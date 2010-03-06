@@ -1,0 +1,106 @@
+Version 3.0 ()
+  API CHANGES
+    - Animation objects are now defined like in Matlab 7.5 and before (to simplify compatibility with all Matlab's and Octave)
+    - removed useless members and member functions for clarity
+    - computeSFMError and computeNRSFMError are now merged in a member function computeError of the Animation class
+    - require Piotr's toolbox 2.42 at least (because of the use of multiTimes)
+  NEW
+    - Animation now support masks and homographies (so does the bundleAdjustment function). Mask can only be used for certain parts of the code though (bundleAdjustment and display, maybe for SFM some day ...)
+    - new alignTo member function to aling two animations
+    - noise in now handled throught the addNoise member function
+    - Animation objects can now easily be sampled through the sampleFrame member function
+    - auto-update of members for Animation: if you update K,R or t, it will update P automatically (sure, it's a waste of ressources but it makes things so much easier to keep track of. Wouldn't have that problem in C++)
+    - normalizePoint now can take sets of points
+    - increased compatibility with Octave 3.2 (only display and stuff using external libraries (yalmip...) is not working). Patches are welcome.
+    - include MSFM from CVPR 08 (finally !)
+    - include CSFM from CVPR 09 (finally !)
+    - SBA 1.6 used in bundleAdjustment. Allegedly faster.
+    - new folder organization and new demos
+  CRITICAL FIXES
+    - bundle adjustment when specifying constant calibration parameters in affine cameras was simply wrong
+    - quaternion bugs in some rare cases
+    - fixed the Sturm & Triggs algorithm (and the Oliensis one therefore)
+  FIXES
+    - slight display bugs got fixed
+    - no more warning displays in bundle adjustment
+  IMPROVEMENTS
+    - much faster computeAnimSimilarity (0.5s compared to 20 min (and 2h on a cluster back in the days ...)) by using intense caching and a mex file
+    - much faster exterior orientation computation/pose estimation by using a mex file
+    - use of bsxfun all over the place, especially for the SFM/NRSFM errors and the core Animation functions (to generate projection matrices, projections ...), making things muuuuuuuuuch faster all over the place.
+
+Version 2.11 (12-Feb-09)
+  CRITICAL FIXES
+    - fix grave bugs in the rotation matrix to quaternion routine (that would only happen for badly behaving matrices though (trace close to 0) )
+    - the NRSFM error according to Torresani (PAMI08) was computed the wrong way ...
+  FIXES
+    - the random rotation around an object could be a bit jittery
+  NEW
+    - the circleSpline function can now accept a repetition number parameter and it also sends back the derivatives of the curve
+    - the walking person data and the face data from Torresani (PAMI08) are added
+    - latest Torresani (PAMI08) code
+
+Version 2.1 (29-Jan-09)
+  API CHANGES
+    - generateToyAnimation uses different flags to deal with the random rotations/translations
+    - bundleAdjustment incorporates R and t in the optional arguments as the full P can be given optionally
+  NEW
+    - better random camera position generation
+    - more projective SFM (2 views calibrated/uncalibrated, N-views (Sturm-Triggs, Oliensis Hartley))
+    - different ways of comparing 2 3D shapes in computeSFMError
+    - bundleAdjustment can deal with full camera matrices (3 x 4), not just the K,R,t decomposition.
+    - extractFromP gives a result for orthographic cameras
+    - use Mupad to generate the bundle adjustment routines (I used Maple before, the code looks a bit more optimized).
+  CRITICAL FIXES
+    - fix grave bugs in the absolute orientation routine
+  FIXES
+    - fix some bugs dealing with calibration matrices (in computeSMFromW and bundleAdjustment)
+    - you can now have different calibration matrices for each camera in computeSMFromW
+
+Version 2.01 (20-Sep-08)
+  FIXES
+    - use custom versions of smooth and minmax (which belong to non-conventional Matlab toolboxes)
+
+Version 2.0  (09-Sep-08)
+  API CHANGES
+    - now uses an Animation class (don't ask me why I did not use that in the first place ...)
+    - errors redefined in computeSFMError and computeNRSFMError
+  NEW
+    - Xiao-Kanade implementation in computeNRSFM, Uses modern math contrary to the paper, so it works pretty well, even though the theory is wrong in certain cases, but that is a different issue ...
+    - compareAnim has been renamed computeNRSFMError. More errors computed
+    - SBA 1.5 used in bundleAdjustment
+    - sources for the Torresani shark
+  CRITICAL FIXES
+    - montageView was broken, sorry about that ...
+  FIXES
+    - A LOT ! unfortunately everywhere, so I only kept track of the biggest ones
+  IMPROVEMENTS
+    - A LOT TOO ! unfortunately everywhere, so I only kept track of the biggest ones
+    - huge speedup in computeAnimSimilarity
+    - faster and more accurate pose estimation
+    - faster quaternion computation
+
+Version 1.2  (21-May-08)
+  NEW
+    - new completeAnim function to ease the creation of an animation object
+  CRITICAL FIXES
+    - fix grave bugs in the SBA routine ! (both in the C routine, and in the matlab code). Big speedup too :)
+    - fix a grave bug in the RANSAC part of computeHomography
+  FIXES
+    - normalization fixed in generateToyAnim
+    - quaternion now returns unit quaternions
+  IMPROVEMENTS
+    - better demo
+    - speedups in several SFM routines
+    - fixed a few typos
+    - more anims in generateToyAnim
+
+Version 1.1  (22-Feb-08)
+  API CHANGES
+    - require Piotr's toolbox 2.0.3 at least
+  FIXES
+    - fix compilation bugs under Windows
+    - fix vect function
+
+Version 1.00  (01-Feb-08)
+  NEW
+    -initial version

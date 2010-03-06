@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+          "http://www.w3.org/TR/REC-html40/loose.dtd">
+
+<html>
+  <head>
+    <title>Vincent's Structure From Motion Toolbox for Matlab</title>
+    <meta name="keywords" content="structure from motion, sfm, Vincent Rabaud, Piotr Dollar, matlab, toolbox, computer vision, images, video, image processing"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1"/>
+    <meta name="robots" content="index, follow"/>
+    <link type="text/css" rel="stylesheet" href="./m2html.css"/>
+  </head>
+  <BODY>
+    <script type="text/javascript">
+      var gaJsHost = (("https:" == document.location.protocol) ? "https://ssl." : "http://www.");
+      document.write(unescape("%3Cscript src='" + gaJsHost + "google-analytics.com/ga.js' type='text/javascript'%3E%3C/script%3E"));
+    </script>
+    <script type="text/javascript">
+      try {
+      var pageTracker = _gat._getTracker("UA-4162056-1");
+      pageTracker._trackPageview();
+      } catch(err) {}
+    </script>
+    <H1>Overview</H1>
+    <H2>DESCRIPTION<A href="#_top"><IMG alt=^ src="up.png" border=0 /></A></H2>
+    <DIV class=box style="font-weight:bold;">
+      <p style="font-weight:bold;">
+        This toolbox is a compilation of popular Structure From Motion (SFM) algorithms. As I used more and more SFM over the years, I could never find anything that goes beyond simple SFM (please, prove me wrong and send me links !!). I compiled all my code into a toolbox so that others do not have to reimplement everything. I apologize in advance if you do not find what you need (like algorithms using the L-infinity beauty) but I only implemented what I needed and optimized what I needed most:
+      </p>
+      <ul style="font-weight:bold;">
+        <li> data generation (random rigid/non-rigid scene, popular non-rigid examples, different camera models, random or smooth random camera positions (with circle splines for Sequin), noise addition ...)
+        <li> 2D geometry (homography computations ...)
+        <li> 3D geometry (quaternion, globally optimal pose estimation, absolute orientation, triangulation ...)
+        <li> rigid 3D reconstruction: orthographic (Tomasi-Kanade with or without orthonormality constraints) or projective (eight point, Sturm - Triggs 96, Oliensis - Hartley 07), bundle adjustment ...
+        <li> non-rigid 3D reconstruction: interface to the available Torresani 08, optimized Xiao - Kanade 04 (with bug fixes to the original papers), CSFM from Rabaud 09
+        <li> visualization for rigid/non-rigid (sequences , multiple-views at once, comparisons ...)
+      </ul>
+      <p>
+        This toolbox is in development and is maintained by <a href="http://vision.ucsd.edu/~vrabaud/" target=_blank>Vincent Rabaud</a>.  Thanks to everyone who has given me feedback and suggestions -- you've&nbsp;helped make this toolbox more useful and easier to use.
+      </p>
+      <p>
+        If you use this toolbox in a paper, I would be grateful if you could cite it using the following BibTex entry:
+      </p>
+      <p style="font-weight:normal;">
+        @misc{vincentsSFMToolbox,<br/>
+          Author = {Vincent Rabaud},<br/>
+          Title = {Vincent's {S}tructure from {M}otion {T}oolbox},<br/>
+          howpublished = {\url{http://vision.ucsd.edu/~vrabaud/toolbox/}}<br/>
+        }</p>
+    </DIV>
+    
+    <H2>CONTENTS<A href="#_top"><IMG alt=^ src="up.png" border=0 /></A></H2>
+    <DIV class=box>
+      <STRONG>The toolbox is divided into 3 parts, arranged by directories:</STRONG>
+      <UL style="LIST-STYLE-IMAGE: url(./matlabicon.gif)">
+        <li><A href="@Animation/Contents.html">Animation</A> defines the animation object used in most of the routines. </li>
+        <li><A href="linearAlgebra/Contents.html">linear algebra</A> a few linear algebra algorithms used in SFM. </li>
+        <li><A href="sfm/Contents.html">sfm</A> SFM routines.</li>
+      </UL>
+    </DIV>
+    
+    <H2>DOWNLOAD<A href="#_top"><IMG alt=^ src="up.png" border=0 /></A></H2>
+    <DIV class=box>
+      <P><STRONG>For version history click <a href="history.txt">here.</a>
+          This code is licensed under <a href="http://www.gnu.org/copyleft/gpl.html" target="blank">GPL.</a></STRONG></P>
+      <UL>
+        <li><a href="../vincentToolbox.zip" onClick="javascript: pageTracker._trackPageview('/toolbox/zip'); ">Version 2.11</a> &nbsp; Feb. 12, 2009
+        <li>Version 2.1 &nbsp; Jan. 29, 2009
+        <li>Version 2.01 &nbsp; Sept. 20, 2008
+        <li>Version 2.0 &nbsp; Sept. 09, 2008
+        <li>Version 1.2 &nbsp; May. 21, 2008
+        <li>Version 1.1 &nbsp; Feb. 22, 2008
+        <li>Version 1.0 &nbsp; Feb. 1, 2008
+        </UL>
+      </DIV>
+    </DIV>
+    
+    <H2>INSTALL<A href="#_top"><IMG alt=^ src="up.png" border=0 /></A></H2>
+    <DIV class=box>
+      <P><STRONG>Most of the routines require:<BR/>
+      <A href="http://vision.ucsd.edu/~pdollar/toolbox/doc/index.html" target=_blank>Piotr's Image & Video Toolbox for Matlab</A> <BR/>
+      For a few other ones, you will need:<br/>
+      <A href="http://control.ee.ethz.ch/~joloef/wiki/pmwiki.php" target=_blank>Yalmip</A> <BR/>
+      <A href="http://sedumi.mcmaster.ca/" target=_blank>Sedumi</A> <BR/>
+      <A href="http://www.laas.fr/~henrion/software/gloptipoly3/" target=_blank>GloptiPoly 3</A> </STRONG></P>
+    </DIV>
+    <br/>
+    <DIV class=box>
+      <P><STRONG>Simply unzip, then add all directories to the Matlab path:<BR />&nbsp; &gt;&gt; addpath(genpath('c:\toolboxSFM')); savepath;</STRONG></P>
+      <P><STRONG>Finally, if you do not want to use the pre-compiled binaries, run the compile script to create your own binaries:<BR />&nbsp; &gt;&gt; cd('c:\toolboxSFM');
+        </STRONG><STRONG>toolboxSFMCompile;</STRONG></P>
+    </DIV>
+    
+    <H2>HELP<A href="#_top"><IMG alt=^ src="up.png" border=0 /></A></H2>
+    <DIV class=box>
+      I tried to keep a very good and detailed documentation with references to the algorithms I implemented (HZ2 standing for the second edition of the Hartley and Zisserman : Multiple View Geometry) but if you have a question, suggestion, or if you find a bug,
+      please email me at<FONT style="BACKGROUND-COLOR: #f5f5f5" color=#0000ff>
+        vrabaud-at-cs.ucsd.edu</FONT>
+    </DIV>
+  </BODY>
+</html>
