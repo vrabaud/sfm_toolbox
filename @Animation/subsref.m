@@ -42,8 +42,6 @@ if length(idx)==1
       varargout{1}=anim.R;
     case 't'
       varargout{1}=anim.t;
-    case 'cam'
-      varargout{1}=anim.cam; % Position of the optical center
       % Misc
     case 'misc'
       varargout{1}=anim.misc;
@@ -156,9 +154,6 @@ else
       varargout{1}=subsref(anim.R,idx(2));
     case 't'
       varargout{1}=subsref(anim.t,idx(2));
-    case 'cam'
-      % Position of the optical center
-      varargout{1}=subsref(anim.cam,idx(2));
       % Misc
     case 'misc'
       varargout{1}=subsref(anim.misc,idx(2));

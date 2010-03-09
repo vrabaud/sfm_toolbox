@@ -45,21 +45,12 @@ if max(size(idx))==1
       anim.R=rhs;
     case 't'
       anim.t=rhs;
-    case 'cam'
-      anim.cam=rhs; % Position of the optical center
       % Misc
     case 'misc'
       anim.misc=rhs;
       % Info
     case 'isProj'
       anim.isProj=rhs;
-      % Quantities
-    case 'nBasis'
-      anim.nBasis=rhs;
-    case 'nPoint'
-      anim.nPoint=rhs;
-    case 'nFrame'
-      anim.nFrame=rhs;
   end
 else
   var=idx(1).subs;
@@ -71,6 +62,7 @@ else
       anim.mask=subsasgn(anim.mask,idx(2),rhs);
       % 3D / Object
     case 'S'
+      if ~isempty(anim.l)>0 && ~isempty(anim.SBasis)>0; return ; end
       anim.S=subsasgn(anim.S,idx(2),rhs);
     case 'conn'
       % Cell of arrays of connectivities
@@ -89,9 +81,6 @@ else
       anim.R=subsasgn(anim.R,idx(2),rhs);
     case 't'
       anim.t=subsasgn(anim.t,idx(2),rhs);
-    case 'cam'
-      % Position of the optical center
-      anim.cam=subsasgn(anim.cam,idx(2),rhs);
       % Misc
     case 'misc'
       anim.misc=subsasgn(anim.misc,idx(2),rhs);
@@ -117,8 +106,7 @@ switch var
       size(anim.R,3) ] );
     % yeah yeah, not optimal but easier to keep everything in sync like
     % that
-    if ~isempty(anim.R) && ~isempty(anim.t) && ...
-        size(anim.R,3)==size(anim.t,2)
+    if ~isempty(anim.R) && ~isempty(anim.t)
       anim.P=generateP(anim);
     end
   case {'P'}

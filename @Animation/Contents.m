@@ -11,7 +11,6 @@
 % generateP             Compute the projection matrices using K, R and t
 % generateS             Generate S tranformed by R and t
 % generateSFromLSBasis  Generate 3D data from the basis of an Animation
-% generateSPCA          Generate the 3D PCA approximation of an Animation
 % generateW             Generate projected data
 % sampleFrame           Sample an Animation by reducing the number of frames
 % setFirstRToId         Sets the first rotation of an ANimation to Id
