@@ -34,7 +34,6 @@ displaySize('P',size(anim.P))
 displaySize('K',size(anim.K))
 displaySize('R',size(anim.R))
 displaySize('t',size(anim.t))
-displaySize('cam',size(anim.cam))
 % Misc
 displaySize('misc',size(anim.misc))
 % Info

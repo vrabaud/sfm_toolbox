@@ -23,7 +23,7 @@ if max(size(idx))==1
     case 'W'
       anim.W=rhs;
     case 'mask'
-      anim.mask=mask;
+      anim.mask=logical(mask);
       % 3D / Object
     case 'S'
       % do not modify if shape basis is defined
@@ -59,7 +59,7 @@ else
     case 'W'
       anim.W=subsasgn(anim.W,idx(2),rhs);
     case 'mask'
-      anim.mask=subsasgn(anim.mask,idx(2),rhs);
+      anim.mask=logical(subsasgn(anim.mask,idx(2),rhs));
       % 3D / Object
     case 'S'
       if ~isempty(anim.l)>0 && ~isempty(anim.SBasis)>0; return ; end
@@ -106,7 +106,7 @@ switch var
       size(anim.R,3) ] );
     % yeah yeah, not optimal but easier to keep everything in sync like
     % that
-    if ~isempty(anim.R) && ~isempty(anim.t)
+    if ~isempty(anim.R) && size(anim.t,2)==size(anim.R,3)
       anim.P=generateP(anim);
     end
   case {'P'}

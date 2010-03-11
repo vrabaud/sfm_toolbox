@@ -83,12 +83,8 @@ function anim=Animation(varargin)
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the Lesser GPL [see external/lgpl.txt]
 
-[ nFrame nPoint nBasis nDim ] = getPrmDflt( varargin,{ 'nFrame', 0, ...
-  'nPoint', 0, 'nBasis', 0 }, 1 );
-
 % measurements
-anim.W=zeros(2,nPoint,nFrame);
-anim.mask= false(nPoint,nFrame);
+anim.W=[]; anim.mask=[];
 
 % 3D / Object
 anim.S=[];
@@ -98,9 +94,7 @@ anim.conn={}; % Cell of arrays of connectivities
 anim.l=[]; anim.SBasis=[];
 
 % Camera
-anim.P=[];
-anim.K=[];
-anim.R=zeros(3,3,nFrame); anim.t=zeros(3,nFrame);
+anim.P=[]; anim.K=[]; anim.R=[]; anim.t=[];
 
 % Misc
 anim.misc=[];
@@ -110,8 +104,6 @@ anim.isProj=false;
 anim.type=-1;
 
 % Quantities
-anim.nBasis=nBasis;
-anim.nPoint=nPoint;
-anim.nFrame=nFrame;
+anim.nBasis=0; anim.nPoint=0; anim.nFrame=0;
 
 anim = class( anim, 'Animation');
