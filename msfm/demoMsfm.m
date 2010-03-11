@@ -69,4 +69,4 @@ fprintf( 'Average 3D Error: %f \n', err(1) );
 % as they are very quick
 disp('------------------------------------------------------------------');
 disp('Computing the final optimizationrigid shape chain');
-anim = nrsfmMsfm( animGT.W, 1 );
+anim = nrsfmMsfm( animGT.W, 1, animGT );
