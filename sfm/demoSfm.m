@@ -74,7 +74,7 @@ function demo2() %#ok<DEFNU>
 disp('Homography with bundle adjustment example');
 disp('Create points and random view');
 
-anim=Animation('nFrame',5,'nPoint',100,'nDim',2);
+anim=Animation(); anim.W=zeros(2,100,5);
 X=rand( 2, 100 );
 for i=1:5
   H = rand( 3, 3 ); anim.mask(:,i)=logical(rand(100,1)>0.5);
@@ -83,7 +83,7 @@ for i=1:5
 end
 
 % add some noise to the measurements
-anim.W=anim.W + 0.01*randn(2,100,5);
+anim=anim.addNoise('noiseW', 0.01, 'doFillW', true);
 
 % compute best homographies between those points
 P=zeros(3,3,anim.nFrame);
@@ -192,28 +192,28 @@ for i = 1 : 4
       case 1,
         animGTSample=animGT.sampleFrame([1:3]);
         anim{1,j} = computeSMFromW( false, 'W', ...
-          animGTSample.W, 'method', 0,'doSBA', j-1 );
+          animGTSample.W, 'method', 0,'nItrSBA', (j-1)*100 );
         out = '3 views, no orthonormality constraints:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 2,
         animGTSample=animGT;
         anim{2,j} = computeSMFromW( false, 'W', animGT.W, ...
-          'method', 0, 'doSBA', j-1 );
+          'method', 0, 'nItrSBA', (j-1)*100 );
         out = 'All the views, no orthonormality constraints:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 3,
         animGTSample=animGT.sampleFrame([1:3]);
         anim{3,j} = computeSMFromW( false, 'W', animGTSample.W, ...
-          'method', 0, 'isCalibrated', true, 'doSBA', j-1);
+          'method', 0, 'isCalibrated', true, 'nItrSBA', (j-1)*100);
         out = '3 views, orthonormality constraints:\n';
         typeTransform = 'camera';
         type3DError = '';
       case 4,
         animGTSample=animGT;
         anim{4,j} = computeSMFromW( false, 'W', animGT.W, ...
-          'method', 0, 'isCalibrated', true, 'doSBA', j-1 );
+          'method', 0, 'isCalibrated', true, 'nItrSBA', (j-1)*100 );
         out = 'All the views, orthonormality constraints:\n';
         typeTransform = 'camera';
         type3DError = '';
@@ -303,7 +303,7 @@ disp('Projective rigid SFM examples');
 nFrame = 10; nPoint = 50;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
   'isProj',true,'dR', 1 );
-animGT=animGT.addNoise('noiseS', '0', 'doFillW', true);
+animGT=animGT.addNoise('noiseS', '5', 'doFillW', true);
 
 playAnim( animGT, 'frame', 1, 'nCam', 20 );
 
@@ -319,7 +319,7 @@ for i = 1 : 4
       case 1,
 		animGTSample=animGT.sampleFrame([1:2]);
         anim{1,j} = computeSMFromW( true, 'W', ...
-          animGTSample.W, 'method', 0,'doSBA', j-1 );
+          animGTSample.W, 'method', 0,'nItrSBA', (j-1)*100 );
         out = '2 views, uncalibrated cameras:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
@@ -327,28 +327,28 @@ for i = 1 : 4
         animGTSample=animGT.sampleFrame([1:2]);
         anim{2,j} = computeSMFromW( true, 'W', ...
           animGTSample.W, 'method', 0,'isCalibrated',true,...
-          'doSBA', j-1);
+          'nItrSBA', (j-1)*100);
         out = '2 views, calibrated cameras:\n';
         typeTransform = 'homography';
         type3DError = '';
       case 3,
         animGTSample=animGT;
         anim{3,j} = computeSMFromW( true, ...
-          'W', animGT.W, 'method', 0, 'doSBA', j-1 );
+          'W', animGT.W, 'method', 0, 'nItrSBA', (j-1)*100 );
         out = 'All the views, uncalibrated cameras, Sturm Triggs:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 4,
         animGTSample=animGT;
         anim{4,j} = computeSMFromW( true, ...
-          'W', animGT.W, 'method', Inf, 'doSBA', j-1 );
+          'W', animGT.W, 'method', Inf, 'nItrSBA', (j-1)*100 );
         out = 'All the views, uncalibrated cameras, Oliensis Hartley:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 5,
         %         [ S(:,:,5,j) P{5} errTmp ] = computeSMFromW( true, ...
         %           'W', animGT.W, 'method', 0, 'isCalibrated',true,...
-        %           'doSBA', j-1 );
+        %           'nItrSBA', (j-1)*100 );
         %         out = 'All the views, calibrated cameras:\n';
     end
 	errTmp = anim{i,j}.computeError();

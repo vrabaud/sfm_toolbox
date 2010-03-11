@@ -42,8 +42,6 @@ function anim = computeSMFromW( isProj, varargin )
 % INPUTS
 %  isProj     - flag indicating if the camera is projective
 %  varargin   - list of paramaters in quotes alternating with their values
-%       - 'W1',[] [ 2 x nPoint ] 2D projected features in the first image
-%       - 'W2',[] [ 2 x nPoint ] 2D projected features in the second image
 %       - 'W', [] [ 2 x nPoint x nFrame ] 2D projected features
 %       - 'isCalibrated' [false] flag indicating if the cameras are
 %                        calibrated
@@ -51,7 +49,6 @@ function anim = computeSMFromW( isProj, varargin )
 %       - 'method', [0] method for performing SFM (see above for details)
 %       - 'onlyErrorFlag', [false] flag indicating if only the error is
 %         needed when nFrame==2 && method==Inf && ~isProj
-%       - 'doSBA', [true] do bundle adjustment
 %       - 'nItrSBA', [100] number of bundle adjustment iterations
 %
 % OUTPUTS 1
@@ -64,17 +61,14 @@ function anim = computeSMFromW( isProj, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 2.1
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the Lesser GPL [see external/lgpl.txt]
 
-[ W1 W2 W isCalibrated K method onlyErrorFlag doSBA nItrSBA ] =...
-  getPrmDflt( varargin, { 'W1' [] 'W2' [] 'W' [] 'isCalibrated' false ...
-  'K' [] 'method' 0 'onlyErrorFlag' false 'doSBA' true ...
-  'nItrSBA' 100 }, 1 );
-
-if ~isempty(W1); W = W1; W(:,:,2) = W2; end
+[ W isCalibrated K method onlyErrorFlag nItrSBA ] =...
+  getPrmDflt( varargin, { 'W' [] 'isCalibrated' false ...
+  'K' [] 'method' 0 'onlyErrorFlag' false 'nItrSBA' 100 }, 1 );
 
 nFrame = size(W,3); nPoint = size(W,2);
 
@@ -87,8 +81,8 @@ end
 WOri = W;
 
 % If calibrated, apply inv(K)
-if ~isempty(K); isCalibrated = true; end
-if ( ~isempty(K) )
+if ~isempty(K)
+  isCalibrated = true;
   if size(K,3)==1
     invK = repmat( inv(K), [ 1 1 nFrame ] );
     K = repmat( K, [ 1 1 nFrame ] );
@@ -96,9 +90,7 @@ if ( ~isempty(K) )
     invK = zeros(3,3,nFrame);
     for i=1:nFrame; invK(:,:,i) = inv(K(:,:,i)); end
   end
-  for i=1:nFrame
-    W(:,:,i) = normalizePoint( invK(:,:,i)*normalizePoint( W(:,:,i), -3 ), 3 );
-  end
+  W = normalizePoint( multiTimes( invK, normalizePoint( W, -3 ), 2), 3 );
 end
 
 if isProj
@@ -294,7 +286,7 @@ else
     anim.P = P;
   end
   
-  if doSBA
+  if nItrSBA > 0
     anim = bundleAdjustment( anim, 'nItrSBA', nItrSBA );
   end
 end
