@@ -4,19 +4,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-/*
-mkoctfile --mex -v  -DCXX=g++-4.1 -DCC=g++-4.1 -DLD_CXX=g++-4.1 -o refineExteriorOrientation.mex refineExteriorOrientation.c;
-
-load('../data/shark/jawSource.mat'); tic; [ q, err ] = refineExteriorOrientation(W,S,rand(4,size(S,3))); toc
-plot(err)
-tic; [ q, err ] = refineExteriorOrientation(W(:,:,1),S(:,:,1),rand(4,1)); toc
-
- mex computeAnimSimilarity.c -lmwlapack -lmwblas -DCXX=g++-4.2 -DCC=g++-4.2 -DLD=g++-4.2
-
- load('shark.mat'); Sim2 = computeAnimSimilarity(reshape(permute(animGT.W,[3,1,2]),size(W,3),[]));*/
-
 #ifdef MATLAB_MEX_FILE
-#include "blas.h"
+#include "lapack.h"
 #else
 double ddot_(int *, double *, int *, double *, int *);
 double dgemm_(char*, char*, int *, int *, int *, double *, double *, int *, double *, int *, double *, double *, int *);
@@ -37,7 +26,7 @@ void printMatrix(double *array, int m, int n) {
 	fprintf(stderr,"\n");
 }
 
-inline void normalizeQuaternion(double *quaternion) {
+__inline void normalizeQuaternion(double *quaternion) {
 	/* normalize */
 	double norm = sqrt(quaternion[0] * quaternion[0] + quaternion[1] * quaternion[1] + quaternion[2] * quaternion[2] + quaternion[3] * quaternion[3]);
 	int k;
@@ -46,24 +35,26 @@ inline void normalizeQuaternion(double *quaternion) {
 		quaternion[k] /= norm;
 }
 
-inline void copyQuaternion(double *quaternionIn, double *quaternionOut) {
+__inline void copyQuaternion(double *quaternionIn, double *quaternionOut) {
 	int k;
 	
 	for (k = 0; k < 4; ++k)
 		quaternionOut[k] = quaternionIn[k];
 }
 
-inline double normSq(int n, double *A) {
+__inline double normSq(int n, double *A) {
 	int one = 1;
-
+#ifdef _WIN32
+	return ddot(&n, A, &one, A, &one);
+#else
 	return ddot_(&n, A, &one, A, &one);
-
+#endif
 	/* 	double res = dnrm2_(&n, A, &one);
 	return res*res; */
 }
 
 /* Compute A*B', A is of size m *p and B n * p */
-inline double matrixMultiplyABt(double *A, double *B, double *C, int m, int p, int n) {
+__inline double matrixMultiplyABt(double *A, double *B, double *C, int m, int p, int n) {
 	double one = 1.0, zero = 0.0;
 	char *chn = "N";
 	char *chnb = "C";
@@ -72,16 +63,16 @@ inline double matrixMultiplyABt(double *A, double *B, double *C, int m, int p, i
 }
 
 /* Compute trace(A*B'), A and B are of size 2*2 */
-inline double matrixTraceProductABt(double *A, double *B, int elemNbr) {
+__inline double matrixTraceProductABt(double *A, double *B, int elemNbr) {
 	int one = 1;
 
 	return ddot_(&elemNbr, A, &one, B, &one);
 }
 
-inline double reconstrPairVal(double *quaternion, double wWtTrace, double *sSt, double *wSt, double *r, double *rtR) {
+__inline double reconstrPairVal(double *quaternion, double wWtTrace, double *sSt, double *wSt, double *r, double *rtR) {
 	double a = quaternion[0], b = quaternion[1], c = quaternion[2], d = quaternion[3];
 	
-	double  t16, t18, t20, t15, t17, t19, t7, t5, t23, t10, t22, t21, t14, t12, t11, t9, t8, t6, t4, t3, t2, t1, t;                                                                           
+	double  t16, t18, t20, t15, t17, t19, t7, t5, t23, t10, t22, t21, t14, t12, t11, t9, t8, t6, t4, t3, t2, t1;
 	t16 = c*c;                                                                             
 	t18 = a*a;                                                                                
 	t20 = t16+t18;                                                                            
@@ -123,12 +114,12 @@ inline double reconstrPairVal(double *quaternion, double wWtTrace, double *sSt, 
 	return (wWtTrace - 2*matrixTraceProductABt(r, wSt, 6) + matrixTraceProductABt(rtR, sSt, 9));
 }
 
-inline double reconstrPairValGrad(double *quaternion, double *gradient, double wWtTrace, double *sSt, double *wSt, double *r, double *dR, double *rtR, double *rtDR ) {
+__inline double reconstrPairValGrad(double *quaternion, double *gradient, double wWtTrace, double *sSt, double *wSt, double *r, double *dR, double *rtR, double *rtDR ) {
 	double a = quaternion[0], b = quaternion[1], c = quaternion[2], d =
 			quaternion[3];
-	int i, j, k;
+	int k;
 	
-	double  t111, t107, t221, t176, t110, t72, t113, t106, t156, t253, t112, t117, t222, t259, t258, t109, t227, t66, t84, t76, t47, t130, t115, t87, t101, t88, t257, t121, t124, t255, t220, t73, t254, t252, t200, t199, t171, t39, t251, t172, t194, t62, t250, t196, t173, t191, t64, t249, t79, t179, t41, t197, t248, t192, t57, t184, t165, t247, t246, t189, t170, t190, t56, t245, t74, t244, t204, t243, t82, t158, t78, t242, t206, t241, t85, t163, t240, t27, t28, t7, t5, t238, t6, t4, t237, t236, t235, t234, t233, t232, t231, t230, t218, t48, t229, t228, t226, t83, t225, t49, t8, t224, t9, t223, t71, t77, t75, t10, t219, t217, t216, t215, t214, t213, t212, t211, t210, t80, t209, t198, t17, t208, t193, t169, t13, t207, t202, t81, t201, t26, t195, t29, t188, t187, t186, t185, t183, t182, t180, t178, t177, t175, t174, t168, t167, t166, t164, t162, t161, t153, t152, t151, t150, t149, t148, t147, t146, t145, t144, t143, t142, t95, t96, t138, t137, t93, t89, t136, t135, t69, t94, t70, t92, t134, t68, t133, t132, t67, t131, t129, t128, t60, t54, t52, t51, t46, t45, t44, t43, t25, t24, t23, t22, t21, t19, t16, t14, t3, t2, t1, t;                                                                             
+	double  t111, t107, t221, t176, t110, t72, t113, t106, t156, t253, t112, t117, t222, t259, t258, t109, t227, t66, t84, t76, t47, t130, t115, t87, t101, t88, t257, t121, t124, t255, t220, t73, t254, t252, t200, t199, t171, t39, t251, t172, t194, t62, t250, t196, t173, t191, t64, t249, t79, t179, t41, t197, t248, t192, t57, t184, t165, t247, t246, t189, t170, t190, t56, t245, t74, t244, t204, t243, t82, t158, t78, t242, t206, t241, t85, t163, t240, t27, t28, t7, t5, t238, t6, t4, t237, t236, t235, t234, t233, t232, t231, t230, t218, t48, t229, t228, t226, t83, t225, t49, t8, t224, t9, t223, t71, t77, t75, t10, t219, t217, t216, t215, t214, t213, t212, t211, t210, t80, t209, t198, t17, t208, t193, t169, t13, t207, t202, t81, t201, t26, t195, t29, t188, t187, t186, t185, t183, t182, t180, t178, t177, t175, t174, t168, t167, t166, t164, t162, t161, t153, t152, t151, t150, t149, t148, t147, t146, t145, t144, t143, t142, t95, t96, t138, t137, t93, t89, t136, t135, t69, t94, t70, t92, t134, t68, t133, t132, t67, t131, t129, t128, t60, t54, t52, t51, t46, t45, t44, t43, t25, t24, t23, t22, t21, t19, t16, t14, t3, t2, t1;                                                                             
 	t111 = b*b;                                                                            
 	t107 = b*t111;                                                                            
 	t221 = t107*c;                                                                            
@@ -414,39 +405,39 @@ inline double reconstrPairValGrad(double *quaternion, double *gradient, double w
 }
 
 void gradientDescent(double wWtTrace, double *sSt, double *wSt, double *errArray, double *quaternionArray, int iFrame, int iFrameIni, int nFrame, double *r, double *dR, double *rtR, double *rtDR, double *quaternionTmp, double *gradient) {
-	int i, j, k;
+	int k;
 
-	/* Figure out the best guess to start from */
-	double errMin, errTmp;
-
+	// Figure out the best guess to start from
+	double errMin, errTmp, errMinOld;
 	double *quaternionMin = quaternionArray + 4 * iFrame;
+	int nItr;
+	double lambda=1.0;
+	int nItrLine;
+	double normGradSq;
 
 	copyQuaternion(quaternionArray + 4 * iFrameIni, quaternionMin);
 	
-	/* Start from that optimal value and perform gradient descent */
-	int nItr;
-	double lambda=1.0;
+	// Start from that optimal value and perform gradient descent
 
-	/*fprintf(stderr,"Start error %f\n", errMin);*/
+	// fprintf(stderr,"Start error %f\n", errMin);
 	for (nItr = 0; nItr < 40; ++nItr) {
 		errMin = reconstrPairValGrad(quaternionMin, gradient, wWtTrace, sSt, wSt, r, dR, rtR, rtDR );
 
-		/* stop if the gradient is too small or the error too */
-		double normGradSq = normSq(4,gradient);
+		// stop if the gradient is too small or the error too
+		normGradSq = normSq(4,gradient);
 		if ((normGradSq < NUM_TOL_SQ) || (errMin < NUM_TOL ))
 			break;
 
-		/* Perform line search */
-		int nItrLine;
-		double errMinOld=errMin;
+		// Perform line search
+		errMinOld=errMin;
 		for (nItrLine = 0; nItrLine < 20; ++nItrLine) {
-			/* get the value for the current quaternion */
+			// get the value for the current quaternion 
 			for (k = 0; k < 4; ++k)
 				quaternionTmp[k] = quaternionMin[k] - lambda * gradient[k];
 			normalizeQuaternion(quaternionTmp);
 			errTmp = reconstrPairVal(quaternionTmp, wWtTrace, sSt, wSt, r, rtR);
 
-			/* check if the error is better than what we had before */
+			// check if the error is better than what we had before 
 			if (errTmp < errMin) {
 				errMin = errTmp;
 				copyQuaternion(quaternionTmp, quaternionMin);
@@ -455,28 +446,39 @@ void gradientDescent(double wWtTrace, double *sSt, double *wSt, double *errArray
 				lambda /= 2;
 		}
 
-		/* stop if the error does not change much, < 0.1 percent */
+		// stop if the error does not change much, < 0.1 percent 
 		if ((errMinOld-errMin)<0.001*errMinOld)
 			break;
 	}
 
-	/*fprintf(stderr,"%i ", nItr);*/
-	/* update if nothing before or if the current result is better than before */
+	//fprintf(stderr,"%i ", nItr);
+	// update if nothing before or if the current result is better than before 
 	if ((errMin < errArray[iFrame]) || (errArray[iFrame]<0))
 		errArray[iFrame] = errMin;
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
-	/* refines the exterior orientation given
-	w (which is 2 x nPoint x nFrame)
-	s (which is 3 x nPoint x nFrame)
-	q (which is 4 x nFrame) an initial estimate of the quaternion */
+	// refines the exterior orientation given
+	// w (which is 2 x nPoint x nFrame)
+	// s (which is 3 x nPoint x nFrame)
+	// q (which is 4 x nFrame) an initial estimate of the quaternion 
 	double *wOri, *q, *res, *w, *s, *quaternionIn;
 	int i, j, k, iFrame, nFrame, nPoint;
+  const mwSize *dim_array;
+  double *quaternionOut;
+  double *wWtTrace;
+  double *errArray;
+  mxArray *pWWtTrace;
+  mxArray *pSSt;
+  double *sSt;
+  mxArray *pWSt;
+  double *wSt;
+	mxArray *pR, *pDR, *pRtR, *pRtDR, *pQuaternionTmp, *pGradient;
+  double *r, *dR, *rtR, *rtDR, *quaternionTmp, *gradient;
 
-	/* Retrieve the useful data */
+  // Retrieve the useful data 
 	w = mxGetPr(prhs[0]);
-	const mwSize *dim_array = mxGetDimensions(prhs[0]);
+	dim_array = mxGetDimensions(prhs[0]);
 	nPoint = dim_array[1];
 	if (mxGetNumberOfDimensions(prhs[0])==2)
 		nFrame = 1;
@@ -485,26 +487,26 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 	s = mxGetPr(prhs[1]);
 	quaternionIn = mxGetPr(prhs[2]);
 
-	/* Create the output data */
+	// Create the output data 
 	plhs[0] = mxCreateDoubleMatrix(4, nFrame, mxREAL);
-	double *quaternionOut = mxGetPr(plhs[0]);
+	quaternionOut = mxGetPr(plhs[0]);
 	for( i = 0, k = 0; i < nFrame; ++i )
 		for( j = 0; j < 4; ++j, ++k )
 			quaternionOut[k] = quaternionIn[k];
 
-	/* fill the errors with -1 */
+	// fill the errors with -1 
 	plhs[1] = mxCreateDoubleMatrix(1, nFrame, mxREAL);
-	double *errArray = mxGetPr(plhs[1]);
+	errArray = mxGetPr(plhs[1]);
 	for( i = 0; i < nFrame; ++i )
 		errArray[i] = -1.0;
 
-	/* create the pairwise ww',ss', sw' multiplications between frames */
-	mxArray *pWWtTrace = mxCreateDoubleMatrix(1, nFrame, mxREAL);
-	double *wWtTrace = mxGetPr(pWWtTrace);
-	mxArray *pSSt = mxCreateDoubleMatrix(9, nFrame, mxREAL);
-	double *sSt = mxGetPr(pSSt);
-	mxArray *pWSt = mxCreateDoubleMatrix(6, nFrame, mxREAL);
-	double *wSt = mxGetPr(pWSt);
+	// create the pairwise ww',ss', sw' multiplications between frames 
+	pWWtTrace = mxCreateDoubleMatrix(1, nFrame, mxREAL);
+	wWtTrace = mxGetPr(pWWtTrace);
+	pSSt = mxCreateDoubleMatrix(9, nFrame, mxREAL);
+	sSt = mxGetPr(pSSt);
+	pWSt = mxCreateDoubleMatrix(6, nFrame, mxREAL);
+	wSt = mxGetPr(pWSt);
 	
 	for ( i = 0; i < nFrame; ++i ) {
 		wWtTrace[i] = matrixTraceProductABt(w + i * 2 * nPoint, w + i * 2 * nPoint, 2*nPoint);
@@ -512,34 +514,34 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 		matrixMultiplyABt(w + i * 2 * nPoint, s + i * 3 * nPoint, wSt + 6*i, 2, nPoint, 3);
 	}
 	
-	/* create some cache some temporary matrices */
-	mxArray *pR = mxCreateDoubleMatrix(2, 3, mxREAL);
-	double *r = mxGetPr(pR);
-	mxArray *pDR = mxCreateDoubleMatrix(6, 4, mxREAL);
-	double *dR = mxGetPr(pDR);
-	mxArray *pRtR = mxCreateDoubleMatrix(3, 3, mxREAL);
-	double *rtR = mxGetPr(pRtR);
-	mxArray *pRtDR = mxCreateDoubleMatrix(9, 4, mxREAL);
-	double *rtDR = mxGetPr(pRtDR);
-	mxArray *pQuaternionTmp = mxCreateDoubleMatrix(4, 1, mxREAL);
-	double *quaternionTmp = mxGetPr(pQuaternionTmp);
-	mxArray *pGradient = mxCreateDoubleMatrix(4, 1, mxREAL);
-	double *gradient = mxGetPr(pGradient);
+	// create some cache some temporary matrices 
+	pR = mxCreateDoubleMatrix(2, 3, mxREAL);
+	r = mxGetPr(pR);
+	pDR = mxCreateDoubleMatrix(6, 4, mxREAL);
+	dR = mxGetPr(pDR);
+	pRtR = mxCreateDoubleMatrix(3, 3, mxREAL);
+	rtR = mxGetPr(pRtR);
+	pRtDR = mxCreateDoubleMatrix(9, 4, mxREAL);
+	rtDR = mxGetPr(pRtDR);
+	pQuaternionTmp = mxCreateDoubleMatrix(4, 1, mxREAL);
+	quaternionTmp = mxGetPr(pQuaternionTmp);
+	pGradient = mxCreateDoubleMatrix(4, 1, mxREAL);
+	gradient = mxGetPr(pGradient);
 
 	for (iFrame = 0; iFrame < nFrame; ++iFrame)
 		gradientDescent(wWtTrace[iFrame], sSt+9*iFrame, wSt+6*iFrame, errArray, quaternionOut, iFrame, iFrame, nFrame, r, dR, rtR, rtDR, quaternionTmp, gradient);
 
-	/* do everything else */
+	// do everything else 
 	for( i = 0; i < 5; ++i ) {
 		for (iFrame = 1; iFrame < nFrame; ++iFrame)
 			gradientDescent(wWtTrace[iFrame], sSt+9*iFrame, wSt+6*iFrame, errArray, quaternionOut, iFrame, iFrame-1, nFrame, r, dR, rtR, rtDR, quaternionTmp, gradient);
 
-		/* do everything else in reverse order */
+		// do everything else in reverse order 
 		for (iFrame = nFrame-2; iFrame >= 0; --iFrame)
 			gradientDescent(wWtTrace[iFrame], sSt+9*iFrame, wSt+6*iFrame, errArray, quaternionOut, iFrame, iFrame+1, nFrame, r, dR, rtR, rtDR, quaternionTmp, gradient);
 	}
 	
-	/* Free memory */
+	// Free memory 
 	mxDestroyArray(pWWtTrace);
 	mxDestroyArray(pSSt);
 	mxDestroyArray(pWSt);
