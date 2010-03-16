@@ -22,7 +22,6 @@ savepwd=pwd; cd(fileparts(mfilename('fullpath'))); cd('../');
 dir = 'sfm/private/sba/';
 dirSBA = [ pwd '/external/sba/'];
 
-disp('************* Compiling SBA');
 cd(dirSBA);
 delete('sba_levmar.o'); delete('sba_levmar_wrap.o'); delete('sba_lapack.o');
 delete('sba_crsm.o'); delete('sba_chkjac.o'); delete('libsba.a');
@@ -34,11 +33,13 @@ switch computer
     system('nmake /f Makefile.vc clean');
     system('nmake /f Makefile.vc sba.lib');
   case {'GLNX86', 'GLNXA64', 'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
-    system('make libsba.a');
+    system([ 'gcc -w -O3 -fPIC -c sba.h sba_chkjac.h compiler.h sba_levmar.c sba_levmar_wrap.c sba_lapack.c sba_crsm.c sba_chkjac.c' ]);
+    system([ 'ar crv libsba.a sba_levmar.o sba_levmar_wrap.o ' ...
+      'sba_lapack.o sba_crsm.o sba_chkjac.o' ]);
+    system([ 'ranlib libsba.a' ]);
+%      system('make libsba.a');
 end
-disp('************* Done compiling SBA');
 
-disp('************* Compiling Matlab SBA');
 cd matlab
 switch computer
   case 'PCWIN',
@@ -54,20 +55,15 @@ switch computer
 	end
 end
 cd ../../..
-disp('************* Done compiling Matlab SBA');
 
-disp('************* Compiling Vincent''s projection routines');
 cd sfm/private/sba
 switch computer
   case 'PCWIN',
     system('cl /nologo /O2 sbaProjection.c /link /dll /out:sbaProjection.dll');
   case {'GLNX86','GLNXA64','i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
-    system('gcc -fPIC -O3 -shared -o sbaProjection.so sbaProjection.c');
+    system('gcc -Wall -fPIC -O3 -shared -o sbaProjection.so sbaProjection.c');
 end
 cd ../../..
-disp('************* Done compiling Vincent''s projection routines');
-
-disp('************* Compiling computeCsfmInfimum, refineExteriorOrientation and msfmRotationDerivative');
 
 rd=fileparts(mfilename('fullpath')); rd=rd(1:end-9);
 
@@ -77,6 +73,7 @@ else opts = {'-output'};
   % if you get warnings on linux, you couldforce the gcc version this way
   % opts = {'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1' '-l' ...
   % 'mwlapack' '-l' 'mwblas' '-output' };
+  opts = {'-l' 'mwlapack' '-l' 'mwblas' '-output' };
 end
 
 % general compile options

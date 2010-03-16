@@ -10,15 +10,17 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 	double a, b, c, d;
 	double  t25, t28, t62, t53, t26, t27, t1, t61, t60, t59, t58, t57, t56, t55, t54, t20, t24, t51, t19, t22, t50, t49, t48, t17, t23, t47, t46, t13, t14, t45, t15, t21, t44, t43, t42, t41, t40, t39, t16, t38, t18, t37, t36, t35, t34, t33, t12, t11, t10, t5, t4, t3;                                          
 	int n, nFrame;
+	double *dR;
+	double *quaternion;
 
 	/* Retrieve the useful data */
-	double *quaternion = mxGetPr(prhs[0]);
+	quaternion = mxGetPr(prhs[0]);
 	nFrame = mxGetN(prhs[0]);
 
 	/* Create the output data */
 	mwSize dim_array[4] = {2, 3, 4, nFrame};
 	plhs[0] = mxCreateNumericArray(4, dim_array, mxDOUBLE_CLASS, mxREAL);
-	double *dR = mxGetPr(plhs[0]);
+	dR = mxGetPr(plhs[0]);
 	
 	/* fill all the rotations */
 	for( n = 0; n < nFrame; ++n) {

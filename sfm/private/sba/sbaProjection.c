@@ -1015,7 +1015,6 @@ h8 = h[7];
 }
 
 API_MOD void CALL_CONV affineNRSFM(int j, int i, double *rt, double *xyz, double *xij, double **adata) {
-double x, y, z, q1, q2, q3, q4, tr1, tr2;
 
 int isFirstCoeff1 = *(adata[0]);
 int nBasis = *(adata[1]);

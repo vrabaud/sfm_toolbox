@@ -9,7 +9,6 @@
 #else
 double ddot_(int *, double *, int *, double *, int *);
 double dgemm_(char*, char*, int *, int *, int *, double *, double *, int *, double *, int *, double *, double *, int *);
-double dnrm2_(int *, double *, int *);
 #endif
 
 const double NUM_TOL = 1e-8;
@@ -59,14 +58,22 @@ __inline double matrixMultiplyABt(double *A, double *B, double *C, int m, int p,
 	char *chn = "N";
 	char *chnb = "C";
 
+#ifdef _WIN32
+	dgemm(chn, chnb, &m, &n, &p, &one, A, &m, B, &n, &zero, C, &m);
+#else
 	dgemm_(chn, chnb, &m, &n, &p, &one, A, &m, B, &n, &zero, C, &m);
+#endif
 }
 
 /* Compute trace(A*B'), A and B are of size 2*2 */
 __inline double matrixTraceProductABt(double *A, double *B, int elemNbr) {
 	int one = 1;
 
+#ifdef _WIN32
+	return ddot(&elemNbr, A, &one, B, &one);
+#else
 	return ddot_(&elemNbr, A, &one, B, &one);
+#endif
 }
 
 __inline double reconstrPairVal(double *quaternion, double wWtTrace, double *sSt, double *wSt, double *r, double *rtR) {
