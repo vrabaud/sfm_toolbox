@@ -1,4 +1,4 @@
-function anim=generateCamFromRt( anim )
+function cam=generateCamFromRt( anim )
 % Generate camera position from R and t in an Animation
 %
 % USAGE
@@ -8,7 +8,7 @@ function anim=generateCamFromRt( anim )
 %  anim     - Animation object (help Animation for details)
 %
 % OUTPUTS
-%  anim     - modified Animation object
+%  cam      - [ 3 x nFrame ] camera centers
 %
 % EXAMPLE
 %
@@ -19,4 +19,8 @@ function anim=generateCamFromRt( anim )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the Lesser GPL [see external/lgpl.txt]
 
-anim.cam=multiTimes(-anim.R,anim.t,3.1);
+if isempty(anim.R) && isempty(anim.t)
+  cam=[];
+else
+  cam=multiTimes(-anim.R,anim.t,3.1);
+end

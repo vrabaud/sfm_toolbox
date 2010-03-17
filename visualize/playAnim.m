@@ -114,6 +114,7 @@ set( gcf, 'KeyPressFcn', { @cloudInterface } );
 if hConn==0; showConn = false; else possibleKey(end+1) = {'c'}; end
 if hGT==0; showGT = false; else possibleKey(end+1) = {'g'}; end
 
+cam(camMode).axis
 axis( cam(camMode).axis );
 for i=1:3; cam(i).gca = gca; end
 cloudInterface( -1, struct('Key',int2str(camMode) ) );

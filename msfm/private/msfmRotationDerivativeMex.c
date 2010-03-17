@@ -12,13 +12,14 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 	int n, nFrame;
 	double *dR;
 	double *quaternion;
+	mwSize dim_array[4] = {2, 3, 4, -1};
 
 	/* Retrieve the useful data */
 	quaternion = mxGetPr(prhs[0]);
 	nFrame = mxGetN(prhs[0]);
 
 	/* Create the output data */
-	mwSize dim_array[4] = {2, 3, 4, nFrame};
+	dim_array[3] = nFrame;
 	plhs[0] = mxCreateNumericArray(4, dim_array, mxDOUBLE_CLASS, mxREAL);
 	dR = mxGetPr(plhs[0]);
 	

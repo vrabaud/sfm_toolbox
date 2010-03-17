@@ -256,7 +256,6 @@ if dR~=0; anim = anim.setFirstRToId(); end
 if ~isempty(anim.l); anim=anim.generateSFromLSBasis(); end
 
 [ disc, disc, anim ]=anim.generateW('doFillW',true);
-anim=anim.generateCamFromRt();
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
