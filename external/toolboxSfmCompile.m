@@ -3,6 +3,9 @@ function toolboxSfmCompile()
 %
 % assumes located in toolbox root directory
 %
+% if you get warnings on linux because yourgcc istoo old/new, you can
+% force the gcc version this way
+%  opts = {'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1' etc
 % USAGE
 %  toolboxCompile
 %
@@ -23,8 +26,13 @@ dir = 'sfm/private/sba/';
 dirSBA = [ pwd '/external/sba/'];
 
 cd(dirSBA);
-delete('sba_levmar.o'); delete('sba_levmar_wrap.o'); delete('sba_lapack.o');
-delete('sba_crsm.o'); delete('sba_chkjac.o'); delete('libsba.a');
+% delete previous object files
+fileList = {'sba_levmar.o', 'sba_levmar_wrap.o', 'sba_lapack.o', ...
+  'sba_crsm.o', 'sba_chkjac.o', 'libsba.a'};
+for i=1:length(fileList)
+  if exist(fileList{i}, 'file'), delete(fileList{i}); end
+end
+
 switch computer
   case 'PCWIN',
     % You need this variable as an environment variable
@@ -37,7 +45,6 @@ switch computer
     system([ 'ar crv libsba.a sba_levmar.o sba_levmar_wrap.o ' ...
       'sba_lapack.o sba_crsm.o sba_chkjac.o' ]);
     system([ 'ranlib libsba.a' ]);
-%      system('make libsba.a');
 end
 
 cd matlab
@@ -50,7 +57,9 @@ switch computer
 	  mkoctfile --mex ./sba.c -I../ -lsba -L../
     else
 	  % Matlab
-	  opts={'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1' '-I..' '-O' '-l' 'mwlapack' '-l' 'mwblas' '-l' 'dl' '../libsba.a'  '/usr/lib/atlas/libblas.a' '/usr/lib/libgfortran.so.3'};
+	  opts={'-w' '-I..' '-O' '-l' 'mwlapack' '-l' 'mwblas' '-l' 'dl' ...
+	    '../libsba.a'  '/usr/lib/atlas/libblas.a' ...
+	    '/usr/lib/libgfortran.so.3'};
 	  mex( 'sba.c', opts{:} );
 	end
 end
@@ -70,9 +79,7 @@ rd=fileparts(mfilename('fullpath')); rd=rd(1:end-9);
 % general compile options (can make architecture specific)
 if exist('OCTAVE_VERSION','builtin') opts = {'-o'};
 else opts = {'-output'};
-  % if you get warnings on linux, you couldforce the gcc version this way
-  % opts = {'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1' '-l' ...
-  % 'mwlapack' '-l' 'mwblas' '-output' };
+  % if you get warnings on linux, you could force the gcc version this way
   opts = {'-l' 'mwlapack' '-l' 'mwblas' '-output' };
 end
 
