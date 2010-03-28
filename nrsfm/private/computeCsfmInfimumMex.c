@@ -26,7 +26,7 @@ void printMatrix(double *array, int m, int n) {
 }
 
 __inline void normalizeQuaternion(double *quaternion) {
-	// normalize 
+	/* normalize */
 	double norm = sqrt(quaternion[0] * quaternion[0] + quaternion[1] * quaternion[1] + quaternion[2] * quaternion[2] + quaternion[3] * quaternion[3]);
 	int k;
 	
@@ -43,7 +43,7 @@ __inline void cleanQuaternion(double *quaternion) {
 		quaternion[1] = 1e-5;
 		quaternion[2] = -1e-5;
 	}
-	// normalize 
+	/* normalize */
 	normalizeQuaternion(quaternion);
 }
 
@@ -64,11 +64,11 @@ __inline double normSq(int n, double *A) {
 #else
 	return ddot_(&n, A, &one, A, &one);
 #endif
-	// 	double res = dnrm2_(&n, A, &one);
-	// return res*res;
+	/* 	double res = dnrm2_(&n, A, &one);
+	return res*res; */
 }
 
-// Compute A*B', A is of size m *p and B n * p 
+/* Compute A*B', A is of size m *p and B n * p  */
 __inline double matrixMultiply(double *A, double *B, double *C, int m, int p, int n) {
 	double one = 1.0, zero = 0.0;
 	char *chn = "N";
@@ -81,7 +81,7 @@ __inline double matrixMultiply(double *A, double *B, double *C, int m, int p, in
 #endif
 }
 
-// Compute trace(A*B'), A and B are of size m*n 
+/* Compute trace(A*B'), A and B are of size m*n */
 __inline double matrixTraceProduct4By4(double *A, double *B) {
 	int elemNbr = 4 * 4, one = 1;
 
@@ -101,7 +101,7 @@ __inline void _copywPrimeWPrimeTransposeBlock(double *wPrimeWPrimeTranspose, int
 
 __inline void updateW(double *wPairwiseProd, int iFrame, int jFrame, int nFrame, double *wPrimeWPrimeTranspose) {
 	int i, j;
-	// update wPrimeWPrimeTranspose 
+	/* update wPrimeWPrimeTranspose */
 	_copywPrimeWPrimeTransposeBlock(wPrimeWPrimeTranspose, 0, 0, iFrame, iFrame, wPairwiseProd, nFrame);
 	_copywPrimeWPrimeTransposeBlock(wPrimeWPrimeTranspose, 0, 1, iFrame, jFrame, wPairwiseProd, nFrame);
 	_copywPrimeWPrimeTransposeBlock(wPrimeWPrimeTranspose, 1, 0, jFrame, iFrame, wPairwiseProd, nFrame);
@@ -323,11 +323,11 @@ __inline double reconstrPairValGrad(double *quaternion, double *wPrimeWPrimeTran
 	dRTransposeR[62] = -a*t73;                                                                                         
 	dRTransposeR[63] = -t29;
 	
-	// Compute the gradient 
+	/* Compute the gradient */
 	for (k = 0; k < 4; ++k)
 		gradient[k] = 2*matrixTraceProduct4By4(dRTransposeR + 4 * 4 * k, wPrimeWPrimeTranspose);
 
-	// Return the error 
+	/* Return the error */
 	return matrixTraceProduct4By4(RTransposeR, wPrimeWPrimeTranspose);
 }
 
@@ -340,13 +340,13 @@ void gradientDescent(double *wPrimeWPrimeTranspose, int iFrame, int jFrame, doub
 	double normGradSq;
 	int nItrLine;
 
-	// update the wPrimeWPrimeTranspose matrix 
+	/* update the wPrimeWPrimeTranspose matrix */
 	updateW(wPairwiseProd, iFrame, jFrame, nFrame, wPrimeWPrimeTranspose);
 
-	// Figure out the best guess to start from 
+	/* Figure out the best guess to start from */
 	quaternionMin = quaternionArray + 4 * (iFrame * nFrame + jFrame);
 
-	// Go over all the neighbors around the current location to find the best one 
+	/* Go over all the neighbors around the current location to find the best one */
 	if (isDone[jFrame * nFrame + iFrame])
 		errMin = errArray[jFrame * nFrame + iFrame];
 	else
@@ -355,40 +355,40 @@ void gradientDescent(double *wPrimeWPrimeTranspose, int iFrame, int jFrame, doub
 		for (j = jFrame - 1; j <= jFrame + 1; ++j)
 			if ((i >= 0) && (i < nFrame) && (j >= 0) && (j < nFrame)
 					&& isDone[j * nFrame + i]) {
-				// and check which one already gives the smallest value 
+				/* and check which one already gives the smallest value */
 				copyQuaternion(quaternionArray + 4 * (i * nFrame + j), quaternionTmp, 1);
 			
 				errTmp = reconstrPairVal(quaternionTmp, wPrimeWPrimeTranspose,RTransposeR);
 
-				// Keep the best pick 
+				/* Keep the best pick */ 
 				if ((errTmp < errMin) || (errMin < 0)) {
 					errMin = errTmp;
 					copyQuaternion(quaternionTmp, quaternionMin, 0);
 				}
 			}
 
-	// Start from that optimal value and perform gradient descent 
+	/* Start from that optimal value and perform gradient descent */
 	lambda=1.0;
 
-	//fprintf(stderr,"Start error %f\n", errMin);
+	/* fprintf(stderr,"Start error %f\n", errMin); */
 	for (nItr = 0; nItr < 40; ++nItr) {
 		errMin = reconstrPairValGrad(quaternionMin, wPrimeWPrimeTranspose, gradient, RTransposeR, dRTransposeR);
 
-		// stop if the gradient is too small or the error too 
+		/* stop if the gradient is too small or the error too */
 		normGradSq = normSq(4,gradient);
 		if ((normGradSq < NUM_TOL_SQ) || (errMin < NUM_TOL ))
 			break;
 
-		// Perform line search 
+		/* Perform line search */
 		errMinOld=errMin;
 		for (nItrLine = 0; nItrLine < 20; ++nItrLine) {
-			// get the value for the current quaternion 
+			/* get the value for the current quaternion */
 			for (k = 0; k < 4; ++k)
 				quaternionTmp[k] = quaternionMin[k] - lambda * gradient[k];
 			cleanQuaternion(quaternionTmp);
 			errTmp = reconstrPairVal(quaternionTmp, wPrimeWPrimeTranspose,RTransposeR);
 
-			// check if the error is better than what we had before 
+			/* check if the error is better than what we had before */
 			if (errTmp < errMin) {
 				errMin = errTmp;
 				copyQuaternion(quaternionTmp, quaternionMin, 0);
@@ -397,13 +397,14 @@ void gradientDescent(double *wPrimeWPrimeTranspose, int iFrame, int jFrame, doub
 				lambda /= 2;
 		}
 
-		// stop if the error does not change much, < 0.1 percent 
+		/* stop if the error does not change much, < 0.1 percent */
 		if ((errMinOld-errMin)<0.001*errMinOld)
 			break;
 	}
 
-	//fprintf(stderr,"%i ", nItr);
-	// update if nothing before or if the current result is better than before 
+	/* fprintf(stderr,"%i ", nItr);
+	 *update if nothing before or if the current result is better than before
+	 */
 	if ((!isDone[iFrame * nFrame + jFrame]) || ((isDone[iFrame * nFrame + jFrame]) && (errMin <errArray[iFrame * nFrame + jFrame]))) {
 		errArray[iFrame * nFrame + jFrame] = errMin;
 		errArray[jFrame * nFrame + iFrame] = errMin;
@@ -415,12 +416,13 @@ void gradientDescent(double *wPrimeWPrimeTranspose, int iFrame, int jFrame, doub
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
-	// compute the infimum in CSFM, provided that the W
-	// (which is 2 x nPoint x nFrame) is centered 
+	/* compute the infimum in CSFM, provided that the W
+	 * (which is 2 x nPoint x nFrame) is centered
+	 */
 	double *wOri, *q, *res;
 	int i, ii, j, k, l, m, n, p, iFrame, jFrame, nFrame, nPoint;
 	mxArray *pIsDone;
-	mwSize *dim_array;
+	const mwSize *dim_array;
 	double *errArray, *quaternionArray ;
 	char *isDone;
 	mxArray *pWPairwiseProd, *pTmp2By2, *pRTransposeR, *pDRTransposeR,
@@ -428,13 +430,13 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 	double *wPairwiseProd, *tmp2By2, *RTransposeR, *dRTransposeR,
 			*quaternionTmp, *gradient, *wPrimeWPrimeTranspose;
 
-	// Retrieve the useful data 
+	/* Retrieve the useful data */
 	wOri= mxGetPr(prhs[0]);
 	dim_array = mxGetDimensions(prhs[0]);
 	nPoint = dim_array[1];
 	nFrame = dim_array[2];
 
-	// Create the output data 
+	/* Create the output data */
 	plhs[0] = mxCreateDoubleMatrix(nFrame, nFrame, mxREAL);
 	errArray = mxGetPr(plhs[0]);
 
@@ -448,7 +450,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 		for (jFrame = 0; jFrame < nFrame; ++jFrame, ++k) {
 			errArray[k] = 0;
 			if (iFrame == jFrame) {
-				// set the rotation to identity 
+				/* set the rotation to identity */
 				isDone[k] = 1;
 				quaternionArray[4 * k + 0] = 1;
 				for (i = 1; i < 4; ++i)
@@ -457,7 +459,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 				isDone[k] = 0;
 		}
 
-	// create the pairwise W multiplications between frames 
+	/* create the pairwise W multiplications between frames */
 	pWPairwiseProd = mxCreateDoubleMatrix(2*nFrame, 2*nFrame, mxREAL);
 	wPairwiseProd = mxGetPr(pWPairwiseProd);
 	pTmp2By2 = mxCreateDoubleMatrix(2, 2, mxREAL);
@@ -470,12 +472,12 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 				for( l = 0; l < 2; ++l )
 					wPairwiseProd[(2*i+k)*2*nFrame + 2*j + l] = tmp2By2[l+2*k];
 		}
-	// symmetrize the matrix 
+	/* symmetrize the matrix */
 	for (i = 0; i < 2*nFrame; ++i )
 		for (j = i+1; j < 2*nFrame; ++j )
 			wPairwiseProd[i*2*nFrame+j] = wPairwiseProd[j*2*nFrame+i];
 
-	// create some cache some temporary matrices 
+	/* create some cache some temporary matrices */
 	pRTransposeR = mxCreateDoubleMatrix(4, 4, mxREAL);
 	RTransposeR = mxGetPr(pRTransposeR);
 	pDRTransposeR = mxCreateDoubleMatrix(4, 4*4, mxREAL);
@@ -487,7 +489,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 	pWPrimeWPrimeTranspose = mxCreateDoubleMatrix(4, 4, mxREAL);
 	wPrimeWPrimeTranspose = mxGetPr(pWPrimeWPrimeTranspose);
 
-	// do everything else 
+	/* do everything else */
 	for (iFrame = 0; iFrame < nFrame; ++iFrame) {
 		for (jFrame = iFrame+1; jFrame < nFrame; ++jFrame)
 			gradientDescent(wPrimeWPrimeTranspose, iFrame, jFrame, wPairwiseProd, errArray, quaternionArray, isDone, nFrame, nPoint, RTransposeR, dRTransposeR, quaternionTmp, gradient);
@@ -495,7 +497,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 		for (jFrame = nFrame - 1; jFrame > iFrame; --jFrame)
 			gradientDescent(wPrimeWPrimeTranspose, iFrame, jFrame, wPairwiseProd, errArray, quaternionArray, isDone, nFrame, nPoint, RTransposeR, dRTransposeR, quaternionTmp, gradient);
 	}
-	// do everything else in a different order 
+	/* do everything else in a different order */
 	for (jFrame = nFrame-1; jFrame > 0; --jFrame) {
 		for (iFrame = jFrame+1; iFrame < nFrame; ++iFrame)
 			gradientDescent(wPrimeWPrimeTranspose, iFrame, jFrame, wPairwiseProd, errArray, quaternionArray, isDone, nFrame, nPoint, RTransposeR, dRTransposeR, quaternionTmp, gradient);
@@ -505,7 +507,7 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 			gradientDescent(wPrimeWPrimeTranspose, iFrame, jFrame, wPairwiseProd, errArray, quaternionArray, isDone, nFrame, nPoint, RTransposeR, dRTransposeR, quaternionTmp, gradient);
 	}
 
-	// Free memory 
+	/* Free memory */
 	mxDestroyArray(pIsDone);
 	mxDestroyArray(pWPrimeWPrimeTranspose);
 	mxDestroyArray(pTmp2By2);
