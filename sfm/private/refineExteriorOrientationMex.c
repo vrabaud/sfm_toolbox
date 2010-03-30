@@ -7,8 +7,9 @@
 #ifdef MATLAB_MEX_FILE
 #include "lapack.h"
 #else
-double ddot_(int *, double *, int *, double *, int *);
-double dgemm_(char*, char*, int *, int *, int *, double *, double *, int *, double *, int *, double *, double *, int *);
+typedef int ptrdiff_t;
+double ddot_(ptrdiff_t *, double *, ptrdiff_t *, double *, ptrdiff_t *);
+double dgemm_(char*, char*, ptrdiff_t *, ptrdiff_t *, ptrdiff_t *, double *, double *, ptrdiff_t *, double *, ptrdiff_t *, double *, double *, ptrdiff_t *);
 #endif
 
 const double NUM_TOL = 1e-8;
@@ -41,8 +42,8 @@ __inline void copyQuaternion(double *quaternionIn, double *quaternionOut) {
 		quaternionOut[k] = quaternionIn[k];
 }
 
-__inline double normSq(int n, double *A) {
-	int one = 1;
+__inline double normSq(ptrdiff_t n, double *A) {
+	ptrdiff_t one = 1;
 #ifdef _WIN32
 	return ddot(&n, A, &one, A, &one);
 #else
@@ -66,8 +67,8 @@ __inline double matrixMultiplyABt(double *A, double *B, double *C, int m, int p,
 }
 
 /* Compute trace(A*B'), A and B are of size 2*2 */
-__inline double matrixTraceProductABt(double *A, double *B, int elemNbr) {
-	int one = 1;
+__inline double matrixTraceProductABt(double *A, double *B, ptrdiff_t elemNbr) {
+	ptrdiff_t one = 1;
 
 #ifdef _WIN32
 	return ddot(&elemNbr, A, &one, B, &one);

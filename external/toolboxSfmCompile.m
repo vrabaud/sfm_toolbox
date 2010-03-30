@@ -92,7 +92,8 @@ else
       opts={'-output'};
       optsAfter = {lapacklib, blaslib};
     case {'GLNX86', 'GLNXA64'},
-      % if you get warnings on linux, you could force the gcc version this way
+      % if you get warnings on linux, you could force the gcc version by
+      % adding those options: 'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1'
       opts = {'-l' 'mwlapack' '-l' 'mwblas' '-output' };
   end
 end
