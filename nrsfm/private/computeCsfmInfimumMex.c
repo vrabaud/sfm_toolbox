@@ -7,9 +7,9 @@
 #ifdef MATLAB_MEX_FILE
 #include "blas.h"
 #else
-typedef int ptrdiff_t;
-double ddot_(ptrdiff_t *, double *, ptrdiff_t *, double *, ptrdiff_t *);
-double dgemm_(char*, char*, ptrdiff_t *, ptrdiff_t *, ptrdiff_t *, double *, double *, ptrdiff_t *, double *, ptrdiff_t *, double *, double *, ptrdiff_t *);
+typedef int mwSignedIndex;
+double ddot_(mwSignedIndex *, double *, mwSignedIndex *, double *, mwSignedIndex *);
+double dgemm_(char*, char*, mwSignedIndex *, mwSignedIndex *, mwSignedIndex *, double *, double *, mwSignedIndex *, double *, mwSignedIndex *, double *, double *, mwSignedIndex *);
 #endif
 
 const double NUM_TOL = 1e-8;
@@ -58,8 +58,8 @@ __inline void copyQuaternion(double *quaternionIn, double *quaternionOut, char d
 		cleanQuaternion(quaternionOut);
 }
 
-__inline double normSq(ptrdiff_t n, double *A) {
-	ptrdiff_t one = 1;
+__inline double normSq(mwSignedIndex n, double *A) {
+	mwSignedIndex one = 1;
 #if defined(_WIN32) || defined(_WIN64)
 	return ddot(&n, A, &one, A, &one);
 #else
@@ -70,7 +70,7 @@ __inline double normSq(ptrdiff_t n, double *A) {
 }
 
 /* Compute A*B', A is of size m *p and B n * p  */
-__inline double matrixMultiply(double *A, double *B, double *C, ptrdiff_t m, ptrdiff_t p, ptrdiff_t n) {
+__inline double matrixMultiply(double *A, double *B, double *C, mwSignedIndex m, mwSignedIndex p, mwSignedIndex n) {
 	double one = 1.0, zero = 0.0;
 	char *chn = "N";
 	char *chnb = "C";
@@ -84,7 +84,7 @@ __inline double matrixMultiply(double *A, double *B, double *C, ptrdiff_t m, ptr
 
 /* Compute trace(A*B'), A and B are of size m*n */
 __inline double matrixTraceProduct4By4(double *A, double *B) {
-	ptrdiff_t elemNbr = 4 * 4, one = 1;
+	mwSignedIndex elemNbr = 4 * 4, one = 1;
 
 #if defined(_WIN32) || defined(_WIN64)
 	return ddot(&elemNbr, A, &one, B, &one);

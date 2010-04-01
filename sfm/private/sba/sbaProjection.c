@@ -21,15 +21,15 @@
 #define CALL_CONV
 #endif /* _MSC_VER */
 
-API_MOD void CALL_CONV affinetr3k4k5kap1kap2pp1pp2Ignored(int j, int i, double *rtk, double *xyz, double *xij, void *adata) { 
+API_MOD void CALL_CONV affinetr3k4k5kap1kap2pp1pp2Ignored(int j, int i, double *rtk, double *xyz, double *xij, double **adata) { 
 double x, y, z, q1, q2, q3, q4, tr1, tr2, k1, k2, k3;
 
 double t4, t5, t6, t7, t8, t9;
 
 int ind = 6;
 
-double *k = ((double **)adata)[0];
-double *kMask = ((double **)adata)[1];
+double *k = adata[0];
+double *kMask = adata[1];
 
 x = xyz[0];
 y = xyz[1];
@@ -55,15 +55,15 @@ k3 = kMask[2] ? k[3*j+2] : rtk[ind++];
 
 }
 
-API_MOD void CALL_CONV affinetr3k4k5kap1kap2pp1pp2IgnoredJac(int j, int i, double *rtk, double *xyz, double *Aij, double *Bij, void *adata) { 
+API_MOD void CALL_CONV affinetr3k4k5kap1kap2pp1pp2IgnoredJac(int j, int i, double *rtk, double *xyz, double *Aij, double *Bij, double **adata) { 
 double x, y, z, q1, q2, q3, q4, tr1, tr2, k1, k2, k3;
 
 double t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t30, t31, t29, t32, t33, t34, t35, t36, t37, t39, t38, t40;
 
 int ind = 6;
 
-double *k = ((double **)adata)[0];
-double *kMask = ((double **)adata)[1];
+double *k = adata[0];
+double *kMask = adata[1];
 
 x = xyz[0];
 y = xyz[1];
@@ -148,7 +148,7 @@ ind = 6;
 
 }
 
-API_MOD void CALL_CONV affinetr3k1k2k3k4k5kap1kap2pp1pp2Ignored(int j, int i, double *rt, double *xyz, double *xij, void *adata) { 
+API_MOD void CALL_CONV affinetr3k1k2k3k4k5kap1kap2pp1pp2Ignored(int j, int i, double *rt, double *xyz, double *xij, double **adata) { 
 double x, y, z, q1, q2, q3, q4, tr1, tr2;
 
 double t4, t5, t6, t7, t8, t9;
@@ -174,7 +174,7 @@ tr2 = rt[5];
 
 }
 
-API_MOD void CALL_CONV affinetr3k1k2k3k4k5kap1kap2pp1pp2IgnoredJac(int j, int i, double *rt, double *xyz, double *Aij, double *Bij, void *adata) { 
+API_MOD void CALL_CONV affinetr3k1k2k3k4k5kap1kap2pp1pp2IgnoredJac(int j, int i, double *rt, double *xyz, double *Aij, double *Bij, double **adata) { 
 double x, y, z, q1, q2, q3, q4, tr1, tr2;
 
 double t11, t12, t13, t14, t15, t16, t17, t18, t19, t27, t20, t21, t22, t23, t24, t25, t26, t28, t30, t29, t31, t32, t33, t34, t35, t36, t38, t37;
@@ -238,15 +238,15 @@ tr2 = rt[5];
 
 }
 
-API_MOD void CALL_CONV projectivekap1kap2pp1pp2Ignored(int j, int i, double *rtk, double *xyz, double *xij, void *adata) { 
+API_MOD void CALL_CONV projectivekap1kap2pp1pp2Ignored(int j, int i, double *rtk, double *xyz, double *xij, double **adata) { 
 double x, y, z, q1, q2, q3, q4, tr1, tr2, tr3, k1, k2, k3, k4, k5;
 
 double t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19;
 
 int ind = 7;
 
-double *k = ((double **)adata)[0];
-double *kMask = ((double **)adata)[1];
+double *k = adata[0];
+double *kMask = adata[1];
 x = xyz[0];
 y = xyz[1];
 z = xyz[2];
@@ -284,15 +284,15 @@ k5 = kMask[4] ? k[5*j+4] : rtk[ind++];
 
 }
 
-API_MOD void CALL_CONV projectivekap1kap2pp1pp2IgnoredJac(int j, int i, double *rtk, double *xyz, double *Aij, double *Bij, void *adata) { 
+API_MOD void CALL_CONV projectivekap1kap2pp1pp2IgnoredJac(int j, int i, double *rtk, double *xyz, double *Aij, double *Bij, double **adata) { 
 double x, y, z, q1, q2, q3, q4, tr1, tr2, tr3, k1, k2, k3, k4, k5;
 
 double t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t50, t51, t52, t53, t95, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t94, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105, t106, t82, t83, t107, t108, t109, t110, t111, t112, t113, t143, t114, t115, t116, t141, t142, t144, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t140, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160, t161, t162, t163, t164, t165, t166;
 
 int ind = 7;
 
-double *k = ((double **)adata)[0];
-double *kMask = ((double **)adata)[1];
+double *k = adata[0];
+double *kMask = adata[1];
 x = xyz[0];
 y = xyz[1];
 z = xyz[2];
@@ -506,7 +506,7 @@ ind = 7;
 
 }
 
-API_MOD void CALL_CONV projectivek1k2k3k4k5kap1kap2pp1pp2Ignored(int j, int i, double *rt, double *xyz, double *xij, void *adata) { 
+API_MOD void CALL_CONV projectivek1k2k3k4k5kap1kap2pp1pp2Ignored(int j, int i, double *rt, double *xyz, double *xij, double **adata) { 
 double x, y, z, q1, q2, q3, q4, tr1, tr2, tr3;
 
 double t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19;
@@ -543,7 +543,7 @@ tr3 = rt[6];
 
 }
 
-API_MOD void CALL_CONV projectivek1k2k3k4k5kap1kap2pp1pp2IgnoredJac(int j, int i, double *rt, double *xyz, double *Aij, double *Bij, void *adata) { 
+API_MOD void CALL_CONV projectivek1k2k3k4k5kap1kap2pp1pp2IgnoredJac(int j, int i, double *rt, double *xyz, double *Aij, double *Bij, double **adata) { 
 double x, y, z, q1, q2, q3, q4, tr1, tr2, tr3;
 
 double t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41, t42, t43, t44, t45, t46, t47, t48, t49, t84, t85, t86, t87, t88, t89, t90, t91, t92, t93, t50, t51, t52, t53, t95, t54, t55, t56, t57, t58, t59, t60, t61, t62, t63, t64, t65, t66, t67, t68, t69, t70, t71, t72, t73, t74, t75, t76, t77, t78, t79, t80, t81, t94, t96, t97, t98, t99, t100, t101, t102, t103, t104, t105, t106, t82, t83, t107, t108, t109, t110, t111, t112, t113, t114, t115, t116, t117, t118, t119, t120, t121, t122, t123, t124, t125, t126, t127, t128, t129, t130, t131, t132, t133, t134, t135, t136, t137, t138, t139, t140, t141, t142, t143, t144, t145, t146, t147, t148, t149, t150, t151, t152, t153, t154, t155, t156, t157, t158, t159, t160, t161, t162, t163, t164, t165, t166, t167, t168, t169, t170, t171, t172, t173, t174, t175, t176, t177, t178, t179, t180, t181, t182, t183, t184, t185, t186, t187, t188, t189, t190, t191, t192;
@@ -754,7 +754,7 @@ tr3 = rt[6];
 
 }
 
-API_MOD void CALL_CONV affineFull(int j, int i, double *p, double *xyz, double *xij, void *adata) { 
+API_MOD void CALL_CONV affineFull(int j, int i, double *p, double *xyz, double *xij, double **adata) { 
 double x, y, z, p1, p2, p3, p4, p5, p6, p7, p8;
 x = xyz[0];
 y = xyz[1];
@@ -774,7 +774,7 @@ p8 = p[7];
 
 }
 
-API_MOD void CALL_CONV affineFullJac(int j, int i, double *p, double *xyz, double *Aij, double *Bij, void *adata) { 
+API_MOD void CALL_CONV affineFullJac(int j, int i, double *p, double *xyz, double *Aij, double *Bij, double **adata) { 
 double x, y, z, p1, p2, p3, p4, p5, p6, p7, p8;
 
 x = xyz[0];
@@ -815,7 +815,7 @@ p8 = p[7];
 
 }
 
-API_MOD void CALL_CONV projectiveFull(int j, int i, double *p, double *xyz, double *xij, void *adata) { 
+API_MOD void CALL_CONV projectiveFull(int j, int i, double *p, double *xyz, double *xij, double **adata) { 
 double x, y, z, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12;
 
 double t4, t5, t6, t7, t8;
@@ -846,7 +846,7 @@ p12 = p[11];
 
 }
 
-API_MOD void CALL_CONV projectiveFullJac(int j, int i, double *p, double *xyz, double *Aij, double *Bij, void *adata) { 
+API_MOD void CALL_CONV projectiveFullJac(int j, int i, double *p, double *xyz, double *Aij, double *Bij, double **adata) { 
 double x, y, z, p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11, p12;
 
 double t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27, t28, t29, t30, t31, t32, t33, t34, t35, t36, t37, t38, t39, t40, t41;
@@ -932,7 +932,7 @@ p12 = p[11];
 
 }
 
-API_MOD void CALL_CONV homography(int j, int i, double *h, double *xyz, double *xij, void *adata) { 
+API_MOD void CALL_CONV homography(int j, int i, double *h, double *xyz, double *xij, double **adata) { 
 double x, y, h1, h2, h3, h4, h5, h6, h7, h8;
 
 double t4, t5, t6, t7;
@@ -957,7 +957,7 @@ h8 = h[7];
 
 }
 
-API_MOD void CALL_CONV homographyJac(int j, int i, double *h, double *xyz, double *Aij, double *Bij, void *adata) { 
+API_MOD void CALL_CONV homographyJac(int j, int i, double *h, double *xyz, double *Aij, double *Bij, double **adata) { 
 double x, y, h1, h2, h3, h4, h5, h6, h7, h8;
 
 double t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22, t23, t24, t25, t26, t27;

@@ -132,7 +132,7 @@ end
 %%%%% Projection
 % j is camera, i point !
 str{1} = [ 'API_MOD void CALL_CONV ' fileName '(int j, double *' ...
-  camParamStr ', double *' pointParamStr ', double *xij, void *adata) { \n' ];
+  camParamStr ', double *' pointParamStr ', double *xij, double **adata) { \n' ];
 
 str{2} = 'double ';
 for i = 1 : length(varPoint); str{2} = [ str{2} varPoint{i} ', ' ]; end
@@ -149,13 +149,13 @@ if camType==1
     str{3} = [ str{3} 'int ind = ' int2str(6+isProj) ';\n\n' ];
   end
   if ~isCalibrated
-    str{3} = [ str{3} 'double *k = ((double **)adata)[0];\n' ];
-    str{3} = [ str{3} 'double *kMask = ((double **)adata)[1];\n' ];
+    str{3} = [ str{3} 'double *k = adata[0];\n' ];
+    str{3} = [ str{3} 'double *kMask = adata[1];\n' ];
     ind = 2;
   end
   if hasDistortion
-    str{3} = [ str{3} 'double *distor = ((double **)adata)[' int2str(ind) '];\n' ];
-    str{3} = [ str{3} 'double *distorMask = ((double **)adata)[' int2str(ind+1) '];\n' ];
+    str{3} = [ str{3} 'double *distor = adata[' int2str(ind) '];\n' ];
+    str{3} = [ str{3} 'double *distorMask = adata[' int2str(ind+1) '];\n' ];
   end
 end
 
@@ -190,7 +190,7 @@ str{4} = [ toC( proj, 'xij' ) '\n}\n\n' ];
 
 %%%%% Jacobian
 str{4} = [ str{4} 'API_MOD void CALL_CONV ' fileName 'Jac(int j, double *' ...
-  camParamStr ', double *' pointParamStr ', double *Aij, double *Bij, void *adata) { \n' ];
+  camParamStr ', double *' pointParamStr ', double *Aij, double *Bij, double **adata) { \n' ];
 
 str{5} = str{2};
 str{6} = str{3};
