@@ -3,7 +3,7 @@ function toolboxSfmCompile()
 %
 % assumes located in toolbox root directory
 %
-% if you get warnings on linux because yourgcc istoo old/new, you can
+% if you get warnings on linux because yourgcc is too old/new, you can
 % force the gcc version this way
 %  opts = {'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1' etc
 % USAGE
@@ -18,6 +18,11 @@ function toolboxSfmCompile()
 % See also
 %
 % Done
+
+if strcmp(computer,'GLNX86') || strcmp(computer,'GLNXA64')
+  gcc_ver = '4.2';
+  gcc_extra = [ 'CXX=g++-' gcc_ver ' CC=g++-' gcc_ver ' LD=g++-' gcc_ver ];
+end
 
 disp('Compiling.......................................');
 savepwd=pwd; cd(fileparts(mfilename('fullpath'))); cd('../');
@@ -43,12 +48,7 @@ switch computer
     system('nmake /f Makefile.vc sba.lib');
   case {'GLNX86', 'GLNXA64', 'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
     % Matlab and Octave on Linux
-    system([ 'gcc -w -O3 -fPIC -c sba.h sba_chkjac.h compiler.h ' ...
-      'sba_levmar.c sba_levmar_wrap.c sba_lapack.c sba_crsm.c ' ...
-      'sba_chkjac.c' ]);
-    system([ 'ar crv libsba.a sba_levmar.o sba_levmar_wrap.o ' ...
-      'sba_lapack.o sba_crsm.o sba_chkjac.o' ]);
-    system('ranlib libsba.a');
+    system('make libsba.a');
 end
 
 cd matlab
@@ -56,13 +56,21 @@ switch computer
   case 'PCWIN',
     % Matlab on Windows 32 (not sure about 64)
     system('nmake /f Makefile.w32 sba.mexw32');
-  case {'GLNX86', 'GLNXA64'},
+  case {'GLNX86'},
 	% Matlab on Linux
-	mex -I../ -O sba.c ../libsba.a /usr/lib/libblas.a ...
-	  /usr/lib/liblapack.a;
+	eval([ 'mex ' gcc_extra '-I.. -O -ldl sba.c ../libsba.a ' ...
+	  '/usr/lib/liblapack.a /usr/lib/atlas/libblas.a ' ...
+	  '/usr/lib/libgfortran.so.3']);
+  case {'GLNXA64'},
+	% Matlab on Linux 64
+	eval([ 'mex -lgfortran ' gcc_extra ' -I.. -O -ldl  sba.c ' ...
+	  '../libsba.a /usr/lib/liblapack_pic.a ' ...
+	  '../../blasLapack/linux/libf77blas.a ' ...
+	  '../../blasLapack/linux/libatlas.a '
+	  ]);
   case {'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
 	% Octave on Linux
-    mkoctfile -v --mex ./sba.c -I../ -lsba -L../
+    mkoctfile --mex ./sba.c -I../ -lsba -L../
 end
 
 cd ../../..
@@ -95,7 +103,8 @@ switch computer
     % Matlab on Linux
 	% if you get warnings on linux, you could force the gcc version by
 	% adding those options: 'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1'
-	opts = {'-l' 'mwlapack' '-l' 'mwblas' '-output' };
+	opts = { ['CXX=g++-' gcc_ver] ['CC=g++-' gcc_ver] ['LD=g++-' ...
+	  gcc_ver] '-largeArrayDims' '-l' 'mwlapack' '-l' 'mwblas' '-output'};
   case {'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
 	% Octave on Linux
 	opts = {'-o'};

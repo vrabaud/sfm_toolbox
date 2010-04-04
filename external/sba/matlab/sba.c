@@ -172,7 +172,7 @@ register int i, j;
 /* matlab stores sparse arrays in the Compressed Column Storage (CCS) format */
 char *getVMaskSparse(mxArray *Am)
 {
-int m, n, *rowidx, *colptr;
+mwIndex m, n, *rowidx, *colptr;
 /* int nnz=mxGetNzmax(Am); */
 double *val;
 register int i, j;
