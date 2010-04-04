@@ -1,0 +1,5 @@
+Thos blas version where obtained from the ATLAS blas, version 3.8.3 compiled with the
+following flags for 64 bits on Ubuntu Karmic:
+
+../configure -b 64 -Fa alg -fPIC --with-netlib-lapack=/usr/lib/liblapack_pic.a 
+
