@@ -6,6 +6,10 @@
 
 #ifdef MATLAB_MEX_FILE
 #include "blas.h"
+#if !defined(dgemm)
+#define dgemm dgemm_
+#define ddot ddot_
+#endif
 #else
 /* if we are in Octave */
 #if defined(_WIN32) || defined(_WIN64) || defined(__hpux)
@@ -82,8 +86,8 @@ __inline double normSq(mwSignedIndex n, double *A) {
 /* Compute A*B', A is of size m *p and B n * p  */
 __inline double matrixMultiply(double *A, double *B, double *C, mwSignedIndex m, mwSignedIndex p, mwSignedIndex n) {
 	double one = 1.0, zero = 0.0;
-	char *chn = "N";
-	char *chnb = "C";
+	char chn[] = "N";
+	char chnb[] = "C";
 
 	dgemm(chn, chnb, &m, &n, &p, &one, A, &m, B, &n, &zero, C, &m);
 }
