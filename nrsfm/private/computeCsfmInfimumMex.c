@@ -7,9 +7,23 @@
 #ifdef MATLAB_MEX_FILE
 #include "blas.h"
 #else
+/* if we are in Octave */
+#if defined(_WIN32) || defined(_WIN64) || defined(__hpux)
+#define FORTRAN_WRAPPER(x) x
+#else
+#define FORTRAN_WRAPPER(x) x ## _
+#endif
 typedef int mwSignedIndex;
-double ddot_(mwSignedIndex *, double *, mwSignedIndex *, double *, mwSignedIndex *);
-double dgemm_(char*, char*, mwSignedIndex *, mwSignedIndex *, mwSignedIndex *, double *, double *, mwSignedIndex *, double *, mwSignedIndex *, double *, double *, mwSignedIndex *);
+
+#define ddot FORTRAN_WRAPPER(ddot)
+extern double ddot(mwSignedIndex *, double *, mwSignedIndex *, double *,
+				   mwSignedIndex *);
+
+#define dgemm FORTRAN_WRAPPER(dgemm)
+extern double dgemm(char*, char*, mwSignedIndex *, mwSignedIndex *, 
+					mwSignedIndex *, double *, double *, mwSignedIndex *, 
+					double *, mwSignedIndex *, double *, double *, 
+					mwSignedIndex *);
 #endif
 
 const double NUM_TOL = 1e-8;
@@ -60,11 +74,7 @@ __inline void copyQuaternion(double *quaternionIn, double *quaternionOut, char d
 
 __inline double normSq(mwSignedIndex n, double *A) {
 	mwSignedIndex one = 1;
-#if defined(_WIN32) || defined(_WIN64)
 	return ddot(&n, A, &one, A, &one);
-#else
-	return ddot_(&n, A, &one, A, &one);
-#endif
 	/* 	double res = dnrm2_(&n, A, &one);
 	return res*res; */
 }
@@ -75,22 +85,14 @@ __inline double matrixMultiply(double *A, double *B, double *C, mwSignedIndex m,
 	char *chn = "N";
 	char *chnb = "C";
 
-#if defined(_WIN32) || defined(_WIN64)
 	dgemm(chn, chnb, &m, &n, &p, &one, A, &m, B, &n, &zero, C, &m);
-#else
-	dgemm_(chn, chnb, &m, &n, &p, &one, A, &m, B, &n, &zero, C, &m);
-#endif
 }
 
 /* Compute trace(A*B'), A and B are of size m*n */
 __inline double matrixTraceProduct4By4(double *A, double *B) {
 	mwSignedIndex elemNbr = 4 * 4, one = 1;
 
-#if defined(_WIN32) || defined(_WIN64)
 	return ddot(&elemNbr, A, &one, B, &one);
-#else
-	return ddot_(&elemNbr, A, &one, B, &one);
-#endif
 }
 
 __inline void _copywPrimeWPrimeTransposeBlock(double *wPrimeWPrimeTranspose, int jBlock, int iBlock, int iFrame, int jFrame, double *wPairwiseProd, int nFrame) {

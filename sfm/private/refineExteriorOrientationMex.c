@@ -7,9 +7,23 @@
 #ifdef MATLAB_MEX_FILE
 #include "lapack.h"
 #else
-typedef int ptrdiff_t;
-double ddot_(ptrdiff_t *, double *, ptrdiff_t *, double *, ptrdiff_t *);
-double dgemm_(char*, char*, ptrdiff_t *, ptrdiff_t *, ptrdiff_t *, double *, double *, ptrdiff_t *, double *, ptrdiff_t *, double *, double *, ptrdiff_t *);
+/* if we are in Octave */
+#if defined(_WIN32) || defined(_WIN64) || defined(__hpux)
+#define FORTRAN_WRAPPER(x) x
+#else
+#define FORTRAN_WRAPPER(x) x ## _
+#endif
+typedef int mwSignedIndex;
+
+#define ddot FORTRAN_WRAPPER(ddot)
+double ddot(mwSignedIndex *, double *, mwSignedIndex *, double *,
+			mwSignedIndex *);
+
+#define dgemm FORTRAN_WRAPPER(dgemm)
+double dgemm(char*, char*, mwSignedIndex *, mwSignedIndex *,
+			 mwSignedIndex *, double *, double *, mwSignedIndex *,
+			 double *, mwSignedIndex *, double *, double *,
+			 mwSignedIndex *);
 #endif
 
 const double NUM_TOL = 1e-8;
@@ -42,13 +56,9 @@ __inline void copyQuaternion(double *quaternionIn, double *quaternionOut) {
 		quaternionOut[k] = quaternionIn[k];
 }
 
-__inline double normSq(ptrdiff_t n, double *A) {
-	ptrdiff_t one = 1;
-#ifdef _WIN32
+__inline double normSq(mwSignedIndex n, double *A) {
+	mwSignedIndex one = 1;
 	return ddot(&n, A, &one, A, &one);
-#else
-	return ddot_(&n, A, &one, A, &one);
-#endif
 	/* 	double res = dnrm2_(&n, A, &one);
 	return res*res; */
 }
@@ -59,22 +69,14 @@ __inline double matrixMultiplyABt(double *A, double *B, double *C, int m, int p,
 	char *chn = "N";
 	char *chnb = "C";
 
-#ifdef _WIN32
 	dgemm(chn, chnb, &m, &n, &p, &one, A, &m, B, &n, &zero, C, &m);
-#else
-	dgemm_(chn, chnb, &m, &n, &p, &one, A, &m, B, &n, &zero, C, &m);
-#endif
 }
 
 /* Compute trace(A*B'), A and B are of size 2*2 */
-__inline double matrixTraceProductABt(double *A, double *B, ptrdiff_t elemNbr) {
-	ptrdiff_t one = 1;
+__inline double matrixTraceProductABt(double *A, double *B, mwSignedIndex elemNbr) {
+	mwSignedIndex one = 1;
 
-#ifdef _WIN32
 	return ddot(&elemNbr, A, &one, B, &one);
-#else
-	return ddot_(&elemNbr, A, &one, B, &one);
-#endif
 }
 
 __inline double reconstrPairVal(double *quaternion, double wWtTrace, double *sSt, double *wSt, double *r, double *rtR) {

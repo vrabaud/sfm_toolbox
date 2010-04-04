@@ -36,11 +36,13 @@ end
 
 switch computer
   case 'PCWIN',
+    % Matlab on Windows 32 (not sure about 64)
     % You need this variable as an environment variable
     %       set INCLUDE="C:\Program Files\Microsoft Visual Studio
     %       8\VC\include"
     system('nmake /f Makefile.vc sba.lib');
   case {'GLNX86', 'GLNXA64', 'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
+    % Matlab and Octave on Linux
     system([ 'gcc -w -O3 -fPIC -c sba.h sba_chkjac.h compiler.h ' ...
       'sba_levmar.c sba_levmar_wrap.c sba_lapack.c sba_crsm.c ' ...
       'sba_chkjac.c' ]);
@@ -52,17 +54,15 @@ end
 cd matlab
 switch computer
   case 'PCWIN',
+    % Matlab on Windows 32 (not sure about 64)
     system('nmake /f Makefile.w32 sba.mexw32');
-  case {'GLNX86', 'GLNXA64', 'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
-    if exist('OCTAVE_VERSION','builtin')
-      mkoctfile --mex ./sba.c -I../ -lsba -L../
-    else
-      % Matlab
-      opts={'-I..' '-O' '-l' 'mwlapack' '-l' 'mwblas' '-l' 'dl' ...
-        '../libsba.a'  '/usr/lib/atlas/libblas.a' ...
-        '/usr/lib/libgfortran.so.3'};
-      mex( 'sba.c', opts{:} );
-    end
+  case {'GLNX86', 'GLNXA64'},
+	% Matlab on Linux
+	mex -I../ -O sba.c ../libsba.a /usr/lib/libblas.a ...
+	  /usr/lib/liblapack.a;
+  case {'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
+	% Octave on Linux
+    mkoctfile -v --mex ./sba.c -I../ -lsba -L../
 end
 
 cd ../../..
@@ -70,8 +70,10 @@ cd ../../..
 cd sfm/private/sba
 switch computer
   case 'PCWIN',
+    % Matlab on Windows 32 (not sure about 64)
     system('cl /nologo /O2 sbaProjection.c /link /dll /out:sbaProjection.dll');
   case {'GLNX86','GLNXA64','i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
+    % Matlab and Octave on Linux
     system('gcc -Wall -fPIC -O3 -shared -o sbaProjection.so sbaProjection.c');
 end
 cd ../../..
@@ -80,22 +82,23 @@ rd=fileparts(mfilename('fullpath')); rd=rd(1:end-9);
 
 % general compile options (can make architecture specific)
 optsAfter={};
-if exist('OCTAVE_VERSION','builtin')
-  opts = {'-o'};
-else
-  switch computer
-    case 'PCWIN',
-      lapacklib = fullfile(matlabroot, 'extern', 'lib', 'win32', ...
-        'microsoft', 'libmwlapack.lib');
-      blaslib = fullfile(matlabroot, ...
-        'extern', 'lib', 'win32', 'microsoft', 'libmwblas.lib');
-      opts={'-output'};
-      optsAfter = {lapacklib, blaslib};
-    case {'GLNX86', 'GLNXA64'},
-      % if you get warnings on linux, you could force the gcc version by
-      % adding those options: 'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1'
-      opts = {'-l' 'mwlapack' '-l' 'mwblas' '-output' };
-  end
+switch computer
+  case 'PCWIN',
+    % Matlab on Windows 32 (not sure about 64)
+	lapacklib = fullfile(matlabroot, 'extern', 'lib', 'win32', ...
+	  'microsoft', 'libmwlapack.lib');
+	blaslib = fullfile(matlabroot, ...
+	  'extern', 'lib', 'win32', 'microsoft', 'libmwblas.lib');
+	opts={'-output'};
+	optsAfter = {lapacklib, blaslib};
+  case {'GLNX86', 'GLNXA64'},
+    % Matlab on Linux
+	% if you get warnings on linux, you could force the gcc version by
+	% adding those options: 'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1'
+	opts = {'-l' 'mwlapack' '-l' 'mwblas' '-output' };
+  case {'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
+	% Octave on Linux
+	opts = {'-o'};
 end
 
 % general compile options
