@@ -23,10 +23,10 @@ function anim = addNoise( anim, varargin )
 %
 % See also ANIMATION
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 [ noiseS noiseW doFillS doFillW ] = getPrmDflt( varargin, {'noiseS',0,...
   'noiseW', 0, 'doFillS',false, 'doFillW',true}, 1);
@@ -42,8 +42,8 @@ if noiseS > 0
   else
     S = anim.S + randn( 3, anim.nPoint, anim.nFrame )*noiseS;
   end
-
-  if doFillS anim.S = S; end
+  
+  if doFillS; anim.S = S; end
   if doFillW
     SOri = anim.S; anim.S = S; anim.W=generateW(anim); anim.S=SOri;
   end

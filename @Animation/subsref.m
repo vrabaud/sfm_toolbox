@@ -11,10 +11,10 @@ function varargout=subsref(anim,idx)
 %
 % EXAMPLE
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 if length(idx)==1
   % measurements
@@ -87,7 +87,8 @@ else
         case 1,
           varargout{1} = computeError(anim,idx(2).subs{:});
         case 2,
-          [ varargout{1}, varargout{2} ] = computeError(anim,idx(2).subs{:});
+          [ varargout{1}, varargout{2} ] = computeError(anim, ...
+            idx(2).subs{:});
         case 3,
           [ varargout{1}, varargout{2}, varargout{3} ] = computeError(...
             anim,idx(2).subs{:});
@@ -126,7 +127,8 @@ else
         case 1,
           varargout{1} = sampleFrame(anim,idx(2).subs{:});
         case 2,
-          [ varargout{1}, varargout{2} ] = sampleFrame(anim,idx(2).subs{:});
+          [ varargout{1}, varargout{2} ] = sampleFrame(anim, ...
+            idx(2).subs{:});
       end
     case 'setFirstRToId',
       varargout{1}=setFirstRToId(anim);

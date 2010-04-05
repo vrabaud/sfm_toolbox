@@ -16,10 +16,10 @@ function anim = setFirstRToId( anim )
 %
 % See also GENERATETOYANIMATION
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 R=anim.R(:,:,1);
 % Re-generate the rotations

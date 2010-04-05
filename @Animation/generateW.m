@@ -23,10 +23,10 @@ function [ W, P, anim ]=generateW( anim, varargin )
 %
 % See also GENERATETOYANIMATION
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 [ P, doFillP, doFillW ] = getPrmDflt( varargin, ...
   { 'P' [] 'doFillP' false 'doFillW' false }, 1 );
@@ -62,7 +62,7 @@ if ~isempty(anim.S)
     end
   end
   
-  if doFillW anim.W=W; end
+  if doFillW; anim.W=W; end
 end
 
 if doFillP; anim.P=P; end

@@ -64,13 +64,13 @@ function [ err errFrame errTot SAbsoluteT anim ] = computeError(anim, ...
 %
 % See also Animation
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 global IS_EXIST_PDIST;
-if isempty(IS_EXIST_PDIST) IS_EXIST_PDIST=exist('pdist','file'); end
+if isempty(IS_EXIST_PDIST); IS_EXIST_PDIST=exist('pdist','file'); end
 
 [ doFillP animGT doCheckAmbiguity checkTransform ] = ...
   getPrmDflt( varargin, ...
@@ -119,7 +119,7 @@ switch method
   case '3D'
     [ disc disc disc disc SAbsoluteT SGTAbsolute ] = alignTo(anim, ...
       animGT, checkTransform);
-
+    
     SDiff=SAbsoluteT-SGTAbsolute;
     
     % Update the errors

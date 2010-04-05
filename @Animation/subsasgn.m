@@ -11,10 +11,10 @@ function anim=subsasgn(anim,idx,rhs)
 %
 % EXAMPLE
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 if max(size(idx))==1
   var=idx.subs;
@@ -99,8 +99,8 @@ switch var
       size(anim.R,3) ] );
   case {'K', 'R', 't'}
     % reset some global values
-    if size(anim.K,1)==5 anim.isProj=true;
-    elseif size(anim.K,1)==3 anim.isProj=false;
+    if size(anim.K,1)==5; anim.isProj=true;
+    elseif size(anim.K,1)==3; anim.isProj=false;
     end
     anim.nFrame=max([ size(anim.W,3) size(anim.S,3) size(anim.l,2) ...
       size(anim.R,3) ] );
