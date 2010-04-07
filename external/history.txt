@@ -5,9 +5,10 @@ Version 3.0 ()
     - computeSFMError and computeNRSFMError are now merged in a member function computeError of the Animation class
     - require Piotr's toolbox 2.42 at least (because of the use of multiTimes)
   NEW
+    - code tested under Linux (Matlab 2008a 32-bits, Matlab 2009b 64-bits, octave 3.2.3) and Windows (Matlab 2007b 32-bits)
     - Animation now support masks and homographies (so does the bundleAdjustment function). Mask can only be used for certain parts of the code though (bundleAdjustment and display, maybe for SFM some day ...)
-    - new alignTo member function to aling two animations
-    - noise in now handled throught the addNoise member function
+    - new alignTo member function to align two animations
+    - noise is now handled through the addNoise member function
     - Animation objects can now easily be sampled through the sampleFrame member function
     - auto-update of members for Animation: if you update K,R or t, it will update P automatically (sure, it's a waste of ressources but it makes things so much easier to keep track of. Wouldn't have that problem in C++)
     - normalizePoint now can take sets of points
