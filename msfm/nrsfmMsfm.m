@@ -21,10 +21,10 @@ function anim = nrsfmMsfm( W, d, animGT )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 doAnimGT=(nargin>=3);
 
@@ -68,12 +68,12 @@ while (errPrev-err)>0.001*errPrev
   errPrev=err;
   [ grt, grR, grS ] = msfmGradientSRt( anim, lamt, lamR, lamS );
   [ grSOrtho, H ] = msfmGradientLsml( anim, d );
-
+  
   % only keep the component of grS that is on the manifold
   % as sticking to a low-dimensional manifold is the priority
   grSTangent = grS - reshape( bsxfun( @times, sum( bsxfun(@times, ...
     reshape(grS,3*nPoint,1,nFrame), H), 1 ), H ), 3, nPoint, nFrame );
-
+  
   % perform line search
   anim = oneGradientDescentIter(anim, grSOrtho, grt, grR, ...
     grSTangent, lamt, lamR, lamS);
@@ -88,46 +88,46 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function animBest = oneGradientDescentIter(anim, grSOrtho, grt, grR, ...
   grSTangent, lamt, lamR, lamS)
-  % cache some data
-  errorOld = errorMsfm(anim, lamt, lamR, lamS);
-  animOld = anim;
-  oldRQuaternion = quaternion(animOld.R);
+% cache some data
+errorOld = errorMsfm(anim, lamt, lamR, lamS);
+animOld = anim;
+oldRQuaternion = quaternion(animOld.R);
 
-  % make grSTangent of the same norm as grSOrtho for each point
-  nPoint=size(grSTangent,2); nFrame=size(grSTangent,3);
+% make grSTangent of the same norm as grSOrtho for each point
+nPoint=size(grSTangent,2); nFrame=size(grSTangent,3);
 
-  % try with different length of grSTangent
-  animBest = anim; errBest = errorOld(5);
-  isDone = false; grSTangentOri = grSTangent;
-  for lam1 = 0 : 10
-    for lam2 = 0 : 10
-      grS = 1/2^lam2*grSTangent + grSOrtho;
-      lam = 1/2^lam1;
-      anim.t = animOld.t - lam*grt;
-      anim.R = quaternion(oldRQuaternion - lam*grR);
-      anim.S = animOld.S - lam*grS;
-      error = errorMsfm(anim,lamt,lamR,lamS);
-      if error(5) < errBest, animBest=anim; isDone = true; break; end
-    end
+% try with different length of grSTangent
+animBest = anim; errBest = errorOld(5);
+isDone = false; grSTangentOri = grSTangent;
+for lam1 = 0 : 10
+  for lam2 = 0 : 10
+    grS = 1/2^lam2*grSTangent + grSOrtho;
+    lam = 1/2^lam1;
+    anim.t = animOld.t - lam*grt;
+    anim.R = quaternion(oldRQuaternion - lam*grR);
+    anim.S = animOld.S - lam*grS;
+    error = errorMsfm(anim,lamt,lamR,lamS);
+    if error(5) < errBest, animBest=anim; isDone = true; break; end
   end
+end
 end
 
 function errTot = errorMsfm(anim, lamt, lamR, lamS)
-  errTot = zeros(1,5);
+errTot = zeros(1,5);
 
-  % reprojection error
-  err = anim.computeError();
-  errTot(1) = err(1);
+% reprojection error
+err = anim.computeError();
+errTot(1) = err(1);
 
-  % error in t
-  errTot(2) = lamt*norm( diff(anim.t,1,2), 'fro' )^2;
+% error in t
+errTot(2) = lamt*norm( diff(anim.t,1,2), 'fro' )^2;
 
-  % error in R
-  errTot(3) = lamR*norm( reshape( diff(anim.R,1,3), 1, [] ))^2;
+% error in R
+errTot(3) = lamR*norm( reshape( diff(anim.R,1,3), 1, [] ))^2;
 
-  % error in S
-  errTot(4) = lamS*norm( reshape( diff(anim.S,1,3), 1, [] ))^2;
+% error in S
+errTot(4) = lamS*norm( reshape( diff(anim.S,1,3), 1, [] ))^2;
 
-  % total error
-  errTot(5) = sum( errTot );
+% total error
+errTot(5) = sum( errTot );
 end

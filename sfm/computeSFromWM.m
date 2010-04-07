@@ -32,7 +32,7 @@ function S = computeSFromWM( varargin )
 % Vincent's Structure From Motion Toolbox      Version 1.1
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 dfs = {'W1',[],'W2',[],'W',[],'isProj','REQ','P1',[],'P2',[],'P',[],'K',...
   eye(3),'method',0};

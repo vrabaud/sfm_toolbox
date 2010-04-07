@@ -20,10 +20,10 @@ function samp = csfmComputeSample(anim, infimum, nSamp, minDist)
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 if nargin<3; minDist = 1; end
 nFrame = size(infimum,1);
@@ -31,7 +31,6 @@ nFrame = size(infimum,1);
 ticId = ticStatus('n samples',5,1);
 
 samp = zeros(nSamp,8);
-i=1;
 
 tmp = repmat( max(infimum,[],2), [ 1 nFrame ] );
 tmpClose = cumsum( exp( 10*( tmp - infimum )./tmp ),2 );
@@ -55,8 +54,8 @@ for i=1:nSamp
       
       if min( [ abs(i1-i2), abs(i1-i3), abs(i2-i3) ] ) < minDist
         continue
-	  end
-	  
+      end
+      
       % make sure it's not the same pairs called over and over
       if checkCount(count, good, alpha); break; end
     end
@@ -81,7 +80,7 @@ for i=1:nSamp
       
       if min( min( [ abs(i1-i2), abs(i1-i3), abs(i2-i3) ] ) ) < minDist
         continue;
-	  end
+      end
       
       % get the infimum and make sure it is superior to the supremum
       samp(i,1:4) = [ i1 i2 i3 ( infimum(i1,i2) + infimum(i1,i3) + ...
@@ -125,5 +124,5 @@ for ii=1:3
     count(triplet(ii),triplet(jj)) = count(triplet(ii),triplet(jj)) + ...
       increment;
   end
-end 
- end
+end
+end

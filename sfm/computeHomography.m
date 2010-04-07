@@ -25,7 +25,7 @@ function [ H nMax ] = computeHomography( x1, x2, method, thres, Sim )
 % Vincent's Structure From Motion Toolbox      Version 2.1
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 %  x1=normalizePoint(x1,3); x2=normalizePoint(x2,3);
 
@@ -66,7 +66,7 @@ switch method
     end
 
     % Decondition
-    H = inv(T2)*H*T1;
+    H = (T2\H)*T1;
   case 10 % use RANSAC
     % Reference: HZ2, p.123, Algorithm 4.6
     nMax=0;

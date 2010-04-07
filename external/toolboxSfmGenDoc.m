@@ -1,3 +1,4 @@
+function toolboxSfmGenDoc()
 % Generate documentation, must run from dir toolbox.
 %
 % Requires external/m2html to be in path.
@@ -20,10 +21,10 @@
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
-% Copyright (C) 2008 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Vincent's Structure From Motion Toolbox      Version 3.0
+% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Liscensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 % run m2html
 params = {'mfiles',{'sfm','linearAlgebra','@Animation'}};

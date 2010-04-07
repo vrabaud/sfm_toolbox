@@ -50,10 +50,10 @@ function M = playAnim( animIn, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 if ~strcmp( class(animIn), 'Animation' );
   error(' Need to input an Animation object');
@@ -125,13 +125,13 @@ if nargout>0; f=1; M = repmat( getframe, 1, abs(nLoop)*length(frame) ); end
 for iLoop = 1 : abs(nLoop)
   % Play the animation once
   for frameNbr=frame
-    tic; try geth=get(h); catch return; end %#ok<CTCH,NASGU>
+    tic; try geth=get(h); catch; return; end %#ok<CTCH,NASGU>
     if doReturn; return; end
-
+    
     if showTitle; set(get(gca,'Title'),'String',...
         sprintf('frame %d of %d',frameNbr,nFrame) );
     end
-
+    
     % Display the image
     while 1
       hCam = cloudUpdate( anim, hPoint, frameNbr, 'hCam',hCam,...
@@ -139,15 +139,15 @@ for iLoop = 1 : abs(nLoop)
         'hGT', hGT, 'hConn', hConn, 'animGT', animGT, ...
         'showTitle', showTitle, 'showGT', showGT, 'alignGT',...
         alignGT, 'showConn', showConn );
-
+      
       if doPause; pause(0.01); continue; end
-
+      
       if  toc>1/fps; break;
       else
         if 1/fps-toc>0.01; pause(0.01); else pause(1/fps-toc); break; end
       end
     end
-
+    
     if nargout>0; M(f) = getframe(gcf); f=f+1; else drawnow; end
   end
   frame = frame( end:-1:1 );

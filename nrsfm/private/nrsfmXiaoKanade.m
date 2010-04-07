@@ -17,10 +17,10 @@ function anim = nrsfmXiaoKanade( W, nBasis )
 %
 % See also COMPUTESMFROMW
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 nFrame = size( W, 3 ); nPoint = size( W, 2 );
 animBest=Animation; animBest.W = W;
@@ -58,7 +58,7 @@ while 1
     tmp = cond( WTildeOri( indWTmp, : ) );
     if tmp < mini; mini = tmp; indW = indWTmp; end
   end
-
+  
   if mini>1e2 && K3>0; K3=K3-1; else break; end
 end
 
@@ -92,19 +92,19 @@ for i = indW
         objBasis = objBasis +abs(MTilde(2*m-1,:)*Qi*MTilde(2*n-1,:)') ...
           + abs( MTilde(2*m,:)*Qi*MTilde(2*n,:)' );
       end
-
+      
       objBasis = objBasis + abs( MTilde(2*m-1,:)*Qi*MTilde(2*n,:)' ) + ...
         abs( MTilde(2*m,:)*Qi*MTilde(2*n-1,:)' );
     end
   end
-
+  
   % Sample the constraints
   disp('Solving the SDP');
   diagno = solvesdp( F,objRotation+objBasis,sdpsettings('solver',...
     'sdpa,csdp,sedumi,*','dualize',1,'debug',1));
   
   QiTmp = double(Qi);
-
+  
   [ U S disc ] = svd( QiTmp ); gj3(:,:,kk) = U(:,1:3)*sqrt(S(1:3,1:3));
   kk = kk + 1;
 end
@@ -132,9 +132,9 @@ fprintf('\nSo far, Kd=%d, K3=%d\n', Kd, K3 );
 for K2 = floor((Kd-3*K3)/2) : -1 : 0
   K1 = Kd - 3*K3 - 2*K2;
   K = K3+K2+K1;
-
+  
   fprintf('\nTrying, Kd=%d, K1=%d, K2=%d, K3=%d\n', Kd, K1, K2, K3 );
-
+  
   %%%%%%%%%%%%%%%%%%%%%% Get the sets of rotations %%%%%%%%%%%%%%%%%%%%%%%%
   G = reshape( gj3, Kd, [] );
   M = MTilde*G; M = M/max(abs(M(:)))*K3; % Just for numerical stability
@@ -144,13 +144,13 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
     for k = 1 : K3
       tmp = M(2*i-1:2*i,3*k-2:3*k);
       l(k,i) = norm(tmp);
-
+      
       if abs( l(k,i) )>thres; R(2*i-1:2*i,3*k-2:3*k) = tmp/l(k,i);
       else rotIsBad(k,i)=1;
       end
     end
   end
-
+  
   % Rectify R (not really mentioned by Xiao)
   for k=2:K3
     for i = 2:nFrame
@@ -160,23 +160,23 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
       R1 = R( goodFrame, 1:3 );
       R2 = R( goodFrame, 3*k-2:3*k );
       R3 = R2; R3(end-1:end,:) = -R3(end-1:end,:);
-
+      
       if norm( R2*(R2\R1)-R1, 'fro' )>norm( R3*(R3\R1)-R1, 'fro' )
         R( goodFrame(end-1:end), 3*k-2:3*k ) = ...
           -R( goodFrame(end-1:end), 3*k-2:3*k );
       end
     end
-
+    
     goodFrame = find( sum( rotIsBad([1 k], 1:nFrame), 1 )==0);
     goodFrame = sort( [ 2*goodFrame 2*goodFrame-1 ] );
     R1 = R( goodFrame, 1:3 );
     R2 = R( goodFrame, 3*k-2:3*k );
     tmp=R2\R1;
-
+    
     R( :, 3*k-2:3*k ) = R( :, 3*k-2:3*k )*tmp;
     M( :, 3*k-2:3*k ) = M( :, 3*k-2:3*k )*tmp;
   end
-
+  
   % Get all the rotations and coefficients in K3 (if non-degenerate)
   RTot = zeros(3,3,nFrame);
   for i = 1 : nFrame
@@ -184,7 +184,7 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
     tmp=find(~rotIsBad(:,i)');
     if isempty(tmp); continue; end
     RTmp=zeros(3,3,length(tmp));
-
+    
     qTot=cell(1,2);
     for k=1:2
       kk=1;
@@ -192,14 +192,14 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
         RTmp(:,:,kk)=rotationMatrix( R(2*i-1:2*i,3*j-2:3*j)*(2*k-3) );
         kk=kk+1;
       end
-
+      
       q=quaternion(RTmp);
       for j=2:size(q,2)
         if norm(-q(:,j)-q(:,1))<norm(q(:,j)-q(:,1)); q(:,j)=-q(:,j); end
       end
       qTot{k}=mean(q,2);
     end
-
+    
     q=qTot{1};
     if i>=2
       q0 = quaternion( RTot(:,:,i-1) );
@@ -208,12 +208,12 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
         q=qTot{2};
       end
     end
-
+    
     RTot(:,:,i) = quaternion(q);
-
+    
     % Recover the coefficients
     l(1:K3,i)=(vect(RTot(1:2,:,i),'v')\reshape(M(2*i-1:2*i,1:3*K3),6,K3))';
-
+    
     % Compute MTilde
     MTilde(2*i-1:2*i,1:3*K3)=kron(l(1:K3,i)',RTot(1:2,:,i));
   end
@@ -227,22 +227,22 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
   end
   goodFrame = find( ~rotIsUnknown );
   tmp=sort([2*goodFrame,2*goodFrame-1]);
-
+  
   % Get the MTilde where l(1:K3,i) is close to 0
   M=MTilde(tmp,:); B=M\W(tmp,:); M2=W/B;
   for i=find(rotIsUnknown)
     MTilde(2*i-1:2*i,:)=M2(2*i-1:2*i,:);
   end
-
+  
   %   find(rotIsUnknown)
   %   plot(l')
   %     B=MTilde\W;
   %   norm(MTilde*B-W,'fro')
   %   pause
-
+  
   % The first 3*K3 columns of MTilde and MHat are now identical
   % We now need to deal with the last columns
-
+  
   %%%%%%%%%%%%%%%%%%%%%% Find gj and rj %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   % We here perform a full optimization and not the hacky alternate
   % optimization from the paper
@@ -254,7 +254,7 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
   [ V disc ] =rq(V);
   gj2 = reshape( V(:,end-(2*K2+K1)+1:end-K1), [], 2, K2);rj2=zeros(3,2,K2);
   gj1 = V(:,end-K1+1:end); rj1=zeros(3,K1);
-
+  
   % Perform iterations for K2 bases
   opt = optimset( 'Display', 'on', 'GradObj', 'off', 'Hessian', 'off',...
     'LargeScale', 'off' );
@@ -270,28 +270,28 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
           n = n + 1;
         end
       end
-
+      
       % Force the rj2 to be independent
       zeroStart=2+kk;
       [ U S V ] = svd( ATmp(:,1:zeroStart-1), 'econ' );
       rj2(1:zeroStart-1,kk,j) = V(:,end)/V(end,end);
       rj2(zeroStart:end,kk,j) = 0;
     end
-
+    
     % Perform the full optimization
     onePos=3*K3+1+2*(j-1);
     x=[gj2(1:onePos-1,1,j); gj2(1:onePos,2,j); rj2(1:2,1,j); rj2(1:2,2,j)];
     MTildeTmp= MTilde(:,1:onePos+1); MNullTmp=MNull(:,1:onePos+1);
     x = fminunc( @(X)( optimizeGj2( X,goodFrame, MTildeTmp, ...
       R, MNullTmp ) ), x,opt);
-
+    
     % Save the best results
     rj2(:,:,j)=[x(end-3:end-2) x(end-1:end); 0 1 ];
     gj2(:,:,j)=0;
     gj2(1:onePos,1,j) = [ x(1:onePos-1); 1 ];
     gj2(1:onePos+1,2,j) = [ x(1:onePos); 1 ];
   end
-
+  
   % Perform iterations for K1 bases
   for j=1:K1
     % Get the best rj1
@@ -300,22 +300,22 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
       ATmp(m,:) = gj1(:,j)'*( MTilde( 2*m-1 , : )'*R(2,:,m) - ...
         MTilde( 2*m , : )'*R(1,:,m) );
     end
-
+    
     [ U S V ] = svd( ATmp, 'econ' );
     rj1(:,j) = V(:,end);
-
+    
     % Perform the full optimization
     onePos=3*K3+2*K2+j;
     x=[gj1(1:onePos-1,j); rj1(:,j) ];
     MTildeTmp= MTilde(:,1:onePos); MNullTmp=MNull(:,1:onePos);
     x = fminunc( @(X)( optimizeGj1( X,goodFrame, MTildeTmp, ...
       R, MNullTmp ) ), x,opt);
-
+    
     % Save the best results
     rj1(:,j)=x(end-2:end);
     gj1(:,j)=0; gj1(1:onePos,j) = [ x(1:onePos-1); 1 ];
   end
-
+  
   % % quality
   % err=zeros(1,length(goodFrame));
   % for j = 1:K2
@@ -331,7 +331,7 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
   %       plot(err)
   %
   % pause
-
+  
   %%%%%%%%%%%%%%%%%%%%%% Recover the coefficients for K2 K1 %%%%%%%%%%%%%%%
   % Rectify the right columns of MTilde
   for m=1:nFrame
@@ -358,47 +358,47 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
       l(K3+K2+i,m) = tmp1\tmp2;
     end
   end
-
+  
   %   B=MTilde\W;
   %   norm(MTilde*B-W,'fro')
   %   plot(l')
   %   pause
-
-
+  
+  
   % Change the signs of the coefficients
   for i = 1 : K2
     A=zeros(2*nFrame,2);
     A(1:2,:)=l(K3+i,goodFrame(1))*R(1:2,:,goodFrame(1))*rj2(:,:,i);
-
+    
     for j=2:length(goodFrame)
       m=goodFrame(j); A(2*j-1:2*j,:)=l(K3+i,m)*R(1:2,:,m)*rj2(:,:,i);
       tmp=goodFrame(1:j); tmp=sort( [ 2*tmp-1, 2*tmp ] );
       MTildeLoc=MTilde(tmp,3*K3+2*i-1:3*K3+2*i);
-
+      
       RAmb1=MTildeLoc\A(1:2*j,:);
       err1=norm(MTildeLoc*RAmb1-A(1:2*j,:),'fro');
-
+      
       A(2*j-1:2*j,:)=-A(2*j-1:2*j,:);
       RAmb2=MTildeLoc\A(1:2*j,:);
       err2=norm(MTildeLoc*RAmb2-A(1:2*j,:),'fro');
-
+      
       if err2<err1; l(K3+i,m)=-l(K3+i,m);
       else A(2*j-1:2*j,:)=-A(2*j-1:2*j,:);
       end
     end
   end
-
+  
   B=MTilde\W;
   %   norm(MTilde*B-W,'fro')
   %   plot(l')
   %   pause
-
+  
   %%%%%%%%%%%%%%%%%%%%%% Recover the shape basis %%%%%%%%%%%%%%%%%%%%%%%%%%
   M=zeros(2*length(goodFrame),3*K);
   for i=1:length(goodFrame)
     M(2*i-1:2*i,:)=kron(l(:,goodFrame(i))',R(1:2,:,goodFrame(i)));
   end
-
+  
   tmp=sort([2*goodFrame,2*goodFrame-1]);
   B=M\W(tmp,:);
   %   norm(M*B-W(tmp,:),'fro')
@@ -406,15 +406,15 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
   %   plot( tmp(1:2:end)+tmp(2:2:end) )
   %   'coiin'
   %   pause
-
+  
   % Recover the full basis
   SBasis = zeros( 3, nPoint, K );
   for i = 1 : K; SBasis(:,:,i) = B(3*i-2:3*i,:); end
-
+  
   %%%%%%%%%%%%%%%%%%%%%% Recover the missing coefficients %%%%%%%%%%%%%%%%%
   opt = optimset( 'Display', 'off', 'GradObj', 'off', 'Hessian', 'off',...
     'LargeScale', 'off' );
-
+  
   while 1
     for m=1:nFrame
       if rotIsUnknown(m)
@@ -424,13 +424,13 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
           end
         else iIni=m-1;
         end
-
+        
         % Optimize over the shape coefficients/rotation
         coeff=[ l(:,iIni); quaternion( R(:,:,iIni) ) ];
         Wm=W(2*m-1:2*m,:);
-
+        
         [ c res ] = fminunc( @(X)( optimRl( X, K,B,Wm ) ), coeff, opt );
-
+        
         l(:,m)=c(1:K); R(:,:,m)=quaternion(c(K+1:end));
         rotIsUnknown(m)=0;
       else
@@ -448,14 +448,14 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
     end
     if ~rotIsUnknown(1); break; end
   end
-
+  
   %%%%%%%%%%%%%%%%%%%%%% Finalize the anim object %%%%%%%%%%%%%%%%%%%%%%%%%
   anim=Animation('SBasis', SBasis, 'l', l, 'R', R, 'isProj', false, ...
     't', animBest.t, 'W', animBest.W );
   anim=anim.generateSFromLSBasis();
   err = anim.computeError( anim ); err=err(1);
   fprintf( 'Reprojection error: %f \n', err );
-
+  
   if err<errBest; errBest=err; animBest=anim; end
 end
 anim=animBest;

@@ -33,7 +33,7 @@ function varargout = montageView( S, varargin )
 % Vincent's Structure From Motion Toolbox      Version 2.1
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 global possibleKey showConn showFirst showTitle showPrettyAxes anim ...
   camMode cam hPoint hConn isIndep;
@@ -66,7 +66,7 @@ for j=1:m
       cam{k}(1).gca = gca;
       animTot{k}.conn = conn;
       [ hPoint{k} hConn{k} ] = cloudInitialize( animTot{k}, 1 );
-
+      
       axis( gca, cam{k}(1).axis );
       if ~isempty(label); title(label{k}); end
       k=k+1;
@@ -93,9 +93,9 @@ if( nargout>0 ); varargout={ h m n }; end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function interface( src, event )
     if ~isIndep; inter=1:nFrame; else inter=find(h==gca); end
-
+    
     anim = animTot( inter );
-
+    
     if isempty(event)
       % Set all the views to be like the current one when using the mouse
       cl = find(h==gca);

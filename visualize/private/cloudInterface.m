@@ -48,19 +48,19 @@ switch event.Key
   case 'q',
     doReturn=1;
   case 'r', % rotate the axes
-    for i=1:nAnim  
+    for i=1:nAnim
       if ~isempty(anim{i}.S)
         anim{i}.S = anim{i}.S([2 3 1],:,:);
         anim{i}.R = anim{i}.R(:,[2 3 1],:);
         anim{i}.t = anim{i}.t([2 3 1],:);
         for j=1:2
           tmp = [ get(hPoint{i}(j),'XData'); get(hPoint{i}(j),'YData'); ...
-                                   get(hPoint{i}(j),'ZData') ];
+            get(hPoint{i}(j),'ZData') ];
           set(hPoint{i}(j),'XData',tmp(2,:));
           set(hPoint{i}(j),'YData',tmp(3,:));
           set(hPoint{i}(j),'ZData',tmp(1,:));
           tmp = [ get(hGT{i}(j),'XData'); get(hGT{i}(j),'YData'); ...
-                                   get(hGT{i}(j),'ZData') ];
+            get(hGT{i}(j),'ZData') ];
           set(hGT{i}(j),'XData',tmp(2,:));
           set(hGT{i}(j),'YData',tmp(3,:));
           set(hGT{i}(j),'ZData',tmp(1,:));
@@ -92,7 +92,7 @@ switch event.Key
             if ~isempty(hCam{i}); set(hCam{i}(:,1:8),'Visible','on'); end
         end
       end
-
+      
       for i=1:nAnim
         axis( cam{i}(camMode).gca, cam{i}(camMode).axis );
         if camMode~=2
@@ -126,11 +126,11 @@ end
 offon = {'off' 'on'};
 for i=1:nAnim
   cam{i}(camMode).diff = cam{i}(camMode).diff + diffView;
-
+  
   % Set some stuff visible or not
   set(hPoint{i}(2),'Visible',offon{1+showFirst});
   set(get(cam{i}(camMode).gca,'Title'),'Visible',offon{1+showTitle});
-
+  
   try
     h = set(hGT{i}(1),'Visible',offon{1+showGT});
     h = set(hGT{i}(2),'Visible',offon{1+showGT*showFirst});
@@ -146,7 +146,7 @@ if camMode~=2 || isempty(event.Key)
   for i=1:nAnim
     set( cam{i}(camMode).gca, 'View', cam{i}(camMode).view + ...
       cam{i}(camMode).diff);
-
+    
     if showPrettyAxes
       set(cam{i}(camMode).gca,'XTick',[],'YTick',[],'ZTick',[],...
         'LineWidth',3);

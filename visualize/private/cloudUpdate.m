@@ -16,7 +16,6 @@ function hCam = cloudUpdate( anim, hPoint, frameNbr, varargin )
 %       - 'animGT' [] ground truth animation
 %       - 'hConn' [0] handle of the connectivities
 %       - 'camMode' [1] camera mode (See PLAYANIM for a description)
-%       - 'showTitle' [true] show a title in the plot
 %       - 'showGT' [false] show the ground truth points
 %       - 'alignGT' [false] align the feature points onto the GT points
 %       - 'showConn' [false] show the connectivities
@@ -34,12 +33,11 @@ function hCam = cloudUpdate( anim, hPoint, frameNbr, varargin )
 % Licensed under the Lesser GPL [see external/lgpl.txt]
 
 dfs = { 'hCam' [] 'nCam' -1 'hGT' 0 'animGT' [] 'hConn' 0 ...
-  'camMode' 1 'showTitle' true 'showGT' false ...
-  'alignGT' false 'showConn' false };
-[ hCam nCam hGT animGT hConn camMode showTitle showGT ...
+  'camMode' 1 'showGT' false 'alignGT' false 'showConn' false };
+[ hCam nCam hGT animGT hConn camMode showGT ...
   alignGT showConn ] = getPrmDflt( varargin, dfs, 1 );
 
-if size(anim.S,3)>1 S = anim.S(:,:,frameNbr); else S=anim.S; end
+if size(anim.S,3)>1; S = anim.S(:,:,frameNbr); else S=anim.S; end
 
 nPoint = size( anim.S, 2 );
 
@@ -50,35 +48,37 @@ R=anim.R(:,:,frameNbr); t=anim.t(:,frameNbr);
 % Align onto the groundtruth
 if showGT || alignGT
   RGT=animGT.R(:,:,frameNbr); tGT=animGT.t(:,frameNbr);
-
+  
   ST = R*S + anim.t(:,frameNbr*ones(1,nPoint));
-  if size(animGT.S,3)>1 SGT = animGT.S(:,:,frameNbr); else SGT=animGT.S; end
-
+  if size(animGT.S,3)>1; SGT = animGT.S(:,:,frameNbr);
+  else SGT=animGT.S;
+  end
+  
   SGTT = RGT*SGT + repmat( tGT, [1 nPoint] );
-
+  
   if ~alignGT
     [ ST SGTT ] = swap(ST,SGTT); [ t tGT ] = swap(t,tGT);
     [ R RGT ] = swap(R,RGT);
   end
-
+  
   %if alignGT % align on the ground truth
   globR = RGT'*R;
-
+  
   % Chirality ambiguity
   if alignGT
-  tempGT = SGTT(3,:) - mean( SGTT(3,:) );
-  temp = ST(3,:) - mean( ST(3,:) );
-  if norm( temp - tempGT, 'fro') > 1.2*norm( -temp - tempGT,'fro')
-    globR = RGT'*[1 0 0; 0 1 0; 0 0 -1]*R;
-    t(3) = -t(3);
-    ST(3,:) = -ST(3,:);
-  end
+    tempGT = SGTT(3,:) - mean( SGTT(3,:) );
+    temp = ST(3,:) - mean( ST(3,:) );
+    if norm( temp - tempGT, 'fro') > 1.2*norm( -temp - tempGT,'fro')
+      globR = RGT'*[1 0 0; 0 1 0; 0 0 -1]*R;
+      t(3) = -t(3);
+      ST(3,:) = -ST(3,:);
+    end
   end
   temp = t - tGT;
   temp(3) = temp(3) - mean( ST(3,:) ) + mean( SGTT(3,:) );
-
+  
   globtr = RGT'*temp;
-
+  
   if ~alignGT
     [ t tGT ] = swap(t,tGT); [ R RGT ] = swap(R,RGT);
     [ globR globRGT ] = swap(globR,globRGT);
@@ -126,7 +126,7 @@ end
 if nCam>=0
   nFrame = size(anim.t,2);
   nCam = min( nCam, nFrame-1 );
-
+  
   % Redo the frames frameNbr - 1 : frameNbr + 1, no matter what
   % just because of the camera color
   hCam( ismember( hCam(:,9), frameNbr - 1 : frameNbr + 1 ) , 9 ) = 0;
@@ -135,11 +135,11 @@ if nCam>=0
   frameInter = frameNbr - nCam : frameNbr + nCam;
   frameInter(frameInter<1 | frameInter>nFrame) = [];
   toDo = frameInter(~ismember( frameInter, hCam(:,9) ));
-
+  
   % Get the frames whose camera can be deleted
   toErase = find( ~ismember( hCam(:,9), frameInter ) );
   iToErase = 1;
-
+  
   % Process those frames
   for t = toDo
     XX=getCoord(anim.t(:,t),anim.R(:,:,t),0.05+0.05*(t==frameNbr),globR,...

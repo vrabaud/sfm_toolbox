@@ -1,5 +1,5 @@
 % Perform RQ decomposition
-% 
+%
 % Returns an upper-triangular matrixR and an unitary matrix Q such that
 % A=R*Q
 %
@@ -22,7 +22,7 @@
 % Vincent's Structure From Motion Toolbox      Version 1.1
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 function [ R Q ] = rq(A)
 

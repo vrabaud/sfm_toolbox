@@ -24,7 +24,7 @@ function [ p dp ] = circleSpline( nPoint, doDisplay, nIter )
 % Vincent's Structure From Motion Toolbox      Version 2.11
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 if nargin<=1; doDisplay = false; end
 if nargin<=2 || nIter<=1; nIter = 4; end
@@ -50,8 +50,8 @@ p(1:2,:) = p(1:2,:)./repmat(sqrt(sum(p(1:2,:).^2,1))./sqrt(1-p(3,:).^2),[2 1]);
 %  p = [ 0 0.5 0; 0.5 0 0; 1.5 0.5 0; 1.25 1.2 0 ]';
 %  p = [ 0 0 0; 0 1 0; 1 0 0; 1 1 0 ]';
 % Treat consecutive overlaping triplets and compute points in between
-%  clf; hold on; 
-pu = zeros(3,0); k = 1; pu = zeros(3,1000);
+%  clf; hold on;
+k = 1; pu = zeros(3,1000);
 for i = 2 : size(p,2) - 2
   % Get the two tangent vectors
   a = p(:,i) - p(:,i-1); a = a/norm(a);
@@ -62,7 +62,7 @@ for i = 2 : size(p,2) - 2
   
   tau = acos( [ a'*c e'*d ] ); % based on beta
   axist = [ cross(b,a) cross(b,d) ];
-
+  
   % Compute the right tangent (and not like described in the paper)
   % as the taus are good up to an ambiguity
   t = zeros(3,2);
@@ -85,7 +85,7 @@ for i = 2 : size(p,2) - 2
   t2Orthob = t(:,2) - (t(:,2)'*b)*b;
   t(:,3) = t(:,2) - 2*t2Orthob;
   tau(2) = -tau(2);
-
+  
   axisSwivel = cross(t(:,1),t(:,3));
   tauSwivelMax = acos(t(:,1)'*t(:,3));
   if pi-tauSwivelMax<0.01; continue; end
@@ -99,13 +99,13 @@ for i = 2 : size(p,2) - 2
   end
   for u = 0 : 0.01 : 1
     % Reflect tau(2)
-%      tauu = tau(1)*cos(u*pi/2)^2 + tau(2)*sin(u*pi/2)^2;
+    %      tauu = tau(1)*cos(u*pi/2)^2 + tau(2)*sin(u*pi/2)^2;
     tauSwivel = 0*cos(u*pi/2)^2 + tauSwivelMax*sin(u*pi/2)^2;
     tu = rotationMatrix(axisSwivel,tauSwivel)*t(:,1);
     tauu = acos(tu'*b);
     
-%      tmp1 = [ 0 1 0 ] + tu'; tmp1 = [ 0 1 0; tmp1 ];
-%      line( tmp1(:,1), tmp1(:,2), tmp1(:,3) );
+    %      tmp1 = [ 0 1 0 ] + tu'; tmp1 = [ 0 1 0; tmp1 ];
+    %      line( tmp1(:,1), tmp1(:,2), tmp1(:,3) );
     
     fu = bNorm*sin(u*tauu)/sin(tauu);
     if abs(tauu)<1e-3; fu = bNorm*u*sinc(u*tauu)/sinc(tauu); end
@@ -115,7 +115,7 @@ for i = 2 : size(p,2) - 2
     % Compute the P(u) point
     if norm(cross(tu,b))<1e-2; continue; end
     puTmp = fu*(rotationMatrix(cross(tu,b),-abs(phiu))*b);
-
+    
     %      puTmp = fu*( cos(phiu)*b + sin(phiu)*tuOrtho );
     pu(:,k) = p(:,i) + puTmp;
     k = k + 1;
@@ -146,9 +146,9 @@ dp(:,end) = pu(:,end)-pu(:,end-1);
 p = p./repmat(sqrt(sum(p.^2,1)),[3 1]);
 if doDisplay
   clf; plot3(p(1,:),p(2,:),p(3,:),'.-'); hold on; axis equal;
-%    plot3(p(1,1),p(2,1),p(3,1),'sr');
-%    plot3(p(1,end),p(2,end),p(3,end),'*g','MarkerSize',20);
-%    plot3(p(1,:),p(2,:),p(3,:),'sr-');
+  %    plot3(p(1,1),p(2,1),p(3,1),'sr');
+  %    plot3(p(1,end),p(2,end),p(3,end),'*g','MarkerSize',20);
+  %    plot3(p(1,:),p(2,:),p(3,:),'sr-');
 end
 if nargout>=2
   dp = dp./repmat(sqrt(sum(dp.^2,1)), [ 3 1 ] );

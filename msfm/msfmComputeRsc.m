@@ -17,9 +17,9 @@ function [ anim SBasis clusInd ] = msfmComputeRsc( W, Sim2, Sim3 )
 % EXAMPLE
 %
 % See also
-
-% Vincent's Structure From Motion Toolbox      Version NEW
-% Copyright (C) 2008 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+%
+% Vincent's Structure From Motion Toolbox      Version 3.0
+% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -36,12 +36,10 @@ else
 end
 
 % remove the close temporal neighbors
-SimTot(spdiags(logical(ones(nFrame,2*5+1)),[-5:5],nFrame,nFrame)) = Inf;
+SimTot(spdiags(logical(ones(nFrame,2*5+1)),-5:5,nFrame,nFrame)) = Inf;
 
 % create a similarity matrix and cluster it
 sig=2;
-W=real(exp(-SimTot.^2/2/sig^2));
-
 test = true;
 
 nClus = size(Sim2,1)/3;
@@ -63,8 +61,7 @@ for n=1:nClus
   animPair=computeSMFromW(anim.isProj, 'W',W(:,:,clus{n}), ...
     'method',Inf,'isCalibrated',true);
   SBasis(:,:,n)=animPair.S;
-  P=animPair.P;
-
+  
   % recover the rotation matrices
   anim.R(:,:,clus{n}) = animPair.R;
 end
@@ -75,22 +72,22 @@ SBasis=bsxfun(@minus,SBasis,mean(SBasis,2));
 % recover the best rotations to align all the shapes
 % first recover matrices to align the clusters ...
 
-% we will compute R to minimze RA, R is [ 3 x 3*nCluster ] 
+% we will compute R to minimze RA, R is [ 3 x 3*nCluster ]
 % and the set of cluster global rotation
 A = zeros(3*nClus, 3*nClus);
 
 for n=1:nClus
   for f=clus{n}
-	if f>1 && clusInd(f-1)~=n
+    if f>1 && clusInd(f-1)~=n
       A(3*n+(-2:0),3*n+(-2:0)) = A(3*n+(-2:0),3*n+(-2:0)) + SBasis(:,:,n)*SBasis(:,:,n)';
-	  i = clusInd(f-1);
-	  A(3*i+(-2:0),3*n+(-2:0)) = A(3*i+(-2:0),3*n+(-2:0)) - SBasis(:,:,i)*SBasis(:,:,n)';
-	end
-	if f<nFrame && clusInd(f+1)~=n
+      i = clusInd(f-1);
+      A(3*i+(-2:0),3*n+(-2:0)) = A(3*i+(-2:0),3*n+(-2:0)) - SBasis(:,:,i)*SBasis(:,:,n)';
+    end
+    if f<nFrame && clusInd(f+1)~=n
       A(3*n+(-2:0),3*n+(-2:0)) = A(3*n+(-2:0),3*n+(-2:0)) + SBasis(:,:,n)*SBasis(:,:,n)';
-	  i = clusInd(f+1);
-	  A(3*i+(-2:0),3*n+(-2:0)) = A(3*i+(-2:0),3*n+(-2:0)) - SBasis(:,:,i)*SBasis(:,:,n)';
-	end
+      i = clusInd(f+1);
+      A(3*i+(-2:0),3*n+(-2:0)) = A(3*i+(-2:0),3*n+(-2:0)) - SBasis(:,:,i)*SBasis(:,:,n)';
+    end
   end
 end
 
@@ -111,11 +108,11 @@ for i=1:nClus
       warning('Problem in finding a rotation matrix');
     else
       RTmp(:,3) = -RTmp(:,3); SBasis(3,:,i) = -SBasis(3,:,i);
-	  anim.R(:,3,clus{i}) = -anim.R(:,3,clus{i});
-	  anim.R(3,:,clus{i}) = -anim.R(3,:,clus{i});
+      anim.R(:,3,clus{i}) = -anim.R(:,3,clus{i});
+      anim.R(3,:,clus{i}) = -anim.R(3,:,clus{i});
     end
   end
-
+  
   % rectify the rotations/translations in anim
   anim.S(:,:,clus{i}) = repmat(RTmp*SBasis(:,:,i), [ 1, 1, length(clus{i})]);
   anim.R(:,:,clus{i}) = multiTimes(anim.R(:,:,clus{i}), RTmp', 1);

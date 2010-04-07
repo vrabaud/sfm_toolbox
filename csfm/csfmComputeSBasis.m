@@ -19,10 +19,10 @@ function SBasis = csfmComputeSBasis( l, W, rankS, lamR, addOneToLFlag )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 % Predefine some variables
 nPoint=size(W,2); nFrame=size(W,3);
@@ -41,7 +41,6 @@ lkron = zeros(3, 3*nBasis, nFrame);
 for t = 1 : nFrame; lkron(:,:,t) = kron(l(:,t)',eye(3)); end
 
 errBest = Inf;
-errTot = [];
 for globItr = 1 : 20
   G = 10*(rand(3*nBasis, rankS)-0.5);
   
@@ -61,7 +60,7 @@ for t = 1 : nFrame
   F = F + set('R(:,3*t-2:3*t)*QQt*R(:,3*t-2:3*t)''==eye(2)+T(2*t-1:2*t,:)');
 end
 obj = norm(T,'fro')^2;%sum(abs(T(:)));
-diagno = solvesdp( F,obj,sdpsettings('solver','sdpa,csdp,sedumi,*')); % sdpt3
+solvesdp( F,obj,sdpsettings('solver','sdpa,csdp,sedumi,*')); % sdpt3
 
 [ U S V ] = svd(double(QQt));
 Q = U*real(sqrt(S));
@@ -70,11 +69,9 @@ SBasis=permute( reshape( kron(eye(nBasis),inv(Q))*G*B, 3, nBasis, nPoint), [ 1 3
 
 
   function [ G, R, err ] = optimizeLocal(G,nItr)
-    AA = sparse(3*nFrame, 3*nFrame );
-    BB = zeros(2, 3*nFrame );
     M = zeros(2*nFrame,3*nBasis);
     
-    lamEye = eye(3);   errPrev = Inf;
+    errPrev = Inf;
     % perform nItr alternate minimization
     for itr = 1 : nItr
       % compute all the Ct
@@ -87,7 +84,7 @@ SBasis=permute( reshape( kron(eye(nBasis),inv(Q))*G*B, 3, nBasis, nPoint), [ 1 3
       AA = spdiags(temp,[-3,0,3],3*nFrame,3*nFrame);
       for i = 1 : 3; AA(i,i) = lamR; AA(end+1-i,end+1-i) = lamR; end
       AA = AA + spBlkDiag(CtCtPrime);
-	  
+      
       % Let's compute BB
       BB = multiTimes(WtBPlus,Ct,2.2);
       BB = reshape(BB,2,[]);
@@ -101,7 +98,7 @@ SBasis=permute( reshape( kron(eye(nBasis),inv(Q))*G*B, 3, nBasis, nPoint), [ 1 3
       end
       % let's continue and compute G
       G = (M'*M+eye(3*nBasis))\(M'*WBPlus);
-
+      
       err = norm( M*G - WBPlus, 'fro' )^2 + lamR*norm(R(:,1:end-3)-R(:,4:end),'fro')^2 + norm(G,'fro')^2;
       if errPrev-err<0.001*errPrev; break; end
       errPrev = err;

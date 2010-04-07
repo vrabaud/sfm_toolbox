@@ -5,7 +5,7 @@ function M=convertPF(P,Pp,isProj)
 % Vincent's Structure From Motion Toolbox      Version 1.1
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 
 F=Pp; Pp=P;
@@ -36,7 +36,7 @@ else    % F has form 14.1, HZ2, p345 :  [ 0 0 a; 0 0 b; c d e ]
     M(2,3)=F(1,3);
     M(1,1)=-(F(3,1)/M(1,3)*M(2,3)/M(1,3)-1)/(1+(M(2,3)/M(1,3))^2);
     M(2,1)=(F(3,1)+M(1,1)*M(2,3))/M(1,3);
-
+    
     M(1,2)=-((F(3,2)/M(1,3)-1)*M(2,3)/M(1,3))/(1+(M(2,3)/M(1,3))^2);
     M(2,2)=(F(3,2)+M(1,2)*M(2,3))/M(1,3);
     M(1,4)=1; M(2,4)=(F(3,3)+M(2,3)*M(1,4))/M(1,3);

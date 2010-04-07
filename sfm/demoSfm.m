@@ -16,7 +16,7 @@ function demoSfm( demoNumber )
 %  demoSfm( demoNumber )
 %
 % INPUTS
-%  demoNumber - [1] value between 1 and 10
+%  demoNumber - [1] value between 1 and 7
 %
 % OUTPUTS
 %
@@ -25,10 +25,10 @@ function demoSfm( demoNumber )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 if(nargin<1), demoNumber=1; end; c
 if(demoNumber<1 || demoNumber>7), error('Invalid demo number.'); end
@@ -102,15 +102,15 @@ errTot = [ err(1), 0 ];
 err = anim.computeError();
 errTot(2) = err(1);
 
-out =sprintf([ 'Reprojection error %0.4f/%0.4f, before/after BA\n\n'],...
-    errTot(1), errTot(2) );
+out =sprintf( 'Reprojection error %0.4f/%0.4f, before/after BA\n\n',...
+  errTot(1), errTot(2) );
 fprintf(out);
 % color=colorcube(8);
 color = [ 1 1 0; 0 1 1; 1 0 1; 1 0 0; 0 1 0; 0 0 1; 0 0 0; 1 1 1 ];
 
 for i=1:5
   plot(anim.W(1,anim.mask(:,i),i),anim.W(2,anim.mask(:,i),i),'.','color',...
-  color(i,:));
+    color(i,:));
   hold on;
 end
 plot(anim.S(1,:),anim.S(2,:),'ro'); axis tight;
@@ -190,7 +190,7 @@ for i = 1 : 4
   for j = 1 : 2
     switch i
       case 1,
-        animGTSample=animGT.sampleFrame([1:3]);
+        animGTSample=animGT.sampleFrame(1:3);
         anim{1,j} = computeSMFromW( false, 'W', ...
           animGTSample.W, 'method', 0,'nItrSBA', (j-1)*100 );
         out = '3 views, no orthonormality constraints:\n';
@@ -204,7 +204,7 @@ for i = 1 : 4
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 3,
-        animGTSample=animGT.sampleFrame([1:3]);
+        animGTSample=animGT.sampleFrame(1:3);
         anim{3,j} = computeSMFromW( false, 'W', animGTSample.W, ...
           'method', 0, 'isCalibrated', true, 'nItrSBA', (j-1)*100);
         out = '3 views, orthonormality constraints:\n';
@@ -221,7 +221,7 @@ for i = 1 : 4
     errTmp = anim{i,j}.computeError();
     err(i,j) = errTmp(1);
     err3DTmp = anim{i,j}.computeError('animGT', animGTSample, ...
-    'checkTransform', typeTransform );
+      'checkTransform', typeTransform );
     err3D(i,j) = err3DTmp(1);
   end
   out =sprintf([ out 'Reprojection error %0.4f/%0.4f and 3D error %s %0.4f/%0.4f , before/after BA\n\n'],...
@@ -317,14 +317,14 @@ for i = 1 : 4
   for j = 1 : 2
     switch i
       case 1,
-		animGTSample=animGT.sampleFrame([1:2]);
+        animGTSample=animGT.sampleFrame(1:2);
         anim{1,j} = computeSMFromW( true, 'W', ...
           animGTSample.W, 'method', 0,'nItrSBA', (j-1)*100 );
         out = '2 views, uncalibrated cameras:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 2,
-        animGTSample=animGT.sampleFrame([1:2]);
+        animGTSample=animGT.sampleFrame(1:2);
         anim{2,j} = computeSMFromW( true, 'W', ...
           animGTSample.W, 'method', 0,'isCalibrated',true,...
           'nItrSBA', (j-1)*100);
@@ -351,10 +351,10 @@ for i = 1 : 4
         %           'nItrSBA', (j-1)*100 );
         %         out = 'All the views, calibrated cameras:\n';
     end
-	errTmp = anim{i,j}.computeError();
+    errTmp = anim{i,j}.computeError();
     err(i,j) = errTmp(1);
     err3DTmp = anim{i,j}.computeError('animGT', animGTSample, ...
-    'checkTransform', typeTransform );
+      'checkTransform', typeTransform );
     err3D(i,j) = err3DTmp(1);
   end
   out =sprintf([ out 'Reprojection error %0.4f/%0.4f and 3D-error %s %0.4f/%0.4f , before/after BA\n\n'],...
@@ -365,7 +365,7 @@ end
 % Plot in 3D
 %  [ disc disc disc SBest ] = computeSFMError('3D', false, 'SGT', animGT.S(:,:,1), ...
 %       'S', S(:,:,3,2), 'checkTransform', 'rigid' );
-%   
+%
 %  playAnim(anim,'animGT',animGT,'nCam',-1,'showGT',true,'alignGT',true);
 
 end

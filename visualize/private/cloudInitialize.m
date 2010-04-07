@@ -9,7 +9,7 @@ function [hPoint hConn hCam hGT] = cloudInitialize( anim, frameNbr, ...
 %  - 'anim' animation object to animate
 %  - 'frameNbr' number of the frame to update to
 %  varargin   - list of paramaters in quotes alternating with their values
-%       - 'nCam' [-1] number of cameras to display in addition to the 
+%       - 'nCam' [-1] number of cameras to display in addition to the
 %                     current one
 %       - 'c' [0.4 0.4 1] color of the features
 %       - 'animGT' [] ground truth animation
@@ -53,7 +53,7 @@ end
 % Draw the Nodes
 if exist('OCTAVE_VERSION','builtin')
   hPoint=plot3( S(1,:,frameNbr), S(2,:,frameNbr), S(3,:,frameNbr), '*', ...
-    'Color',c); 
+    'Color',c);
 else
   hPoint=plot3( S(1,:,frameNbr), S(2,:,frameNbr), S(3,:,frameNbr), '.', ...
     'Color',c );
@@ -61,7 +61,7 @@ end
 hold on;
 hPoint(2)=plot3( S(1,1,frameNbr), S(2,1,frameNbr), S(3,1,frameNbr),'ks');
 if ~exist('OCTAVE_VERSION','builtin')
- set(hPoint,'MarkerSize',10*markerScale);
+  set(hPoint,'MarkerSize',10*markerScale);
 end
 
 if ~isempty(animGT)

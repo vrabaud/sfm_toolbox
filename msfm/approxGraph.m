@@ -16,9 +16,9 @@ function [ S2 S3Exp ] = approxGraph(S2,S3)
 % EXAMPLE
 %
 % See also GENERATETOYANIMATION, VIEWANIMSIMILARITY
-
-% Vincent's Structure From Motion Toolbox      Version NEW
-% Copyright (C) 2008 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+%
+% Vincent's Structure From Motion Toolbox      Version 3.0
+% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -42,7 +42,7 @@ for i=1:size(M,1)
   S3Exp(M(i,2),M(i,3)) = S3Exp(M(i,2),M(i,3)) + w;
   S3n(M(i,1),M(i,2)) = S3n(M(i,1),M(i,2)) + 1;
   S3n(M(i,1),M(i,3)) = S3n(M(i,1),M(i,3)) + 1;
-  S3n(M(i,2),M(i,3)) = S3n(M(i,2),M(i,3)) + 1;  
+  S3n(M(i,2),M(i,3)) = S3n(M(i,2),M(i,3)) + 1;
 end
 
 S3Exp = S3Exp + S3Exp';

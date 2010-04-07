@@ -18,21 +18,21 @@ function [ animArray SimMin ] = nrsfmCsfm( W, nBasisArray, nTriplet, nPair, ...
 %  nItr          - [50] number of iterations to use for bundle adjustment
 %
 % OUTPUTS
-%  animArray     - array containing one reconstructed anim object per basis 
+%  animArray     - array containing one reconstructed anim object per basis
 %                  number in nBasisArray. Just an anim if nBasisArray is a
 %                  number
 %  SimMin        - similarity matrix between the pairs of frames
 %
 % EXAMPLE
 %
-% See also 
+% See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
-if nargin<=4 nItr=50; end
+if nargin<=4; nItr=50; end
 
 % pre-processing
 anim=Animation('W',W);
@@ -57,13 +57,13 @@ for nBasis = nBasisArray
   % Compute the best basis knowing the coefficients
   anim.SBasis=csfmComputeSBasis( anim.l, anim.W, 5, 1 );
   % anim.S is updated automatically
-
+  
   % Compute the best rotation matrices
   anim.R = computeOrientation(anim.W,anim.S,'exteriorSequence');
-
+  
   % compute the error
-%    anim=anim.generateSFromLSBasis();
-
+  %    anim=anim.generateSFromLSBasis();
+  
   if nItr>0
     anim = bundleAdjustment( anim, 'nItrSBA', nItr );
   end
@@ -72,4 +72,4 @@ for nBasis = nBasisArray
   save temp;
 end
 
-if length(nBasisArray)==1 animArray = animArray(1); end
+if length(nBasisArray)==1; animArray = animArray(1); end

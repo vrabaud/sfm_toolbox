@@ -1,7 +1,7 @@
 % Perform k-way normalized cut
-% 
+%
 % REFERENCE
-%  Spectral Relaxation Models And Structure Analysis For K-Way Graph 
+%  Spectral Relaxation Models And Structure Analysis For K-Way Graph
 %  Clustering And Bi-Clustering
 %  Tech report, 2001
 %  M. Gu, H. Zha, C. Ding, X. He, H. Simon, J. Xia
@@ -11,11 +11,11 @@
 %
 % INPUTS
 %  d           - distance matrix
-%  sigma       - 
+%  sigma       -
 %  k           - number of clusters
 %
 % OUTPUTS
-%  label       - 
+%  label       -
 %
 % EXAMPLE
 %
@@ -24,13 +24,13 @@
 % Vincent's Structure From Motion Toolbox      Version 1.1
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 function label = nCut( d, sigma, k )
 
 N = size( d, 1 );
 W = exp(-d.^2/(2*sigma^2));
-                       
+
 d = sum(W,1);
 
 B = sparse(1:N,1:N,1./sqrt(d));

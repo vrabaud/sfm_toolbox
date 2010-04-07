@@ -1,4 +1,4 @@
-function toolboxSFMUpdateHeader
+function toolboxSfmUpdateHeader
 % Update the headers of all the files.
 %
 % Must start in /toolbox base directory
@@ -14,19 +14,20 @@ function toolboxSFMUpdateHeader
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 2.0
-% Copyright (C) 2007 Piotr Dollar.  [vrabaud-at-cs.ucsd.edu]
+% Vincent's Structure From Motion Toolbox      Version 3.0
+% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Liscensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 header={
-  '% Vincent''s Structure From Motion Toolbox      Version 2.11'; ...
+  '% Vincent''s Structure From Motion Toolbox      Version 3.0'; ...
   '% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]'; ...
   '% Please email me if you find bugs, or have suggestions or questions!'; ...
-  '% Licensed under the Lesser GPL [see external/lgpl.txt]'};
+  '% Licensed under the GPL [see external/gpl.txt]'};
 
 % must start in /toolbox base directory  - cd( 'c:/code/toolbox' );
-dirs={ 'sfm' 'sfm/private' 'linearAlgebra' '@Animation'};
+dirs={'@Animation' 'csfm' 'external' 'linearAlgebra' 'msfm' 'nrsfm' ...
+  'sfm' 'sfm/private' 'visualize'};
 
 % update the headers
 for i=1:length(dirs)

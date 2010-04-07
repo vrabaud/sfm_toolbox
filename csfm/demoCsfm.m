@@ -20,12 +20,12 @@ function demoCsfm( testCase )
 %
 % EXAMPLE
 %
-% See also 
+% See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 if(nargin<1), testCase = 1; end
 
@@ -34,24 +34,24 @@ switch testCase,
   case 1, % Torresani shark
     animGT=generateToyAnimation( 4.2, 'dt', 0 );
     animRank=5; animNBasis=2;
-	animPeriod=120; % just for display purposes
+    animPeriod=120; % just for display purposes
   case 2, % artifical non-linear shape
     nFrame = 50; nPoint = 20;
     animGT=generateToyAnimation( 0.1,'nPoint',nPoint,'nFrame',nFrame,...
       'nBasis', 3, 'dt', 0, 'nLoop', 2 );
-	animRank=9; animNBasis = 3;
-	animPeriod=nFrame; % just for display purposes
+    animRank=9; animNBasis = 3;
+    animPeriod=nFrame; % just for display purposes
   case 3, % artifical non-linear shape
     nFrame = 50; nPoint = 20;
     animGT=generateToyAnimation( 0.1,'nPoint',nPoint,'nFrame',nFrame,...
       'nBasis', [ 0 2 1], 'dt', 0, 'nLoop', 2 );
-	animGT=animGT.addNoise('noiseS',0.01);
-	animRank = 3; animNBasis = 3;
-	animPeriod=nFrame; % just for display purposes
+    animGT=animGT.addNoise('noiseS',0.01);
+    animRank = 3; animNBasis = 3;
+    animPeriod=nFrame; % just for display purposes
   case 4 % Walking Person
     animGT=generateToyAnimation( 5 );
-	animRank = 6; animNBasis = 2;
-	animPeriod=50; % just for display purposes
+    animRank = 6; animNBasis = 2;
+    animPeriod=50; % just for display purposes
 end
 
 % pre-processing, precompute the optimal translation
@@ -82,32 +82,32 @@ disp('------------------------------------------------------------------');
 
 % display the embedding for fun
 if animNBasis==2 || animNBasis==3
-	disp('Displaying some intermediate embedding maybe');
-	switch animNBasis,
-	case 2,
-		plot(anim.l(1,:),anim.l(2,:),'.-');  hold on
-	case 3,
-		plot3(anim.l(1,:),anim.l(2,:),anim.l(3,:),'.-');  hold on
-	end
-	if animPeriod>0
-	switch animNBasis,
-		case 2,
-		for i=1:anim.nFrame-animPeriod-1
-			plot(anim.l(1,[i i+animPeriod]),anim.l(2,[i i+animPeriod]),'.-');
-		end
-		case 3,
-		for i=1:anim.nFrame/2-1
-			plot(anim.l(1,[i i+animPeriod]),anim.l(2,[i i+animPeriod]),'.-');
-		end
-	end
-	end
-	axis equal;
-	fprintf('\n');
-	disp(['--------------------------------------------------------', ...
-	'----------']);
-	in=input(['Press (n) to continue to next step, ', ...
-	'anything else will quit the demo\n'],'s');
-	if in~='n'; return; end
+  disp('Displaying some intermediate embedding maybe');
+  switch animNBasis,
+    case 2,
+      plot(anim.l(1,:),anim.l(2,:),'.-');  hold on
+    case 3,
+      plot3(anim.l(1,:),anim.l(2,:),anim.l(3,:),'.-');  hold on
+  end
+  if animPeriod>0
+    switch animNBasis,
+      case 2,
+        for i=1:anim.nFrame-animPeriod-1
+          plot(anim.l(1,[i i+animPeriod]),anim.l(2,[i i+animPeriod]),'.-');
+        end
+      case 3,
+        for i=1:anim.nFrame/2-1
+          plot(anim.l(1,[i i+animPeriod]),anim.l(2,[i i+animPeriod]),'.-');
+        end
+    end
+  end
+  axis equal;
+  fprintf('\n');
+  disp(['--------------------------------------------------------', ...
+    '----------']);
+  in=input(['Press (n) to continue to next step, ', ...
+    'anything else will quit the demo\n'],'s');
+  if in~='n'; return; end
 end
 
 % Compute the best basis
@@ -120,7 +120,7 @@ anim.SBasis=SBasis;
 montageView(anim.SBasis);
 disp('------------------------------------------------------------------');
 in=input(['Press (n) to continue to next step, ' ...
-'anything else will quit the demo\n'],'s');
+  'anything else will quit the demo\n'],'s');
 if in~='n'; return; end
 
 % Compute the best rotation matrices
@@ -138,7 +138,6 @@ playAnim(anim,'animGT',animGT,'showGT',true,'alignGT',true);
 
 % perform gradient descent to optimize
 disp('Perform the final optimization');
-animIni=anim;
 anim = bundleAdjustment( anim, 'nItrSBA', 64 );
 disp('------------------------------------------------------------------');
 

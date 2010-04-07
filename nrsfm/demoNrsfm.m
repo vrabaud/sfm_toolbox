@@ -13,7 +13,7 @@ function demoSFM( demoNumber )
 %  demoSFM( demoNumber )
 %
 % INPUTS
-%  demoNumber - [1] value between 1 and 10
+%  demoNumber - [1] value between 1 and 4
 %
 % OUTPUTS
 %
@@ -22,10 +22,10 @@ function demoSFM( demoNumber )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 if(nargin<1), demoNumber=1; end; c
 if(demoNumber<1 || demoNumber>10), error('Invalid demo number.'); end
@@ -77,7 +77,7 @@ disp('Orthographic NRSFM with random data');
 nFrame = 50; nPoint = 20; nBasis = 3;
 animGT=generateToyAnimation( 0.1,'nPoint',nPoint,'nFrame',nFrame,...
   'nBasis', nBasis, 'doSMean', 1, 'dt', 0 );
-anim=anim.addNoise('noiseS',0);
+animGT=animGT.addNoise('noiseS',0);
 
 %Torresani
 disp('**Computing NRSFM with Torresani''s method');

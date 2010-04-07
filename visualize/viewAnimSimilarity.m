@@ -19,10 +19,10 @@ function viewAnimSimilarity( anim1, Sim, varargin )
 %
 % See also COMPUTEANIMSIMILARITY
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 global possibleKey showConn showFirst showGT showTitle anim ...
   camMode alignGT hCam cam hPoint hGT hConn;
@@ -79,11 +79,11 @@ end
     point = get( h(3), 'CurrentPoint' );
     x = round( point( 1, 1:2 ) );
     if any(x<=0) || any(x>[size(Sim,1) size(Sim,2)]); return; end
-
+    
     % Deal with the markers
     set( marker1, 'XData', x(1), 'YData', 1 );
     set( marker2, 'XData', 1, 'YData', x(2) );
-
+    
     for k=1:2
       hCam{k} = cloudUpdate( anim{k}, hPoint{k}, x(k), 'hCam',hCam{k},...
         'nCam', nCam, 'camMode', camMode, ...
@@ -92,7 +92,7 @@ end
         alignGT, 'showConn', showConn );
       axis( cam{k}(camMode).gca, cam{k}(camMode).axis );
     end
-
+    
     % Display the image
     cloudInterface( src, event );
   end

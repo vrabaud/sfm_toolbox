@@ -20,12 +20,12 @@ function [ xHat T ] = normalizePoint( x, method )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
-xHat=x; nCoord = size(x,1); nPoint = size(x,2); nSet = size(x,3);
+xHat=x; nCoord = size(x,1); nSet = size(x,3);
 
 if nargin<2 || isempty(method); method = nCoord; end
 
@@ -37,9 +37,9 @@ if abs(method)==Inf
   scale = sqrt(2)./mean(sqrt(sum( bsxfun(@minus, x, c).^2, 1)),2);
   T = repmat(eye(nCoord),[1,1,nSet]);
   T(:,end+1,:) = -c; T = bsxfun(@times,scale,T);
-
+  
   xHat = bsxfun(@times, scale, bsxfun(@minus, x, c));
-
+  
   if method<0; xHat(end+1,:,:) = 1; T(end+1,end,:)=1; end
 else
   if abs(method)>nCoord

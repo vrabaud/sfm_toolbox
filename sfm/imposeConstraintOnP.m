@@ -32,7 +32,7 @@ function [ Q P ] = imposeConstraintOnP( P, isProj, constraint )
 % Vincent's Structure From Motion Toolbox      Version 1.1
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 nFrame=size( P, 3 );
 
@@ -105,7 +105,7 @@ end
 
 if nargout==2
   switch constraint
-    case {'ortho', 'firstIdRot'},
+    case 'ortho',
       P(:,1:3,:)=multiTimes(P(:,1:3,:),Q(1:3,1:3),1);
     case 'orthoHard',
       if isProj

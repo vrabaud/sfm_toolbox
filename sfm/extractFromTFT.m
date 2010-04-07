@@ -19,7 +19,7 @@ function [arg1, arg2]=extractFromTFT(T,type)
 % Vincent's Structure From Motion Toolbox      Version 1.1
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 switch type
   case 0
@@ -29,6 +29,6 @@ switch type
     epp=solveLeastSqAx(V);
     for i=1:3; V(i,:)=solveLeastSqAx(T(:,:,i)')'; end
     ep=solveLeastSqAx(V);
-
+    
     arg1=ep; arg2=epp;
 end

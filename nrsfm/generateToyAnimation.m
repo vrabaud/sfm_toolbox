@@ -27,7 +27,7 @@ function anim = generateToyAnimation( type, varargin )
 %       - 'isProj' [false] flag indicating if the camera is projective
 %       - 'nLoop' [1] number of times the animation is repeated
 %       - 'dR' [1] set the camera rotation behavior. 0: fixed,
-%              1:random (but containing all the scene; if set, dt cannot be 
+%              1:random (but containing all the scene; if set, dt cannot be
 %              set to 2), 2: smooth changes around the scene
 %              if a cell containing a matrix, it is supposed to be fixed
 %              to that value
@@ -49,10 +49,10 @@ function anim = generateToyAnimation( type, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 dfs = {'nPoint',[], 'isProj',false,'nLoop', 1,...
   'dR',[],'dt',[],'nFrame',10,'K',[],...
@@ -87,7 +87,6 @@ switch type
       error('Need to specify the number of points and frames and basis');
     end
     if isProj; error('not implemented yet !'); end
-    S = zeros( 3, nPoint, nFrame );
     
     % Create the basis
     SBasis = 2*rand(3,nPoint,sum(nBasis))-1;
@@ -111,13 +110,13 @@ switch type
       l(k,:) = gaussSmooth( 2*rand(nFrame,1)-1, 6, 'same', 4 );
     end
     
-    anim.l=l; anim.SBasis=SBasis;
     if doSMean; l(1,:)=1; end
-
+    anim.l=l; anim.SBasis=SBasis;
+    
     % Scale the whole thing
     anim.SBasis=anim.SBasis/max(abs(anim.S(:)))/2;
     anim=anim.generateSFromLSBasis(); S=anim.S;
-
+    
     if dR==1; dR = 2; end
     if dt==1; dt = 0; end
   case 1 % Bending Cylinder
@@ -149,7 +148,7 @@ switch type
   case 4.2 % Random Camera Shark
     load( [ fileparts(mfilename('fullpath')) '/data/shark/jawSource']);
     
-    dR = 2; dt = 0; 
+    dR = 2; dt = 0;
     isProj = false;
   case 5 % walking person from Torresani (PAMI 08)
     load( [ fileparts(mfilename('fullpath')) '/data/walkingTorresani08/walking' ] );
@@ -159,14 +158,14 @@ switch type
     conn{1}=[ 26 9 28 26 6 22 21 17 ]; % right leg
     conn{2}=[ 27 25 24 23 ]; % left leg
     conn{3}=[ 1 31 32 33 31 ]; % head
-	conn{4}=[ 38 39 43 11 ]; % right arm
-	conn{5}=[ 40 41 4 ]; % left arm
-	
-for i=[1:size(anim.S,2)]
-text(anim.S(1,i,1),anim.S(2,i,1),anim.S(3,i,1),int2str(i));
-hold on;
-end
-axis([-1 1 -1 1 -1 1]/2)
+    conn{4}=[ 38 39 43 11 ]; % right arm
+    conn{5}=[ 40 41 4 ]; % left arm
+    
+    for i=1:size(anim.S,2)
+      text(anim.S(1,i,1),anim.S(2,i,1),anim.S(3,i,1),int2str(i));
+      hold on;
+    end
+    axis([-1 1 -1 1 -1 1]/2)
   case 6 %face from Torresani (PAMI 08)
   otherwise
     error('type not defined');
@@ -218,13 +217,13 @@ end
 % Create the camera translations
 t=zeros(3,nFrame); span = max(abs(S(:)));
 if iscell(dt)
-  t = repmat(dt{1},[ 1 nFrame ]); dt = 0;
+  t = repmat(dt{1},[ 1 nFrame ]);
 else
   switch dt
     case 1,
       t = [ span*(0.5*rand(2,nFrame)-1); span*(1+rand(1,nFrame)) ];
     case 2,
-      q = gaussSmooth( [ span*(0.5*rand(2,nFrame)-1); ...
+      t = gaussSmooth( [ span*(0.5*rand(2,nFrame)-1); ...
         span*(1+rand(1,nFrame)) ], 4, 'same', 4 );
   end
 end
@@ -234,9 +233,9 @@ isGood = false;
 while ~isGood
   isGood = true;
   for i = 1 : nFrame
-    if size(S,3)==1 STmp=S;
-else     STmp=S(:,:,i);
-end    
+    if size(S,3)==1; STmp=S;
+    else     STmp=S(:,:,i);
+    end
     if ~allPointsInFront( STmp, R(:,:,i), t(:,i) ) || ...
         ( ~isempty(S) &&  ...
         ~allPointsInFront( STmp, R(:,:,i), t(:,i) ) )
@@ -268,8 +267,4 @@ function answer = allPointsInFront( S, R, t )
 X = R*S + repmat( t, [ 1 size(S,2) ] );
 % Check if they are in front
 answer = all( X(3,:) > 0 );
-end
-function X = randomUnitPoint()
-theta = 2*pi*rand(); u = rand()*2-1;
-X = [ sqrt(1-u^2)*[cos(theta); sin(theta) ] ; u ];
 end

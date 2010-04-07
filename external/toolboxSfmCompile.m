@@ -6,8 +6,9 @@ function toolboxSfmCompile()
 % if you get warnings on linux because yourgcc is too old/new, you can
 % force the gcc version this way
 %  opts = {'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1' etc
+%
 % USAGE
-%  toolboxCompile
+%  toolboxSfmCompile
 %
 % INPUTS
 %
@@ -17,7 +18,10 @@ function toolboxSfmCompile()
 %
 % See also
 %
-% Done
+% Vincent's Structure From Motion Toolbox      Version 3.0
+% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Please email me if you find bugs, or have suggestions or questions!
+% Licensed under the GPL [see external/gpl.txt]
 
 if strcmp(computer,'GLNX86') || strcmp(computer,'GLNXA64')
   gcc_ver = '4.2';
@@ -57,19 +61,19 @@ switch computer
     % Matlab on Windows 32 (not sure about 64)
     system('nmake /f Makefile.w32 sba.mexw32');
   case {'GLNX86'},
-	% Matlab on Linux
-	eval([ 'mex ' gcc_extra '-I.. -O -ldl sba.c ../libsba.a ' ...
-	  '/usr/lib/liblapack.a /usr/lib/atlas/libblas.a ' ...
-	  '/usr/lib/libgfortran.so.3']);
+    % Matlab on Linux
+    eval([ 'mex ' gcc_extra '-I.. -O -ldl sba.c ../libsba.a ' ...
+      '/usr/lib/liblapack.a /usr/lib/atlas/libblas.a ' ...
+      '/usr/lib/libgfortran.so.3']);
   case {'GLNXA64'},
-	% Matlab on Linux 64
-	eval([ 'mex -lgfortran ' gcc_extra ' -I.. -O -ldl  sba.c ' ...
-	  '../libsba.a /usr/lib/liblapack_pic.a ' ...
-	  '../../blasLapack/linux64/libf77blas.a ' ...
-	  '../../blasLapack/linux64/libatlas.a '
-	  ]);
+    % Matlab on Linux 64
+    eval([ 'mex -lgfortran ' gcc_extra ' -I.. -O -ldl  sba.c ' ...
+      '../libsba.a /usr/lib/liblapack_pic.a ' ...
+      '../../blasLapack/linux64/libf77blas.a ' ...
+      '../../blasLapack/linux64/libatlas.a '
+      ]);
   case {'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
-	% Octave on Linux
+    % Octave on Linux
     mkoctfile --mex ./sba.c -I../ -lsba -L../
 end
 
@@ -79,10 +83,12 @@ cd sfm/private/sba
 switch computer
   case 'PCWIN',
     % Matlab on Windows 32 (not sure about 64)
-    system('cl /nologo /O2 sbaProjection.c /link /dll /out:sbaProjection.dll');
+    system(['cl /nologo /O2 sbaProjection.c /link /dll ' ...
+      '/out:sbaProjection.dll']);
   case {'GLNX86','GLNXA64','i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
     % Matlab and Octave on Linux
-    system('gcc -Wall -fPIC -O3 -shared -o sbaProjection.so sbaProjection.c');
+    system(['gcc -Wall -fPIC -O3 -shared -o sbaProjection.so ' ...
+      'sbaProjection.c']);
 end
 cd ../../..
 
@@ -93,21 +99,21 @@ optsAfter={};
 switch computer
   case 'PCWIN',
     % Matlab on Windows 32 (not sure about 64)
-	lapacklib = fullfile(matlabroot, 'extern', 'lib', 'win32', ...
-	  'microsoft', 'libmwlapack.lib');
-	blaslib = fullfile(matlabroot, ...
-	  'extern', 'lib', 'win32', 'microsoft', 'libmwblas.lib');
-	opts={'-output'};
-	optsAfter = {lapacklib, blaslib};
+    lapacklib = fullfile(matlabroot, 'extern', 'lib', 'win32', ...
+      'microsoft', 'libmwlapack.lib');
+    blaslib = fullfile(matlabroot, ...
+      'extern', 'lib', 'win32', 'microsoft', 'libmwblas.lib');
+    opts={'-output'};
+    optsAfter = {lapacklib, blaslib};
   case {'GLNX86', 'GLNXA64'},
     % Matlab on Linux
-	% if you get warnings on linux, you could force the gcc version by
-	% adding those options: 'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1'
-	opts = { ['CXX=g++-' gcc_ver] ['CC=g++-' gcc_ver] ['LD=g++-' ...
-	  gcc_ver] '-largeArrayDims' '-l' 'mwlapack' '-l' 'mwblas' '-output'};
+    % if you get warnings on linux, you could force the gcc version by
+    % adding those options: 'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1'
+    opts = { ['CXX=g++-' gcc_ver] ['CC=g++-' gcc_ver] ['LD=g++-' ...
+      gcc_ver] '-largeArrayDims' '-l' 'mwlapack' '-l' 'mwblas' '-output'};
   case {'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
-	% Octave on Linux
-	opts = {'-o'};
+    % Octave on Linux
+    opts = {'-o'};
 end
 
 % general compile options

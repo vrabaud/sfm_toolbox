@@ -21,10 +21,10 @@ function [ l K ] = csfmGnmds(samp,infimum,nTriplet,nPair,lam1 )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 t=find(samp(:,1)==0,1,'first');
 if ~isempty(t); samp=samp(1:t-1,:); end
@@ -37,7 +37,6 @@ nPair=ceil(sqrt(nPair))^2;
 nSampPer3=5;
 
 t=vect(samp(:,[1:3,5:7]),'v');
-count = histc( t, 1:max(t) );
 
 %%% Start defining the problem
 K=sdpvar(nFrame, nFrame);
@@ -48,7 +47,6 @@ obj=0;
 % Deal with triplets
 if nTriplet>0
   AGood=sparse( nTriplet, nFrame^2 ); ABad=sparse( nTriplet, nFrame^2 );
-  b1=sparse( nTriplet, 1 );
   for i=1:nTriplet
     indGood=[ index( samp(i,5), samp(i,6) ) index( samp(i,6), samp(i,7) ) index( samp(i,7), samp(i,5) ); ...
       index( samp(i,5), samp(i,5) ) index( samp(i,6), samp(i,6) ) index( samp(i,7), samp(i,7) ) ];
@@ -129,7 +127,7 @@ if 0
 end
 
 %%% Solve the whole problem
-diagno = solvesdp( F,obj,sdpsettings('solver','sdpa,csdp,sedumi,*',...
+solvesdp( F,obj,sdpsettings('solver','sdpa,csdp,sedumi,*',...
   'dualize',1,'debug',1));
 
 K = double(K);

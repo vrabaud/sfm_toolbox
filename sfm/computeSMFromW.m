@@ -61,10 +61,10 @@ function anim = computeSMFromW( isProj, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
+% Vincent's Structure From Motion Toolbox      Version 3.0
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
-% Licensed under the Lesser GPL [see external/lgpl.txt]
+% Licensed under the GPL [see external/gpl.txt]
 
 [ W isCalibrated K method onlyErrorFlag nItrSBA ] =...
   getPrmDflt( varargin, { 'W' [] 'isCalibrated' false ...
@@ -208,7 +208,7 @@ if isProj
           end
         end
         lam = ( a + lam )*sqrt(a/(a^2*C0+2*a*C1+C2));
-%        [a,sqrt(a/(a^2*C0+2*a*C1+C2)), mean(lam(:)), std(lam(:))]
+        %        [a,sqrt(a/(a^2*C0+2*a*C1+C2)), mean(lam(:)), std(lam(:))]
       end
     end
     
@@ -221,7 +221,7 @@ if isProj
     PTmp = P;
     S = normalizePoint(S,4);
     P = zeros(3,4,nFrame);
-    for i=1:nFrame; P(:,:,i) = inv( T(:,:,i) )*PTmp(3*i-2:3*i,:); end
+    for i=1:nFrame; P(:,:,i) = T(:,:,i)\PTmp(3*i-2:3*i,:); end
     
     % the first matrix should be close to Id but we just force it
     %      P(:,:,1) = eye(3,4); P(3,3:4,1) = [ 0 1 ];
@@ -272,6 +272,7 @@ if onlyErrorFlag
 else
   anim=Animation();
   anim.isProj=isProj; anim.W=WOri; anim.S=S;
+  if ~isempty(K); anim.K = K; end
   if isCalibrated
     anim.t = squeeze(P(:,4,:));
     if anim.isProj
