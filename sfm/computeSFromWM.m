@@ -1,4 +1,4 @@
-function S = computeSFromWM( varargin )
+function S = computeSFromWM( isProj, varargin )
 % Perform triangulation (3D positions from motion and W)
 %
 % REFERENCE
@@ -6,20 +6,15 @@ function S = computeSFromWM( varargin )
 %  method Inf is HZ2, p318, Algorithm 12.1
 %
 % USAGE
-%  S = computeSFromWM( 'W1', W1, 'W2', W2, 'isProj', isProj, 'P1', P1, ...
-%       'P2', P2, 'method', method );
 %  S = computeSFromWM( 'W', W, 'isProj', isProj, 'P', P, 'method', method )
 %
 % INPUTS
+%  isProj     - flag indicating if the camera is projective
 %  varargin   - list of paramaters in quotes alternating with their values
-%       - 'W1',[] [ 2 x nPoint ] 2D projected features in the first image
-%       - 'W2',[] [ 2 x nPoint ] 2D projected features in the second image
 %       - 'W', [] [ 2 x nPoint x nFrame ] 2D projected features
 %       - 'isProj','REQ' flag indicating if the camera is projective
-%       - 'P1',[] [3 x 4 ] projection matrix of the first camera
-%       - 'P2',[] [3 x 4 ] projection matrix of the second camera
 %       - 'P',[] [3 x 4 x nFrame ] projection matrices of the camera
-%       - 'K',[eye(3)] [3 x 3 ] calibration matrix
+%       - 'K',[eye(3)] [3 x 3 ] or [3 x 3 x nFrame ] calibration matrices
 %       - 'method', [0] method for triangulation
 %
 % OUTPUTS
@@ -34,21 +29,20 @@ function S = computeSFromWM( varargin )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-dfs = {'W1',[],'W2',[],'W',[],'isProj','REQ','P1',[],'P2',[],'P',[],'K',...
-  eye(3),'method',0};
-[ W1 W2 W isProj P1 P2 P K method ] = getPrmDflt( varargin, dfs, 1 );
-
-if ~isempty(W1); W = W1; W(:,:,2) = W2; P = P1; P(:,:,2) = P2; end
+dfs = {'W',[],'P',[],'K', [],'method',0};
+[ W P K method ] = getPrmDflt( varargin, dfs, 1 );
 
 nFrame = size(W,2); nPoint = size(W,2);
 
 % If uncalibrated or if a third coordinate
-if any(any(K~=eye(3))) || size(W,1)==3
-  invK = inv(K);
-  for i=1:nFrame
-    W(1:2,:,i) = normalizePoint( invK*normalizePoint( W(:,:,i), -3 ), 3 );
+if ~isempty(K)
+  if size(K,3)==1
+    invK = repmat( inv(K), [ 1 1 nFrame ] );
+  else
+    invK = zeros(3,3,nFrame);
+    for i=1:nFrame; invK(:,:,i) = inv(K(:,:,i)); end
   end
-  W = W( 1:2, :, : );
+  W = normalizePoint( multiTimes( invK, normalizePoint( W, -3 ), 2), 3 );
 end
 
 switch method
