@@ -141,8 +141,7 @@ if isProj
           M = P(:,1:3,j); v(:,j) = det(M)*M(3,:)';
         end
         % compute the image of a point
-        S = computeSFromWM( 'W', W(:,:,:), 'P', P, 'method', 0,'isProj',...
-          true );
+        S = computeSFromWM( true, 'W', W(:,:,:), 'P', P, 'method', 0);
         maxCountTmp = sum((v(:,1)'*(S-repmat(C(:,1),1,nPoint)))>0) + ...
           sum((v(:,2)'*(S-repmat(C(:,2),1,nPoint)))>0);
         if maxCountTmp>maxCount; P2 = P(:,:,2); maxCount = maxCountTmp; end
@@ -150,7 +149,7 @@ if isProj
       P(:,:,2) = P2;
     end
     
-    S = computeSFromWM( 'W', W, 'P', P, 'method', 0, 'isProj', true );
+    S = computeSFromWM( true, 'W', W, 'P', P, 'method', 0 );
   end
   
   % Projective Factorization
