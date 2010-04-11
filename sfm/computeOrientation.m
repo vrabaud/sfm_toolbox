@@ -100,8 +100,10 @@ switch method
     
     t=rrBar-s*R*rlBar;
   case 'exterior'
-    RIni = getPrmDflt( varargin, {'RIni' []}, 1 );
-    
+    if ~isempty(varargin); RIni = varargin{0};
+    else RIni=[];
+    end
+
     if isempty(RIni)
       try
         % Sedumi and GloptiPoly3 must be installed and in the path !
