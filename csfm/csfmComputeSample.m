@@ -61,9 +61,8 @@ for i=1:nSamp
     end
     
     % compute the reconstruction of those 3 good pairs
-    animBest = computeSMFromW( anim.isProj, 'W', ...
-      anim.W(:,:,[i1 i2 i3]), 'method', Inf, 'doSBA', true, ...
-      'isCalibrated', true );
+    animBest = computeSMFromW( anim.isProj, 'W', anim.W(:,:,[i1 i2 i3]),...
+      'method', Inf, 'isCalibrated', true );
     [ err errIndiv ] = animBest.computeError();
     changeCount(count, good, 1);
     

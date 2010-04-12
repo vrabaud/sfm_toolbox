@@ -106,8 +106,7 @@ switch abs( method )
       if isDone{i1}(i2,i3) || min( pdist( sample' ) )<=minSpan; continue; end
       
       [ disc disc err ] = computeSMFromW( anim.isProj, ...
-        'W', anim.W(:,:, [ i1 i2 i3]), 'K', anim.K, 'method',Inf, ...
-        'doSBA', 1 );
+        'W', anim.W(:,:, [ i1 i2 i3]), 'K', anim.K, 'method',Inf);
       
       perm = [ i1 i2 i3; i1 i3 i2; i3 i1 i2; i3 i2 i1; i2 i1 i3; ...
         i2 i3 i1 ];
