@@ -61,9 +61,6 @@ for nBasis = nBasisArray
   % Compute the best rotation matrices
   anim.R = computeOrientation(anim.W,anim.S,'exteriorSequence');
   
-  % compute the error
-  %    anim=anim.generateSFromLSBasis();
-  
   if nItr>0
     anim = bundleAdjustment( anim, 'nItrSBA', nItr );
   end

@@ -12,7 +12,7 @@ function anim=subsasgn(anim,idx,rhs)
 % EXAMPLE
 %
 % Vincent's Structure From Motion Toolbox      Version 3.0
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -91,12 +91,12 @@ end
 switch var
   % deal with the modified shape basis/coefficients
   case {'l','SBasis'}
+    anim.nFrame=max([ size(anim.W,3) size(anim.S,3) size(anim.l,2) ...
+      size(anim.R,3) ] );
     if ~isempty(anim.l) && ~isempty(anim.SBasis)
       anim.nBasis=size(anim.SBasis,3);
       anim=generateSFromLSBasis(anim);
     end
-    anim.nFrame=max([ size(anim.W,3) size(anim.S,3) size(anim.l,2) ...
-      size(anim.R,3) ] );
   case {'K', 'R', 't'}
     % reset some global values
     if size(anim.K,1)==5; anim.isProj=true;
@@ -113,7 +113,7 @@ switch var
     % yeah yeah, costly but easier to keep everything in sync like that
     if ~isempty(anim.K) && ~isempty(anim.P); anim=generateKRt(anim); end
   case {'W', 'S'}
-    anim.nPoint=max([ size(anim.W,2) size(anim.S,2) ] );
+    anim.nPoint=max([ size(anim.W,2) size(anim.S,2) size(anim.SBasis,2)] );
     anim.nFrame=max([ size(anim.W,3) size(anim.S,3) size(anim.l,2) ...
       size(anim.R,3) ] );
 end

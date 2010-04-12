@@ -5,9 +5,9 @@ function demoCsfm( testCase )
 %
 % The demos are as follows:
 %  1: Shark data from Torresani et al, no noise
-%  2: Orthographic absolute orientation computation
-%  3: Orthographic exterior orientation computation
-%  4: Orthographic rigid SFM examples
+%  2: Artifical non-linear shape
+%  3: Artifical non-linear shape
+%  4: Walking Person
 %
 % USAGE
 %  demoCSFM(testCase)
@@ -113,6 +113,7 @@ end
 % Compute the best basis
 % S is recomputed automatically
 disp('Computing the resulting best SBasis');
+save temp
 SBasis=csfmComputeSBasis( anim.l, anim.W, animRank, 1, 1 );
 save temp
 anim.SBasis=SBasis;

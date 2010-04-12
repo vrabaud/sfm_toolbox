@@ -115,7 +115,7 @@ switch type
     
     % Scale the whole thing
     anim.SBasis=anim.SBasis/max(abs(anim.S(:)))/2;
-    anim=anim.generateSFromLSBasis(); S=anim.S;
+    S=anim.S;
     
     if dR==1; dR = 2; end
     if dt==1; dt = 0; end
@@ -251,8 +251,6 @@ anim.R=R; anim.t=t; anim.K=K;
 anim.S=S; anim.conn=conn; anim.isProj=isProj;
 
 if dR~=0; anim = anim.setFirstRToId(); end
-
-if ~isempty(anim.l); anim=anim.generateSFromLSBasis(); end
 
 [ disc, disc, anim ]=anim.generateW('doFillW',true);
 end

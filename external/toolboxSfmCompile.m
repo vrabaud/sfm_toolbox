@@ -33,8 +33,8 @@ function toolboxSfmCompile(doSba,gccVer)
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the Lesser GPL [see external/lgpl.txt]
 
-if nargin<0; doSba=false; end
-if nargin<1; gccVer=num2str(4.2); end
+if nargin==0; doSba=false; end
+if nargin<=1; gccVer=num2str(4.2); end
 
 if strcmp(computer,'GLNX86') || strcmp(computer,'GLNXA64')
   gcc_extra = [ 'CXX=g++-' gccVer ' CC=g++-' gccVer ' LD=g++-' gccVer ];
@@ -45,10 +45,9 @@ savepwd=pwd; cd(fileparts(mfilename('fullpath'))); cd('../');
 
 dirSBA = [ pwd '/external/sba/'];
 
-cd(dirSBA);
-
 % build the SBA static library and the SBA mex file
 if doSba
+  cd(dirSBA);
   % delete previous object files
 	fileList = {'sba_levmar.o', 'sba_levmar_wrap.o', 'sba_lapack.o', ...
 	'sba_crsm.o', 'sba_chkjac.o', 'libsba.a', 'sba.lib', ...

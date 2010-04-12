@@ -1,4 +1,4 @@
-function QOpt = refineExteriorOrientation(S,W,Q)
+function [ QOpt, err ] = refineExteriorOrientation(S,W,Q)
 % wrapper around a mex to optimize the quaternions in exterior orientation
 %
 % Exterior is : 1 array of 3D position x is known and its 2D orthographic
@@ -18,6 +18,7 @@ function QOpt = refineExteriorOrientation(S,W,Q)
 %
 % OUTPUTS
 %  Q          - [ 4 x nFrame ] optimized quaternions
+%  err        - [ 1 x nFrame ] final errors
 %
 % EXAMPLE
 %
@@ -28,4 +29,4 @@ function QOpt = refineExteriorOrientation(S,W,Q)
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-QOpt = refineExteriorOrientationMex(S,W,Q);
+[ QOpt, err ] = refineExteriorOrientationMex(S,W,Q);

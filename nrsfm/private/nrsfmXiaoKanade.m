@@ -452,7 +452,6 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
   %%%%%%%%%%%%%%%%%%%%%% Finalize the anim object %%%%%%%%%%%%%%%%%%%%%%%%%
   anim=Animation('SBasis', SBasis, 'l', l, 'R', R, 'isProj', false, ...
     't', animBest.t, 'W', animBest.W );
-  anim=anim.generateSFromLSBasis();
   err = anim.computeError( anim ); err=err(1);
   fprintf( 'Reprojection error: %f \n', err );
   
