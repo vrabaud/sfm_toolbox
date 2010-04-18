@@ -130,7 +130,7 @@ if nCam>=0
   % Redo the frames frameNbr - 1 : frameNbr + 1, no matter what
   % just because of the camera color
   hCam( ismember( hCam(:,9), frameNbr - 1 : frameNbr + 1 ) , 9 ) = 0;
-  
+
   % Get the frames that are not displayed and that should be displayed
   frameInter = frameNbr - nCam : frameNbr + nCam;
   frameInter(frameInter<1 | frameInter>nFrame) = [];
@@ -155,9 +155,8 @@ if nCam>=0
     hCam(nCam,9) = t;
   end
   % Do not display the ones that should not be displayed (if any left)
-  for camNbr = toErase( iToErase : end )
-    set( hCam(camNbr, 1 : end-1), 'Visible', 'off' );
-  end
+  hCamToErase=hCam(toErase( iToErase : end ), 1 : end-1);
+  set( hCamToErase(:), 'Visible', 'off' );
 end
 end
 

@@ -57,7 +57,7 @@ for i=1:3
   % make axes equal
   cam(i).axis=mean(cam(i).axis,2);
   cam(i).axis=[cam(i).axis-maxB cam(i).axis+maxB];
-  cam(i).axis=vect( cam(i).axis, 'h' );
+  cam(i).axis=(cam(i).axis')(:);
 end
 cam(3).axis(5)=0;
 cam(3).axis = cam(3).axis( [ 1 2 5 6 3 4 ] );
