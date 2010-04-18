@@ -1,4 +1,4 @@
-function anim = computeSMFromW( isProj, varargin )
+function anim = computeSMFromW( isProj, W, varargin )
 % Recover rigid structure and motion from 2D calibrated measurements W
 %
 % Normalized 8-point algorithm
@@ -32,20 +32,16 @@ function anim = computeSMFromW( isProj, varargin )
 % Returns the structure and camera parameters in an Animation object
 %
 % USAGE
-%   anim = computeSMFromW( isProj, 'W1',W1,'W2',W2,...
-%        'isProj',isProj,'method',method )
-%   anim = computeSMFromW( isProj, 'W',W,'isProj',isProj,...
-%        'method',method )
-%   anim = computeSMFromW( isProj, 'W',W,'method', ...
-%        Inf,'onlyErrorFlag',true )
+%   anim = computeSMFromW( isProj, W, 'method',method )
+%   anim = computeSMFromW( isProj, W,'method',Inf,'onlyErrorFlag',true )
 %
 % INPUTS
 %  isProj     - flag indicating if the camera is projective
+%  W          - [] [ 2 x nPoint x nFrame ] 2D projected features
 %  varargin   - list of paramaters in quotes alternating with their values
-%       - 'W', [] [ 2 x nPoint x nFrame ] 2D projected features
 %       - 'isCalibrated' [false] flag indicating if the cameras are
 %                        calibrated
-%       - 'K',[eye(3)] [3 x 3 ] or [3 x 3 x nFrame ] calibration matrices
+%       - 'K',[eye(3)] [3 x 3 ] or [ 3 x 3 x nFrame ] calibration matrices
 %       - 'method', [0] method for performing SFM (see above for details)
 %       - 'onlyErrorFlag', [false] flag indicating if only the error is
 %         needed when nFrame==2 && method==Inf && ~isProj
@@ -62,12 +58,12 @@ function anim = computeSMFromW( isProj, varargin )
 % See also
 %
 % Vincent's Structure From Motion Toolbox      Version 3.0
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-[ W isCalibrated K method onlyErrorFlag nItrSBA ] =...
-  getPrmDflt( varargin, { 'W' [] 'isCalibrated' false ...
+[ isCalibrated K method onlyErrorFlag nItrSBA ] =...
+  getPrmDflt( varargin, { 'isCalibrated' false ...
   'K' [] 'method' 0 'onlyErrorFlag' false 'nItrSBA' 100 }, 1 );
 
 nFrame = size(W,3); nPoint = size(W,2);
@@ -141,7 +137,7 @@ if isProj
           M = P(:,1:3,j); v(:,j) = det(M)*M(3,:)';
         end
         % compute the image of a point
-        S = computeSFromWM( true, 'W', W(:,:,:), 'P', P, 'method', 0);
+        S = computeSFromWM( true, W, P, 'method', 0);
         maxCountTmp = sum((v(:,1)'*(S-repmat(C(:,1),1,nPoint)))>0) + ...
           sum((v(:,2)'*(S-repmat(C(:,2),1,nPoint)))>0);
         if maxCountTmp>maxCount; P2 = P(:,:,2); maxCount = maxCountTmp; end
@@ -149,7 +145,7 @@ if isProj
       P(:,:,2) = P2;
     end
     
-    S = computeSFromWM( true, 'W', W, 'P', P, 'method', 0 );
+    S = computeSFromWM( true, W, P, 'method', 0 );
   end
   
   % Projective Factorization
@@ -287,7 +283,7 @@ else
   end
   
   if nItrSBA > 0
-    anim = bundleAdjustment( anim, 'nItrSBA', nItrSBA );
+    anim = bundleAdjustment( anim, 'nItr', nItrSBA );
   end
 end
 end

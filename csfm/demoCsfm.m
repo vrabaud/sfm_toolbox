@@ -139,7 +139,7 @@ playAnim(anim,'animGT',animGT,'showGT',true,'alignGT',true);
 
 % perform gradient descent to optimize
 disp('Perform the final optimization');
-anim = bundleAdjustment( anim, 'nItrSBA', 64 );
+anim = bundleAdjustment( anim, 'nItr', 64 );
 disp('------------------------------------------------------------------');
 
 % regenerate the 3D shapes

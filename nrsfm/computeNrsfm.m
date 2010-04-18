@@ -19,7 +19,7 @@ function anim = computeNrsfm( method, W, varargin )
 %     for THB, PAMI08
 %       - 'nItr'          - maximum number of EM iterations (nItr)
 %     for MSFM
-%     for TSFM
+%     for CSFM
 %       - 'nTriplet'      -
 %       - 'nPair'
 %       - 'nItr'          - number of gradient descent iterations
@@ -31,8 +31,8 @@ function anim = computeNrsfm( method, W, varargin )
 %
 % See also COMPUTESMFROMW
 %
-% Vincent's Structure From Motion Toolbox      Version 2.0\n
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Vincent's Structure From Motion Toolbox      Version 3.0
+% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -77,5 +77,6 @@ switch method
     anim = nrsfmCsfm( W, nBasis, nTriplet, nPair, nItr );
 end
 % Perform gradient descent on the different coefficients
-% [ S P K R t l ] = bundleAdjustment( false, Inf, W, animi.S, anim.R, ...
-%   anim.t, 'l', anim.l )
+if nItr>0 && (method==1 || method==2)
+  anim = bundleAdjustment(anim);
+end

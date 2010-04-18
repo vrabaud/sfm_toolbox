@@ -191,28 +191,28 @@ for i = 1 : 4
     switch i
       case 1,
         animGTSample=animGT.sampleFrame(1:3);
-        anim{1,j} = computeSMFromW( false, 'W', ...
+        anim{1,j} = computeSMFromW( false, ...
           animGTSample.W, 'method', 0,'nItrSBA', (j-1)*100 );
         out = '3 views, no orthonormality constraints:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 2,
         animGTSample=animGT;
-        anim{2,j} = computeSMFromW( false, 'W', animGT.W, ...
+        anim{2,j} = computeSMFromW( false, animGT.W, ...
           'method', 0, 'nItrSBA', (j-1)*100 );
         out = 'All the views, no orthonormality constraints:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 3,
         animGTSample=animGT.sampleFrame(1:3);
-        anim{3,j} = computeSMFromW( false, 'W', animGTSample.W, ...
+        anim{3,j} = computeSMFromW( false, animGTSample.W, ...
           'method', 0, 'isCalibrated', true, 'nItrSBA', (j-1)*100);
         out = '3 views, orthonormality constraints:\n';
         typeTransform = 'camera';
         type3DError = '';
       case 4,
         animGTSample=animGT;
-        anim{4,j} = computeSMFromW( false, 'W', animGT.W, ...
+        anim{4,j} = computeSMFromW( false, animGT.W, ...
           'method', 0, 'isCalibrated', true, 'nItrSBA', (j-1)*100 );
         out = 'All the views, orthonormality constraints:\n';
         typeTransform = 'camera';
@@ -318,14 +318,14 @@ for i = 1 : 4
     switch i
       case 1,
         animGTSample=animGT.sampleFrame(1:2);
-        anim{1,j} = computeSMFromW( true, 'W', ...
+        anim{1,j} = computeSMFromW( true, ...
           animGTSample.W, 'method', 0,'nItrSBA', (j-1)*100 );
         out = '2 views, uncalibrated cameras:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 2,
         animGTSample=animGT.sampleFrame(1:2);
-        anim{2,j} = computeSMFromW( true, 'W', ...
+        anim{2,j} = computeSMFromW( true, ...
           animGTSample.W, 'method', 0,'isCalibrated',true,...
           'nItrSBA', (j-1)*100);
         out = '2 views, calibrated cameras:\n';
@@ -334,20 +334,20 @@ for i = 1 : 4
       case 3,
         animGTSample=animGT;
         anim{3,j} = computeSMFromW( true, ...
-          'W', animGT.W, 'method', 0, 'nItrSBA', (j-1)*100 );
+          animGT.W, 'method', 0, 'nItrSBA', (j-1)*100 );
         out = 'All the views, uncalibrated cameras, Sturm Triggs:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 4,
         animGTSample=animGT;
         anim{4,j} = computeSMFromW( true, ...
-          'W', animGT.W, 'method', Inf, 'nItrSBA', (j-1)*100 );
+          animGT.W, 'method', Inf, 'nItrSBA', (j-1)*100 );
         out = 'All the views, uncalibrated cameras, Oliensis Hartley:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 5,
         %         [ S(:,:,5,j) P{5} errTmp ] = computeSMFromW( true, ...
-        %           'W', animGT.W, 'method', 0, 'isCalibrated',true,...
+        %           animGT.W, 'method', 0, 'isCalibrated',true,...
         %           'nItrSBA', (j-1)*100 );
         %         out = 'All the views, calibrated cameras:\n';
     end

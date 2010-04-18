@@ -62,7 +62,7 @@ for nBasis = nBasisArray
   anim.R = computeOrientation(anim.W,anim.S,'exteriorSequence');
   
   if nItr>0
-    anim = bundleAdjustment( anim, 'nItrSBA', nItr );
+    anim = bundleAdjustment( anim, 'nItr', nItr );
   end
   
   animArray{end+1} = anim;

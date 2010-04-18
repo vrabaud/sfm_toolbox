@@ -52,8 +52,8 @@ switch abs( method )
         W = anim.WUncal;
         for i=1:nFrame-1
           for j=i+1:nFrame
-            [ disc disc err errTot ] = computeSMFromW( anim.isProj, 'W1', ...
-              W(:,:,i), 'W2', W(:,:,j), 'method', Inf,'onlyErrorFlag',true );
+            [ disc disc err errTot ] = computeSMFromW( anim.isProj, ...
+              W(:,:,[i,j]), 'method', Inf,'onlyErrorFlag',true );
             Sim(i,j) = err;
           end
           Sim(i+1:end,i)=Sim(i,i+1:end);
@@ -106,7 +106,7 @@ switch abs( method )
       if isDone{i1}(i2,i3) || min( pdist( sample' ) )<=minSpan; continue; end
       
       [ disc disc err ] = computeSMFromW( anim.isProj, ...
-        'W', anim.W(:,:, [ i1 i2 i3]), 'K', anim.K, 'method',Inf);
+        anim.W(:,:, [ i1 i2 i3]), 'K', anim.K, 'method',Inf);
       
       perm = [ i1 i2 i3; i1 i3 i2; i3 i1 i2; i3 i2 i1; i2 i1 i3; ...
         i2 i3 i1 ];

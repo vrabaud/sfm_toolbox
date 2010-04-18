@@ -129,7 +129,7 @@ fprintf( '\nTorresani: Reprojection error %0.4f and 3D-error %0.4f\n\n',...
 
 % perform gradient descent on the coefficients to improve the quality of
 % the result
-% animXiao = bundleAdjustment( animXiao, 'nItrSBA', 10 );
+% animXiao = bundleAdjustment( animXiao, 'nItr', 10 );
 % 
 % [ errXiao errFrameXiao ] = animXiao.computeError( 'animGT', animGT );
 % fprintf( 'Xiao+gradient descent: Reprojection error %0.4f and 3D-error %0.4f\n\n', ...

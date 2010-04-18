@@ -11,9 +11,7 @@ anim.SBasis(:,:,1)=-anim.SBasis(:,:,1);
 
 anim.l(1,:)=1; anim.t(:)=0;
 anim=anim.setFirstRToId();
-[ anim.SBasis disc disc anim.R anim.t anim.l ] = ...
-  bundleAdjustment( false, Inf, animGT.W, anim.SBasis,anim.R, ...
-  anim.t, 'l', anim.l, 'nItrSBA', 100 );
+anim = bundleAdjustment( anim, 'nItr', 100 );
 anim=anim.setFirstRToId();
 
 [ err ] = computeNRSFMError( animGT, anim );
