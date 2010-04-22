@@ -40,9 +40,13 @@ function anim = computeSMFromW( isProj, W, varargin )
 %  W          - [] [ 2 x nPoint x nFrame ] 2D projected features
 %  varargin   - list of paramaters in quotes alternating with their values
 %       - 'isCalibrated' [false] flag indicating if the cameras are
-%                        calibrated
-%       - 'K',[eye(3)] [3 x 3 ] or [ 3 x 3 x nFrame ] calibration matrices
-%       - 'method', [0] method for performing SFM (see above for details)
+%                        calibrated (intrinsic parameters are identity)
+%       - 'doAffineUpgrade' [true] flag indicating if the affine upgrade
+%                        is computed
+%       - 'doMetricUpgrade' [true] flag indicating if the metric upgrade
+%                        is computed
+%       - 'K',[] [3 x 3 ] or [ 3 x 3 x nFrame ] calibration matrices
+%       - 'method', [inf] method for performing SFM (see above for details)
 %       - 'onlyErrorFlag', [false] flag indicating if only the error is
 %         needed when nFrame==2 && method==Inf && ~isProj
 %       - 'nItrSBA', [100] number of bundle adjustment iterations
@@ -62,9 +66,10 @@ function anim = computeSMFromW( isProj, W, varargin )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-[ isCalibrated K method onlyErrorFlag nItrSBA ] =...
-  getPrmDflt( varargin, { 'isCalibrated' false ...
-  'K' [] 'method' 0 'onlyErrorFlag' false 'nItrSBA' 100 }, 1 );
+[ isCalibrated doAffineUpgrade doMetricUpgrade K method onlyErrorFlag ...
+  nItrSBA ] = getPrmDflt( varargin, { 'isCalibrated' false ...
+  'doAffineUpgrade' true 'doMetricUpgrade' true 'K' [] 'method' inf ...
+  'onlyErrorFlag' false 'nItrSBA' 100 }, 1 );
 
 nFrame = size(W,3); nPoint = size(W,2);
 
@@ -151,7 +156,7 @@ if isProj
   % Projective Factorization
   % Reference: Iterative Extensions of the Sturm/Triggs Algorithm:
   % Convergence and Nonconvergence, from Oliensis, Hartley, PAMI 07
-  if nFrame>2 && ismember(method,[ 0 Inf ]) && ~isCalibrated
+  if nFrame>2 && ismember(method,[ 0 Inf ])
     % Normalize coordinates
     [ W T ] = normalizePoint(W,-Inf);
     
@@ -217,9 +222,6 @@ if isProj
     S = normalizePoint(S,4);
     P = zeros(3,4,nFrame);
     for i=1:nFrame; P(:,:,i) = T(:,:,i)\PTmp(3*i-2:3*i,:); end
-    
-    % the first matrix should be close to Id but we just force it
-    %      P(:,:,1) = eye(3,4); P(3,3:4,1) = [ 0 1 ];
   end
 else
   % Gold Standard for Affine camera matrix
@@ -246,47 +248,31 @@ else
       [ U S V ] = svd( WStack );
       P = permute(reshape(U(:,1:3),2,nFrame,3),[1 3 2]);
       P(3,4,:) = 1; P(1:2,4,:) = reshape( t, 2, 1, nFrame );
-      
-      if isCalibrated
-        % Tomasi Kanade with the metric constraint
-        [ disc P ] = imposeConstraintOnP( P, isProj, 'orthoHard' );
-        % the first matrix should already be close to Id but we just force it
-        [ disc P ] = imposeConstraintOnP( P, isProj, 'firstId' );
-        S = reshape( permute( P(1:2,1:3,:), [ 1 3 2 ] ), 2*nFrame, 3 )\...
-          WStack;
-      else
-        S=bsxfun(@times,[ S(1,1); S(2,2); S(3,3) ], V(:,1:3)');
-      end
+
+      S=bsxfun(@times,[ S(1,1); S(2,2); S(3,3) ], V(:,1:3)');
     end
   end
 end
 
+if onlyErrorFlag; anim=err; return; end
+
+% create the Animation object
+anim=Animation(); anim.isProj=isProj; anim.W=WOri; anim.S=S; anim.P=P;
+if ~isempty(K); anim.K = K; end
+
+% perform an affine upgrade if requested
+if doAffineUpgrade; anim = affineUpgrade(anim, isCalibrated); end
+
+% perform a metric upgrade if requested
+if doMetricUpgrade; anim = metricUpgrade(anim, isCalibrated); end
+
 % do bundle adjustment
-if onlyErrorFlag
-  anim=err;
-else
-  anim=Animation();
-  anim.isProj=isProj; anim.W=WOri; anim.S=S;
-  if ~isempty(K); anim.K = K; end
-  if isCalibrated
-    anim.t = squeeze(P(:,4,:));
-    if anim.isProj
-      anim.R = P(:,1:3,:);
-    else
-      anim.R = zeros(3,3,nFrame);
-      for i=1:nFrame
-        anim.R(:,:,i) = rotationMatrix( rotationMatrix(P(1:2,1:3,i) ));
-      end
-    end
-  else
-    anim.P = P;
-  end
-  
-  if nItrSBA > 0
-    anim = bundleAdjustment( anim, 'nItr', nItrSBA );
-  end
+if nItrSBA > 0
+  anim = bundleAdjustment( anim, 'nItr', nItrSBA );
 end
 end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [ Wk, WkHat ] =projSturmTriggsWkWkHat(lam,W,nFrame,nPoint)
 % perform the computation of Wk and its rank 4 approximation
