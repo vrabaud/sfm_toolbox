@@ -2,6 +2,7 @@ Version 3.0 ()
   API CHANGES
     - Animation objects are now defined like in Matlab 7.5 and before (to simplify compatibility with all Matlab's and Octave)
     - removed useless members and member functions for clarity
+    - API changes in the main functions (computeSMFromW, computeSFromW ...)
     - computeSFMError and computeNRSFMError are now merged in a member function computeError of the Animation class
     - require Piotr's toolbox 2.42 at least (because of the use of multiTimes)
   NEW
@@ -16,11 +17,12 @@ Version 3.0 ()
     - include MSFM from CVPR 08 (finally !)
     - include CSFM from CVPR 09 (finally !)
     - SBA 1.6 used in bundleAdjustment. Allegedly faster.
-    - new folder organization and new demos
+    - new folder organization and new/more demos
   CRITICAL FIXES
     - bundle adjustment when specifying constant calibration parameters in affine cameras was simply wrong
     - quaternion bugs in some rare cases
     - fixed the Sturm & Triggs algorithm (and the Oliensis one therefore)
+    - fixed a bad implementation of computeSFromW
   FIXES
     - slight display bugs got fixed
     - no more warning displays in bundle adjustment

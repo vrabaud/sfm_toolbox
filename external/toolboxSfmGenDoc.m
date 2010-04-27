@@ -4,11 +4,10 @@ function toolboxSfmGenDoc()
 % Requires external/m2html to be in path.
 %
 % Prior to running, update a few things in the overview.html file in:
-%   toolbox/external/m2html/templates/frame-piotr/overview.html
+%   toolbox/external/m2html/templates/frame-vincent/overview.html
 %   1) The version / date
 %   2) Link to rar/zip file
 % Might be useful to use:
-%find . -name ".svn" -exec rm -rf {} \;
 %
 % USAGE
 %  toolboxGenDoc
@@ -27,7 +26,7 @@ function toolboxSfmGenDoc()
 % Licensed under the GPL [see external/gpl.txt]
 
 % run m2html
-params = {'mfiles',{'sfm','linearAlgebra','@Animation'}};
+params = {'mfiles',{'@Animation','csfm','linearAlgebra','nrsfm','sfm','visualize'}};
 params = {params{:},'htmldir','doc','recursive','on','source','off'};
 matlabpathTmp = matlabpath;
 tmp = which('m2html','-all');
@@ -63,7 +62,7 @@ end
 
 % Zip the whole toolbox
 s = dir( './' );
-goodFolder = { '@Animation' 'doc' 'linearAlgebra' 'csfm' 'msfm' 'nrsfm' 'sfm' 'visualize' 'external' };
+goodFolder = { '@Animation' 'csfm' 'doc' 'external' 'linearAlgebra' 'nrsfm' 'sfm' 'visualize' };
 for i = length(s) : -1 : 1
   isGood = false;
   for j = 1 : length(goodFolder)
