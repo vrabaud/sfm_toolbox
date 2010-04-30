@@ -260,16 +260,17 @@ if onlyErrorFlag; anim=err; return; end
 anim=Animation(); anim.isProj=isProj; anim.W=WOri; anim.S=S; anim.P=P;
 if ~isempty(K); anim.K = K; end
 
+% do bundle adjustment
+if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
+
 % perform an affine upgrade if requested
 if doAffineUpgrade; anim = affineUpgrade(anim, isCalibrated); end
 
 % perform a metric upgrade if requested
 if doMetricUpgrade; anim = metricUpgrade(anim, isCalibrated); end
 
-% do bundle adjustment
-if nItrSBA > 0
-  anim = bundleAdjustment( anim, 'nItr', nItrSBA );
-end
+% do a final bundle adjustment
+%if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
