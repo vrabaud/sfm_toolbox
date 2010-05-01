@@ -82,12 +82,12 @@ if true || exist('OCTAVE_VERSION','builtin')==5; return; end
 
 % Chandraker IJCV 2009
 
-r=sdpvar(1,1); e=sdpvar(1,1); f=sdpvar(nFrame,1); g=sdpvar(nFrame,1);
+r=sdpvar(1,1); e=sdpvar(1,1); fg=sdpvar(nFrame,2);
 v=sdpvar(3,1);
 % free variables for the convex/concave relaxations
-ap=sdpvar(nFrame,1); lam=sdpvar(nFrame,1);
+lam=sdpvar(nFrame,2); ypp=sdpvar(nFrame,2); t=sdpvar(nFrame,2);
 
-FIni=set(r*e >= sum((f-g).^2));
+FIni=set(r*e >= sum((fg(:,1)-fg(:,2)).^2)) + set(v(4)==1);
 
 l=repmat(-100,3,1); u=-l;
 for nItr=1:10
@@ -103,7 +103,9 @@ for nItr=1:10
   l=lNew; u=uNew;
   
   % compute the lower bound/current best for each interval
-  vBest=zeros(s3,size(l,2)); currBest=zeros(1,size(l,2));
+  vBest=zeros(s3,size(l,2));
+  currBest=zeros(1,size(l,2));
+  lowerBound=zeros(1,size(l,2));
   for i=1:size(l,2)
     % add boundary conditions
     F=FIni+set(l(:,i)<=v)+set(v<=u(:,i));
@@ -114,7 +116,7 @@ for nItr=1:10
     %  beta = (a2*a8 + a12*a3 - a11*a4  - a4*a6)*p1 + (a12*a7 - a1*a8 + a4*a5 - a11*a8)*p2 + (- a1*a12 - a12*a6 + a10*a8 + a4*a9)*p3 + a1*a11 + a1*a6 - a2*a5 + a11*a6 - a10*a7 - a3*a9;
     %  gamma = - ((a12*a2*a7 - a12*a3*a6 - a11*a2*a8 - a10*a4*a7 + a11*a4*a6 + a10*a3*a8)*p1 + (-a1*a12*a7 + a12*a3*a5 + a1*a11*a8 - a11*a4*a5 - a3*a8*a9 + a4*a7*a9)*p2 + (a1*a12*a6 - a12*a2*a5 - a1*a10*a8 + a10*a4*a5 + a2*a8*a9 - a4*a6*a9)*p3 + a11*a2*a5 - a1*a11*a6 + a1*a10*a7 - a10*a3*a5 - a2*a7*a9 + a3*a6*a9);
     %  simplify(lam^3 - alpha*lam^2 + beta*lam - gamma-det(lam*eye(3)-(A(:,1:3)-A(:,4)*[p1,p2,p3])))
-    alpha=zeros(nFrame,j); beta=zeros(nFrame,j); gamma=zeros(nFrame,j);
+    alpha=zeros(nFrame,4); beta=zeros(nFrame,4); gamma=zeros(nFrame,4);
     for j=1:nFrame
       a1=P(1,1,j); a2=P(1,2,j); a3=P(1,3,j); a4=P(1,4,j);
       a5=P(2,1,j); a6=P(2,2,j); a7=P(2,3,j); a8=P(2,4,j);
@@ -130,47 +132,52 @@ for nItr=1:10
         a1*a11*a6 + a1*a10*a7 - a10*a3*a5 - a2*a7*a9 + a3*a6*a9 ];
     end
     % compute the bounds on a,b,c,d
-    % greek will designate alpha,bet,gamma,delta
-    greekHqat=zeros(nFrame,4,4);
-    abcdBound=zeros(nFrame,2);
+    % greek will designate alpha,bet,gamma
+    greekHqat=zeros(nFrame,4,3);
+    abcdBound=zeros(nFrame,2,4);
     for j=1:4
       switch j,
         case 1,
           greek=alpha;
+        case 2,
+          greek=beta;
+        case 3,
+          greek=gamma;
+        case 4,
+          greek=zeros(nFrame,4); greek(:,1)=1;
       end
       greekHqat(:,:,j)=greek*Hqa';
       pos=greekHqat(:,:,j)>0; neg=greekHqat(:,:,j)<0;
-      if j<4
-        abcdBound(pos,:)=abcdBound(pos>0,:)+...
-          greekHqat(pos,:,j)*[l(j,i),u(j,i)];
-        abcdBound(neg,:)=abcdBound(neg,:)+...
-          greekHqat(neg,:,j)*[u(j,i),l(j,i)];
-      else
-        abcdBound(pos,:)=abcdBound(pos,:)+[l(j,i),u(j,i)];
-        abcdBound(neg,:)=abcdBound(neg,:)+[u(j,i),l(j,i)];
-      end
+      abcdBound(:,:,j)=(greekHqat(:,:,j).*pos)*[l(:,i),u(:,i);1,1] + ...
+        (greekHqat(:,:,j).*neg)*[u(:,i),l(:,i);1,1];
     end
-    % add first relaxation constraints
-    ind1=abcdBound(:,1)>0 || abcdBound(:,2)<0;
-    ind2=abcdBound(:,1)<0 && abcdBound(:,2)>0;
-    % conv(c^(1/3)*a) <= f <= conc(c^(1/3)*a)
-    F=F+set(f(ind1)>=(abcdBound(:,1,3).^(1/3)).*ap(ind1)+...
-      (abcdBound(:,2,3).^(1/3))*(a(ind1)-ap(ind1)));
-    F=F+set(f(ind1)>=(abcdBound(:,1,3).^(1/3)).*ap(ind1)+...
-      (abcdBound(:,2,3).^(1/3))*(a(ind1)-ap(ind1)));
-    % add second relaxation constraints
-    % add third relaxation constraints
+    % add constraints
+    for i=1:2
+      F = F + convx13y(fg(:,i),greekHqat(:,:,i+2)*v,abcdBound(:,1,i+2),...
+        abcdBound(:,2,i+2),greekHqat(:,:,i+1)*v,abcdBound(:,1,i+1),...
+        abcdBound(:,2,i+1),ypp(:,i),lam(:,i),t(:,i));
+      F = F + concx13y(fg(:,i),greekHqat(:,:,i+2)*v,abcdBound(:,1,i+2),...
+        abcdBound(:,2,i+2),greekHqat(:,:,i+1)*v,abcdBound(:,1,i+1),...
+        abcdBound(:,2,i+1),ypp(:,i),lam(:,i),t(:,i));
+    end
+    F = F + concx83(e,d*v,abcdBound(:,1,4),abcdBound(:,2,4));
     % solve the problem
     diagno = solvesdp( F,r,sdpsettings('solver', ...
       'sdpa,csdp,sedumi,*','dualize',1,'debug',1));
     vBest(:,i)=double(v);
     % compute the current best
-    a=alphaHqat*[v;1]; b=betaHqat*[v;1]; c=gammaHqat*[v;1];
-    d=Hqa(:,4)'*[v;1];
-    curBest(:,i)=sum((c^(1/3).*a-d^(1/3).*b)^2)/d^(8/3);
+    a=greekHqat(:,:,1)*vBest(:,i); b=greekHqat(:,:,2)*vBest(:,i);
+    c=greekHqat(:,:,3)*vBest(:,i); d=greekHqat(:,:,4)*vBest(:,i);
+    curBest(i)=sum((c^(1/3).*a-d^(1/3).*b)^2)/d^(8/3);
+    lowerBound(i)=double(r);
   end
+  % remove intervals for which the lower bound is higher than the current
+  % best of another intervals
+  badInterval=find(lowerBound>min(curBest));
+  l(:,badInterval)=[]; u(:,badInterval)=[];
 end
-
+l
+u
 end
 
 function conc=concx83(z,x,xl,xu)
