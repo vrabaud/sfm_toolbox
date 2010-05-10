@@ -101,8 +101,6 @@ else
       end
     case 'generateCamFromRt',
       varargout{1}=generateCamFromRt(anim);
-    case 'generateKRt',
-      varargout{1}=generateKRt(anim);
     case 'generateP',
       switch nargout
         case 1,

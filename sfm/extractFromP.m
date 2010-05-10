@@ -1,4 +1,4 @@
-function [K,R,t]=extractFromP(P,isProj,isKIdentity)
+function [K,R,t]=extractFromP(P,isProj)
 % Extract information from a projection matrix
 %
 % USAGE
@@ -22,11 +22,6 @@ function [K,R,t]=extractFromP(P,isProj,isKIdentity)
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-if nargin<2; isKIdentity=false; end
-
-if isKIdentity
-  return
-end
 if isProj
   if nargout==1
     % Use Kruppa equations to extract f
@@ -61,7 +56,7 @@ else
   KR = P(1:2,1:3);
   K = chol( KR*KR' ); K = makeKPositive(K);
   P = K\P(1:2,:);
-  R = rotationMatrix(rotationMatrix(P(:,1:3)));
+  R = rotationMatrix(rotationMatrix(P(1:2,1:3)));
   t = [ P(:,4); 0 ];
   K(3,3)=1;
 end

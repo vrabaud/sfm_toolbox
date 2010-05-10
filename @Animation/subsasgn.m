@@ -27,7 +27,9 @@ if max(size(idx))==1
       % 3D / Object
     case 'S'
       % do not modify if shape basis is defined
-      if ~isempty(anim.l)>0 && ~isempty(anim.SBasis)>0; return ; end
+      if ~isempty(anim.l) && ~isempty(anim.SBasis)
+        warning('Cannot modify S as l and SBasis define it'); return;
+      end
       anim.S=rhs;
     case 'conn'
       anim.conn=rhs; % Cell of arrays of connectivities
@@ -38,6 +40,10 @@ if max(size(idx))==1
       anim.SBasis=rhs;
       % Camera
     case 'P'
+      % do not modify if R and t are defined
+      if ~isempty(anim.R) && ~isempty(anim.t)
+        warning('Cannot modify P as R and t define it'); return;
+      end
       anim.P=rhs;
     case 'K'
       anim.K=rhs;
@@ -62,7 +68,9 @@ else
       anim.mask=logical(subsasgn(anim.mask,idx(2),rhs));
       % 3D / Object
     case 'S'
-      if ~isempty(anim.l)>0 && ~isempty(anim.SBasis)>0; return ; end
+      if ~isempty(anim.l) && ~isempty(anim.SBasis)
+        warning('Cannot modify S as l and SBasis define it'); return;
+      end
       anim.S=subsasgn(anim.S,idx(2),rhs);
     case 'conn'
       % Cell of arrays of connectivities
@@ -74,6 +82,10 @@ else
       anim.SBasis=subsasgn(anim.SBasis,idx(2),rhs);
       % Camera
     case 'P'
+      % do not modify if R and t are defined
+      if ~isempty(anim.R) && ~isempty(anim.t)
+        warning('Cannot modify P as R and t define it'); return;
+      end
       anim.P=subsasgn(anim.P,idx(2),rhs);
     case 'K'
       anim.K=subsasgn(anim.K,idx(2),rhs);
@@ -109,9 +121,6 @@ switch var
     if ~isempty(anim.R) && size(anim.t,2)==size(anim.R,3)
       anim.P=generateP(anim);
     end
-  case {'P'}
-    % yeah yeah, costly but easier to keep everything in sync like that
-    if ~isempty(anim.K) && ~isempty(anim.P); anim=generateKRt(anim); end
   case {'W', 'S'}
     anim.nPoint=max([ size(anim.W,2) size(anim.S,2) size(anim.SBasis,2)] );
     anim.nFrame=max([ size(anim.W,3) size(anim.S,3) size(anim.l,2) ...

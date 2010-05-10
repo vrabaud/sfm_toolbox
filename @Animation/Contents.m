@@ -7,7 +7,6 @@
 % computeError          Compute several SFM errors
 % disaplay              Display the different elements contained in the object
 % generateCamFromRt     Generate camera position from R and t in an Animation
-% generateKRt           Compute K, R and t using the projection matrices
 % generateP             Compute the projection matrices using K, R and t
 % generateS             Generate S tranformed by R and t
 % generateSFromLSBasis  Generate 3D data from the basis of an Animation

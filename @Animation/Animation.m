@@ -49,9 +49,10 @@ function anim=Animation(varargin)
 %
 % IMPORTANT
 %   for coding comfort, the automatic processes happens:
-%     - when l or SBasis is specified, S cannot be changed by an outsider
-%     - when any element in l or SBasis is modified, the corresponding
-%       elements in S are modified
+%     - when any element in l or SBasis is modified, S is geenrated
+%       automatically and cannot be modified.
+%     - if R and t are not empty and filled/updated, P is generated
+%       automatically and cannot be modified.
 %
 % An Animation object has the following methods
 %   anim=generateSFromLSBasis( anim );
