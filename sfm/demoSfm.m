@@ -191,30 +191,30 @@ for i = 1 : 4
     switch i
       case 1,
         animGTSample=animGT.sampleFrame(1:3);
-        anim{1,j} = computeSMFromW( false, ...
-          animGTSample.W, 'method', 0,'nItrSBA', (j-1)*100 );
-        out = '3 views, no orthonormality constraints:\n';
+        anim{1,j} = computeSMFromW( false, animGTSample.W, 'method', 0, ...
+          'nItrSBA', (j-1)*100 );
+        out = '3 views, uncalibrated cameras:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 2,
         animGTSample=animGT;
-        anim{2,j} = computeSMFromW( false, animGT.W, ...
-          'method', 0, 'nItrSBA', (j-1)*100 );
-        out = 'All the views, no orthonormality constraints:\n';
+        anim{2,j} = computeSMFromW( false, animGT.W, 'method', 0, ...
+          'nItrSBA', (j-1)*100 );
+        out = 'All the views, uncalibrated cameras:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 3,
         animGTSample=animGT.sampleFrame(1:3);
-        anim{3,j} = computeSMFromW( false, animGTSample.W, ...
-          'method', 0, 'isCalibrated', true, 'nItrSBA', (j-1)*100);
-        out = '3 views, orthonormality constraints:\n';
+        anim{3,j} = computeSMFromW( false, animGTSample.W, 'method', 0, ...
+          'isCalibrated', true, 'nItrSBA', (j-1)*100 );
+        out = '3 views, calibrated cameras:\n';
         typeTransform = 'camera';
         type3DError = '';
       case 4,
         animGTSample=animGT;
-        anim{4,j} = computeSMFromW( false, animGT.W, ...
-          'method', 0, 'isCalibrated', true, 'nItrSBA', (j-1)*100 );
-        out = 'All the views, orthonormality constraints:\n';
+        anim{4,j} = computeSMFromW( false, animGT.W, 'method', 0, ...
+          'isCalibrated', true, 'nItrSBA', (j-1)*100 );
+        out = 'All the views, calibrated cameras:\n';
         typeTransform = 'camera';
         type3DError = '';
     end
@@ -354,7 +354,7 @@ for i = 1 : 4
     errTmp = anim{i,j}.computeError();
     err(i,j) = errTmp(1);
     err3DTmp = anim{i,j}.computeError('animGT', animGTSample, ...
-      'checkTransform', typeTransform );
+      'checkTransform',typeTransform);
     err3D(i,j) = err3DTmp(1);
   end
   out =sprintf([ out 'Reprojection error %0.4f/%0.4f and 3D-error %s %0.4f/%0.4f , before/after BA\n\n'],...

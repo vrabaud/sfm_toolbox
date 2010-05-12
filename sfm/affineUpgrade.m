@@ -1,19 +1,19 @@
-function anim = affineUpgrade(anim)
-% Perform an affine upgrade
+function [ Hqa, vBest ] = affineUpgrade(anim)
+% Perform an affine upgrade by recovering the plane at infinity
 %
 % Given projection matrices and a 3D projective structure in anim,
 % perform an affine upgrade.
 % For now, only quasi-affine is performed
 %
 % USAGE
-%   anim = affineUpgrade(anim, isCalibrated)
+%   anim = affineUpgrade(anim)
 %
 % INPUTS
-%  anim       - Animation object with P and S filled
+%  anim          - Animation object with P and S filled
 %
 % OUTPUTS
-%  anim      - Animation object after the quasi affine transformation
-%              has been applied
+%  Hqa           - quasi affine homography
+%  vBest         - best v 
 %
 % EXAMPLE
 %
@@ -27,6 +27,7 @@ function anim = affineUpgrade(anim)
 if ~anim.isProj; return; end
 
 P=anim.P; S=anim.S; W=anim.W; nPoint=anim.nPoint; nFrame=anim.nFrame;
+Hqa=eye(3); vBest=zeros(3,1);
 
 % notations from Chandraker IJCV 2009
 % compute Hq that takes the projective frame to some quasi-affine frame
@@ -61,8 +62,9 @@ for delta=[-1:2:1]
       zeros(0,5),[-1,-1,-1,-1,-Inf]', [1,1,1,1,Inf]');
 	if ~any(isna(sol)) && sol(5)>0; break; end
   else
-    [sol,fval,exitflag] = linprog([0,0,0,0,-1]',-A,zeros(size(A,1),1),[],[],...
-      [-1,-1,-1,-1,-Inf]', [1,1,1,1,Inf]');
+    [sol,fval,exitflag] = linprog([0,0,0,0,-1]',-A,zeros(size(A,1),1),...
+      [],[],[-1,-1,-1,-1,-Inf]', [1,1,1,1,Inf]', [], ...
+      optimset('Display','off'));
     if exitflag==1 && sol(5)>0; break; end
   end
 end
@@ -74,20 +76,18 @@ Sq=normalizePoint(Hq*normalizePoint(anim.S,-4),4);
 Ha=eye(4); Ha(1:3,4)=-mean(Sq,2);
 Hqa=Ha*Hq;
 
-% apply Hqa
-anim.P=multiTimes(anim.P,inv(Hqa),1);
-anim.S=normalizePoint(Hqa*normalizePoint(anim.S,-4),4);
-
-if true || exist('OCTAVE_VERSION','builtin')==5; return; end
+% Yalmip does not work under octave sorry :(
+if exist('OCTAVE_VERSION','builtin')==5; return; end
 
 % Chandraker IJCV 2009
 
-r=sdpvar(1,1); e=sdpvar(1,1); fg=sdpvar(nFrame,2);
-v=sdpvar(3,1);
 % free variables for the convex/concave relaxations
-lam=sdpvar(nFrame,2); ypp=sdpvar(nFrame,2); t=sdpvar(nFrame,2);
-
-FIni=set(r*e >= sum((fg(:,1)-fg(:,2)).^2)) + set(v(4)==1);
+r=sdpvar(1,1); e=sdpvar(1,1); fg=sdpvar(nFrame,2);
+v=sdpvar(4,1);
+% the constraint in re >= ... is replaced by (r+e)^2 >= ...
+% as r and e are positive
+% (looser but an SOCP cone)
+FIni=set(cone(fg(:,1)-fg(:,2),re)) + set(v(4)==1);
 
 l=repmat(-100,3,1); u=-l;
 for nItr=1:10
@@ -103,12 +103,12 @@ for nItr=1:10
   l=lNew; u=uNew;
   
   % compute the lower bound/current best for each interval
-  vBest=zeros(s3,size(l,2));
+  vBest=zeros(4,size(l,2));
   currBest=zeros(1,size(l,2));
   lowerBound=zeros(1,size(l,2));
-  for i=1:size(l,2)
+  for ind=1:size(l,2)
     % add boundary conditions
-    F=FIni+set(l(:,i)<=v)+set(v<=u(:,i));
+    F=FIni+set(l(:,ind)<=v(1:3)<=u(:,ind));
 
     %  syms lam a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 a11 a12 p1 p2 p3;
     %  A=[a1 a2 a3 a4; a5 a6 a7 a8; a9 a10 a11 a12];
@@ -147,42 +147,46 @@ for nItr=1:10
           greek=zeros(nFrame,4); greek(:,1)=1;
       end
       greekHqat(:,:,j)=greek*Hqa';
-      pos=greekHqat(:,:,j)>0; neg=greekHqat(:,:,j)<0;
-      abcdBound(:,:,j)=(greekHqat(:,:,j).*pos)*[l(:,i),u(:,i);1,1] + ...
-        (greekHqat(:,:,j).*neg)*[u(:,i),l(:,i);1,1];
+      abcdBound(:,:,j)=max(greekHqat(:,:,j),0)*[l(:,ind),u(:,ind);1,1] + ...
+        min(greekHqat(:,:,j),0)*[u(:,ind),l(:,ind);1,1];
     end
     % add constraints
-    for i=1:2
-      F = F + convx13y(fg(:,i),greekHqat(:,:,i+2)*v,abcdBound(:,1,i+2),...
-        abcdBound(:,2,i+2),greekHqat(:,:,i+1)*v,abcdBound(:,1,i+1),...
-        abcdBound(:,2,i+1),ypp(:,i),lam(:,i),t(:,i));
-      F = F + concx13y(fg(:,i),greekHqat(:,:,i+2)*v,abcdBound(:,1,i+2),...
-        abcdBound(:,2,i+2),greekHqat(:,:,i+1)*v,abcdBound(:,1,i+1),...
-        abcdBound(:,2,i+1),ypp(:,i),lam(:,i),t(:,i));
+    lam=sdpvar(nFrame,2); yp=sdpvar(nFrame,2); ypp=sdpvar(nFrame,2);
+	t=sdpvar(nFrame,2);
+    for k=1:2
+      F = F + convx13y(fg(:,k),greekHqat(:,:,k+2)*v,abcdBound(:,1,k+2),...
+        abcdBound(:,2,k+2),greekHqat(:,:,k+1)*v,abcdBound(:,1,k+1),...
+        abcdBound(:,2,k+1),yp(:,k),lam(:,k),t(:,k));
+      F = F + concx13y(fg(:,k),greekHqat(:,:,k+2)*v,abcdBound(:,1,k+2),...
+        abcdBound(:,2,k+2),greekHqat(:,:,k+1)*v,abcdBound(:,1,k+1),...
+        abcdBound(:,2,k+1),ypp(:,k),lam(:,k),t(:,k));
     end
-    F = F + concx83(e,d*v,abcdBound(:,1,4),abcdBound(:,2,4));
+    F = F + concx83(e,greekHqat(:,:,4)*v,abcdBound(:,1,4),abcdBound(:,2,4));
+    for j=1:length(F)
+    F{j}
+    end
     % solve the problem
     diagno = solvesdp( F,r,sdpsettings('solver', ...
-      'sdpa,csdp,sedumi,*','dualize',1,'debug',1));
-    vBest(:,i)=double(v);
+      'sdpa,csdp,sedumi,*','debug',2))
+    vBest(:,ind)=double(v);
     % compute the current best
-    a=greekHqat(:,:,1)*vBest(:,i); b=greekHqat(:,:,2)*vBest(:,i);
-    c=greekHqat(:,:,3)*vBest(:,i); d=greekHqat(:,:,4)*vBest(:,i);
-    curBest(i)=sum((c^(1/3).*a-d^(1/3).*b)^2)/d^(8/3);
-    lowerBound(i)=double(r);
+    a=greekHqat(:,:,1)*vBest(:,ind); b=greekHqat(:,:,2)*vBest(:,ind);
+    c=greekHqat(:,:,3)*vBest(:,ind); d=greekHqat(1,:,4)*vBest(:,ind);
+    curBest(ind)=sum((nthroot(c,3).*a-nthroot(d,3).*b).^2)./nthroot(d,3)^8;
+    lowerBound(ind)=double(r);
   end
   % remove intervals for which the lower bound is higher than the current
   % best of another intervals
   badInterval=find(lowerBound>min(curBest));
-  l(:,badInterval)=[]; u(:,badInterval)=[];
+  l(:,badInterval)=[]; u(:,badInterval)=[]; vBest(:,badInterval)=[];
 end
-l
-u
+% figure out the best v
+vBest=v(:,1);
 end
 
 function conc=concx83(z,x,xl,xu)
   % compute the concave relaxation for x^(8/3)
-  conc=set(z <= xl.^(8/3)+(x-xl)./(xu-xl).*(xu.^(8/3)-xl.^(8/3)));
+  conc=set(z <= nthroot(xl,3).^8+(x-xl)./(xu-xl).*(nthroot(xu,3).^8-nthroot(xl,3).^8));
 end
 
 function conc=concxy(z,x,xl,xu,y,yl,yu)
@@ -193,56 +197,77 @@ end
 
 function conv=convxy(z,x,xl,xu,y,yl,yu)
   % compute the convex relaxation for x*y
-  conc=set(z >= xl.*y + yl.*x - xl.*yl ) + ...
+  conv=set(z >= xl.*y + yl.*x - xl.*yl ) + ...
     set(z >= xu.*y + yu.*x - xu.*yu );
+end
+
+function relax=relaxx13y(z,x,xl,xu,y,yl,yu,yp,lam,isConv)
+  % compute the convex relaxation for x^(1/3)*y when xl > 0
+  % case 1
+  if isConv
+    relax=set(z>=nthroot(xl,3).*yp+nthroot(xu,3).*(y-yp));
+  else
+    relax=set(z<=nthroot(xl,3).*yp+nthroot(xu,3).*(y-yp));
+  end
+  relax=relax + set((1-lam).*yl<=yp<=(1-lam).*yu);
+  relax=relax + set(lam.*yl<=y-yp<=lam.*yu);
+  relax=relax + set(lam==(x-xl)./(xu-xl));
 end
 
 function conc=concx13y(z,x,xl,xu,y,yl,yu,ypp,lam,t)
   % compute the concave relaxation for x^(1/3)*y
   % case 1
-  ind=(xl>0) || (xu<0);
-  conc=set(z(ind)<=(xu(ind).^(1/3)-xl.^(1/3)).*ypp(ind) + ...
-    xu(ind).^(1/3).*y(ind));
-  conc=conc + set(lam(ind).*yu(ind) >= y(ind)+ypp(ind)) + ...
-    set(y(ind)+ypp(ind)>=lam(ind).*yl(ind));
-  conc=conc + set((1-lam(ind)).*yu(ind) >= -ypp(ind)) + ...
-    set(-ypp(ind)>=(1-lam(ind)).*yl(ind));
-  conc=conc + set(lam(ind)==(x(ind)-xl(ind))./(xu(ind)-xl(ind)));
+  ind=(xl>0);
+  conc=relaxx13y(z(ind),x(ind),xl(ind),xu(ind),y(ind),yl(ind),yu(ind),...
+    ypp(ind),lam(ind),false);
+  ind=(xu<0);
+  conc=conc+relaxx13y(z(ind),x(ind),-xu(ind),-xl(ind),y(ind),yl(ind),...
+    yu(ind),ypp(ind),lam(ind),false);
   % case 2
-  ind=(xl<=0) && (0<=xu) && (-xl/8<xu);
-  conc=conc + set(t<=(xl.^(-2/3)-2/3*xu.^(1/3)./xl).*x+2/3*xu.^(1/3));
-  conc=conc + set(t<=(x+2*xu)./(3*xu.^(2/3)));
-  conc=conc + concxy(z(ind),t(ind),xl(ind).^(1/3),2/3*xu(ind).^(2/3),...
-    y,yl,yu);
+  ind=(xl<=0) & (0<=xu) & (-xl/8<xu);
+  conc=conc + set(t(ind)<=(nthroot(xl(ind),-3).^2-2/3*nthroot(xu(ind),3)./xl(ind))...
+    .*x(ind)+2/3*nthroot(xu(ind),3));
+  conc=conc + set(t(ind)<=(x(ind)+2*xu(ind))./(3*nthroot(xu(ind),3).^2));
+  conc=conc + concxy(z(ind),t(ind),nthroot(xl(ind),3),2/3*nthroot(xu(ind),3).^2,...
+    y(ind),yl(ind),yu(ind));
   % case 2 bis
-  ind=(xl<=0) && (0<=xu) && (-xl/8>=xu);
-  conc=conc + set(t<=((xu.^(1/3)-xl.^(1/3)).*x+...
-    (xu.*xl.^(1/3)-xl.*xu.^(1/3)))./(xu-xl));
-  conc=conc + concxy(z(ind),t(ind),xl(ind).^(1/3),xu(ind).^(1/3),...
-    y,yl,yu);
+  ind=(xl<=0) & (0<=xu) & (-xl/8>=xu);
+  conc=conc + set(t(ind)<=((nthroot(xu(ind),3)-nthroot(xl(ind),3)).*x(ind)+...
+    (xu(ind).*nthroot(xl(ind),3)-xl(ind).*nthroot(xu(ind),3)))./(xu(ind)-xl(ind)));
+  conc=conc + concxy(z(ind),t(ind),nthroot(xl(ind),3),nthroot(xu(ind),3),...
+    y(ind),yl(ind),yu(ind));
+  % add the constraint on t
+  ind=(xl<=0) & (0<=xu);
+  tBound=[nthroot(xl(ind),3),2/3*nthroot(xu(ind),3).^2, nthroot(xu(ind),3)];
+  conc=conc+concxy(z(ind),t(ind),min(tBound,[],2),max(tBound,[],2),...
+    y(ind),yl(ind),yu(ind));
 end
 
-function conv=convx13y(z,x,xl,xu,y,yl,yu,yp,lam)
+function conv=convx13y(z,x,xl,xu,y,yl,yu,yp,lam,t)
   % compute the convex relaxation for x^(1/3)*y
   % case 1
-  ind=(xl>0) || (xu<0);
-  conv=set(z(ind)>=xl(ind).^(1/3).*yp(ind)+xu.^(1/3).* ...
-    (y(ind)-yp(ind)));
-  conv=conv + set((1-lam(ind)).*yl(ind) <= yp(ind)) + ...
-    set(yp(ind)<=(1-lam(ind)).*yu(ind));
-  conv=conv + set(lam(ind).*yl(ind) <= y(ind)-yp(ind)) + ...
-    set(y(ind)-yp(ind)<=lam(ind).*yu(ind));
-  conv=conv + set(lam(ind)==(x(ind)-xl(ind))./(xu(ind)-xl(ind)));
+  ind=(xl>0);
+  conv=relaxx13y(z(ind),x(ind),xl(ind),xu(ind),y(ind),yl(ind),yu(ind),...
+    yp(ind),lam(ind),true);
+  ind=(xu<0);
+  conv=conv+relaxx13y(z(ind),x(ind),-xu(ind),-xl(ind),y(ind),yl(ind),...
+    yu(ind),yp(ind),lam(ind),true);
   % case 2
-  ind=(xl<=0) && (0<=xu) && (-xu/8>xl);
-  conc=conc + set(t>=(xu.^(-2/3)-2/3*xl.^(1/3)./xu).*x+2/3*xl.^(1/3));
-  conc=conc + set(t>=(x+2*xl)./(3*(-xl).^(2/3)));
-  conc=conc + convxy(z(ind),t(ind),zeros(len(ind),1),...
-    max([xl(ind).^(1/3),xu(ind).^(1/3)],2),y,yl,yu);
+  ind=(xl<=0) & (0<=xu) & (-xu/8>xl);
+  conv=conv + set(t(ind)>=(nthroot(xu(ind),-3).^2-2/3*...
+    nthroot(xl(ind),3)./xu(ind)).*x(ind)+2/3*nthroot(xl(ind),3));
+  conv=conv + set(t(ind)>=(x(ind)+2*xl(ind))./(3*nthroot(-xl(ind),3).^2));
+  conv=conv + convxy(z(ind),t(ind),zeros(nnz(ind),1),...
+    max([nthroot(xl(ind),3),nthroot(xu(ind),3)],[],2),y(ind),yl(ind),yu(ind));
   % case 2 bis
-  ind=(xl<=0) && (0<=xu) && (-xu/8<=xl);
-  conc=conc + set(t<=((xu.^(1/3)-xl.^(1/3)).*x+...
-    (xu.*xl.^(1/3)-xl.*xu.^(1/3)))./(xu-xl));
-  conc=conc + convxy(z(ind),t(ind),xl(ind).^(1/3),xu(ind).^(1/3),...
-    y,yl,yu);
+  ind=(xl<=0) & (0<=xu) & (-xu/8<=xl);
+  conv=conv + set(t(ind)<=((nthroot(xu(ind),3)-nthroot(xl(ind),3)).*x(ind)+...
+    (xu(ind).*nthroot(xl(ind),3)-xl(ind).*nthroot(xu(ind),3)))./(xu(ind)-xl(ind)));
+  conv=conv + convxy(z(ind),t(ind),nthroot(xl(ind),3),nthroot(xu(ind),3),...
+    y(ind),yl(ind),yu(ind));
+  % add the constraint on t
+  ind=(xl<=0) & (0<=xu);
+  tBound=[nthroot(xl(ind),3),2/3*nthroot(xu(ind),3).^2, nthroot(xu(ind),3)];
+  conv=conv+convxy(z(ind),t(ind),min(tBound,[],2),max(tBound,[],2),...
+    y(ind),yl(ind),yu(ind));
 end

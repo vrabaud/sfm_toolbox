@@ -17,11 +17,12 @@ Version 3.0 ()
     - include MSFM from CVPR 08 (finally !)
     - include CSFM from CVPR 09 (finally !)
     - SBA 1.6 used in bundleAdjustment. Allegedly faster.
-    - new folder organization and new/more demos
+    - new folder organization and new/more demos in SFM and NRSFM
+    - quasi-affine upgrade in projective reconstruction
   CRITICAL FIXES
     - bundle adjustment when specifying constant calibration parameters in affine cameras was simply wrong
     - quaternion bugs in some rare cases
-    - fixed the Sturm & Triggs algorithm (and the Oliensis one therefore)
+    - better Sturm & Triggs algorithm (and the Oliensis one therefore)
     - fixed a bad implementation of computeSFromW
   FIXES
     - slight display bugs got fixed
