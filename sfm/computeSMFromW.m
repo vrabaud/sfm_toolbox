@@ -1,33 +1,40 @@
 function anim = computeSMFromW( isProj, W, varargin )
 % Recover rigid structure and motion from 2D calibrated measurements W
 %
+% Essential matrix decomposition
+% Reference: HZ2, p259, Result 9.19, and p. 294
+% isProj && nFrame==2 && isCalibrated
+% 
 % Normalized 8-point algorithm
 % Reference: HZ2, p279 and alg 11.1 p. 282
-% nFrame==2 && method==0 && isProj
-%
-% Gold Standard for Affine camera matrix
-% Reference: HZ2, p351, Algorithm 14.1
-% nFrame==2 && ~isProj && onlyErrorFlag
-%
-% Tomasi Kanade without the metric constraint
-% Affine camera matrix, MLE estimation (Tomasi Kanade)
-% Reference: HZ2, p437, Algorithm 18.1
-% nFrame>=2 && method==0 && ~isProj
-%
-% Tomasi Kanade with the metric constraint
-% nFrame>=2 && method==0 && ~isProj && isCalibrated
+% isProj && nFrame==2 && ~isCalibrated
 %
 % Projective Factorization
 % Reference: HZ2, p445, Algorithm 18.2
 % Sturm and Triggs ECCV 96
 % A Factorization Based Algorithm for Multi-Image Projective Structure and
 % Motion
-% nPoint>=2 && method==0 && isProj && ~isCalibrated
+% isProj && nFrame>2 && method==0
 %
 % Projective Factorization
 % Reference: Iterative Extensions of the Sturm/Triggs Algorithm:
 % Convergence and Nonconvergence, from Oliensis, Hartley, PAMI 07
-% nPoint>=2 && method==Inf && isProj && ~isCalibrated
+% isProj && nFrame>2 && method==Inf
+%
+% Gold Standard for Affine camera matrix
+% Reference: HZ2, p351, Algorithm 14.1
+% ~isProj && nFrame==2 && onlyErrorFlag
+%
+% Tomasi Kanade without the metric constraint
+% Affine camera matrix, MLE estimation (Tomasi Kanade)
+% Reference: HZ2, p437, Algorithm 18.1
+% ~isProj && nFrame>2
+%
+% Tomasi Kanade with the metric constraint
+% ~isProj && nFrame>2 && isCalibrated
+%
+% if doAffineUpgrade and/or doMetricUpgrade are true, affine and metric
+% upgrades from Chandraker IJCV 2009 is applied
 %
 % Returns the structure and camera parameters in an Animation object
 %
@@ -45,7 +52,9 @@ function anim = computeSMFromW( isProj, W, varargin )
 %                        is computed
 %       - 'doMetricUpgrade' [true] flag indicating if the metric upgrade
 %                        is computed
-%       - 'K',[] [3 x 3 ] or [ 3 x 3 x nFrame ] calibration matrices
+%       - 'K',[] [3 x 1 ], [ 3 x nFrame ] calibration parameters
+%                       (or [5 x 1 ], [ 5 x nFrame ] when projective)
+%       - 'KFull',[] [3 x 3 ] or [ 3 x 3 x nFrame ] calibration matrices
 %       - 'method', [inf] method for performing SFM (see above for details)
 %       - 'onlyErrorFlag', [false] flag indicating if only the error is
 %         needed when nFrame==2 && method==Inf && ~isProj
@@ -66,61 +75,68 @@ function anim = computeSMFromW( isProj, W, varargin )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-[ isCalibrated doAffineUpgrade doMetricUpgrade K method onlyErrorFlag ...
-  nItrSBA ] = getPrmDflt( varargin, { 'isCalibrated' false ...
-  'doAffineUpgrade' true 'doMetricUpgrade' true 'K' [] 'method' inf ...
-  'onlyErrorFlag' false 'nItrSBA' 100 }, 1 );
+[ isCalibrated doAffineUpgrade doMetricUpgrade K KFull method ...
+  onlyErrorFlag nItrSBA ] = getPrmDflt( varargin, ...
+  { 'isCalibrated' false 'doAffineUpgrade' true 'doMetricUpgrade' true ...
+  'K' [] 'KFull' [] 'method' inf 'onlyErrorFlag' false 'nItrSBA' 100 }, 1);
+
+if doMetricUpgrade; doAffineUpgrade=true; end
 
 nFrame = size(W,3); nPoint = size(W,2);
 
 P=zeros(3,4,nFrame); P(:,:,1)=eye(3,4); if ~isProj; P(3,3:4)=[0 1]; end
 
-if size(W,1)==3
-  W = normalizePoint(W,3);
-  W = W( 1:2, :, : );
-end
-WOri = W;
+if size(W,1)==3; W = normalizePoint(W,3); end
+
+% create an animation object that wil contain the output
+anim=Animation(); anim.isProj=isProj; anim.W=W; 
 
 % If calibrated, apply inv(K)
-if ~isempty(K)
-  isCalibrated = true;
-  if size(K,3)==1
-    invK = repmat( inv(K), [ 1 1 nFrame ] );
-    K = repmat( K, [ 1 1 nFrame ] );
+if ~isempty(K); anim.K=K; end
+if ~isempty(KFull); anim.KFull=KFull; end
+if ~isempty(anim.K)
+  isCalibrated=true;
+  % unapply the calibration to the measurements
+  KFull=anim.KFull;
+  if size(KFull,3)==1
+    invKFull = repmat( inv(KFull), [ 1 1 nFrame ] );
+    KFull = repmat( KFull, [ 1 1 nFrame ] );
   else
-    invK = zeros(3,3,nFrame);
-    for i=1:nFrame; invK(:,:,i) = inv(K(:,:,i)); end
+    invKFull = zeros(3,3,nFrame);
+    for i=1:nFrame; invKFull(:,:,i) = inv(KFull(:,:,i)); end
   end
-  W = normalizePoint( multiTimes( invK, normalizePoint( W, -3 ), 2), 3 );
+  W = normalizePoint( multiTimes( invKFull, normalizePoint( W, -3 ), 2), 3 );
 end
 
 if isProj
   % Normalized 8-point algorithm
   % Reference: HZ2, p279 and alg 11.1 p. 282
-  if nFrame==2 && method==0
+  if nFrame==2
     % Normalize input data
     [x T]=normalizePoint(W(:,:,1),Inf);
     [xp Tp]=normalizePoint(W(:,:,2),Inf);
-    
+
     A=[xp([1 1],:).*x; xp(1,:); xp([2 2],:).*x;xp(2,:);x;ones(1,nPoint)]';
-    
+
     [U,S,V]=svd(A,0); F=reshape(V(:,end),[3,3])';
     [U,S,V]=svd(F,0);
     F=U*diag([S(1,1) S(2,2) 0])*V';
-    
+
     F=[ Tp; 0 0 1 ]'*F*[ T; 0 0 1 ];
-    
+
     if ~isCalibrated
       P(:,:,2) = convertPF([],F,true);
+      S = computeSFromWM( true, W, P, 'method', 0 );
     else
       % Essential matrix decomposition
       % Reference: HZ2, p259, Result 9.19, and p. 294
       [ U disc V ] = svd(F);
-      
+      if det(U)<0; U=-U; end; if det(V)<0; V=-V; end
+
       % Check which of the 4 possibilities gives a point in front of both
       % cameras
       WW = [ 0 -1 0; 1 0 0; 0 0 1 ];
-      maxCount = 0;
+      maxCount=0;
       for i = 1 : 4
         switch i
           case 1,
@@ -132,25 +148,25 @@ if isProj
           case 4,
             P(:,:,2) = [ U*WW'*V' -U(:,3) ];
         end
-        if det(P(:,1:3,2))<0; P(:,1:3,2) = -P(:,1:3,2); end
         
         C = zeros(3,2); v = C;
         for j = 1 : 2
-          % camera center(Reference: HZ2, p158-161
-          [ disc disc VV ] = svd(P(:,:,j)); C(:,j) =VV(1:3,end)'/VV(4,end);
+          % camera center (Reference: HZ2, p158-161)
+          M = P(:,1:3,j);
+          C(:,j)=[ -M\P(:,4,j) ];
           % principal axis
-          M = P(:,1:3,j); v(:,j) = det(M)*M(3,:)';
+          v(:,j) = det(M)*M(3,:)';
         end
         % compute the image of a point
-        S = computeSFromWM( true, W, P, 'method', 0);
-        maxCountTmp = sum((v(:,1)'*(S-repmat(C(:,1),1,nPoint)))>0) + ...
-          sum((v(:,2)'*(S-repmat(C(:,2),1,nPoint)))>0);
-        if maxCountTmp>maxCount; P2 = P(:,:,2); maxCount = maxCountTmp; end
+        STmp = computeSFromWM( true, W, P, 'method', 0);
+        maxCountTmp = sum((v(:,1)'*bsxfun(@minus,STmp,C(:,1)))>0) + ...
+          sum((v(:,2)'*bsxfun(@minus,STmp,C(:,2)))>0);
+        if maxCountTmp>maxCount
+          P2 = P(:,:,2); maxCount = maxCountTmp; S=STmp;
+        end
       end
       P(:,:,2) = P2;
     end
-    
-    S = computeSFromWM( true, W, P, 'method', 0 );
   end
   
   % Projective Factorization
@@ -256,21 +272,80 @@ end
 
 if onlyErrorFlag; anim=err; return; end
 
-% create the Animation object
-anim=Animation(); anim.isProj=isProj; anim.W=WOri; anim.S=S; anim.P=P;
-if ~isempty(K); anim.K = K; end
+% fill the Animation object with the results
+anim.S=S; anim.P=P;
 
 % do bundle adjustment
 if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
 
 % perform an affine upgrade if requested
-if doAffineUpgrade; anim = affineUpgrade(anim, isCalibrated); end
+H=[];
+if anim.isProj
+  % if we want to do an affin upgrade, and if we are not in the case
+  % of the essential matrix
+  if doAffineUpgrade && ~(isCalibrated && nFrame==2)
+    % only apply the quasi affine upgrade if we are under octave
+    % (as Yalmip does not work there)
+    if exist('OCTAVE_VERSION','builtin')==5
+      H = affineUpgrade(anim, isCalibrated);
+    else
+      [ Hqa, vBest ] = affineUpgrade(anim, isCalibrated);
+      % if the camera is calibrated or if we do not do a metric upgrade
+      % stop here
+      if isCalibrated || ~doMetricUpgrade
+        % apply H
+        piInf=Hqa'*vBest;
+        H=eye(4); H(4,1:3)=-piInf;
+      else
+        % perform a metric upgrade if requested
+        if doMetricUpgrade
+          [ anim.KFull, H ]=metricUpgrade(anim, isCalibrated, vBest);
+        end
+      end
+    end
+  end
+else
+  if doMetricUpgrade && isCalibrated
+    H=metricUpgrade(anim, isCalibrated);
+  end
+  if doMetricUpgrade && exist('OCTAVE_VERSION','builtin')~=5
+    [ H, anim.KFull ]=metricUpgrade(anim, isCalibrated);
+  end
+end
 
-% perform a metric upgrade if requested
-if doMetricUpgrade; anim = metricUpgrade(anim, isCalibrated); end
+% apply the homography H
+if ~isempty(H)
+  anim.P=multiTimes(anim.P,H,1);
+  anim.S=normalizePoint(inv(H)*normalizePoint(anim.S,-4),4);
+end
 
-% do a final bundle adjustment
-%if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
+% recover rotations and translations
+if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
+  P=anim.P; KFull=anim.KFull;
+  if ~isCalibrated && ~isempty(KFull)
+    if size(KFull,3)==1; P=multiTimes(inv(KFull),P,1.2);
+    else
+      invKFull = zeros(3,3,nFrame);
+      for i=1:nFrame; invKFull(:,:,i) = inv(KFull(:,:,i)); end
+      P=multiTimes(invKFull,P,2);
+    end
+  end
+  R=zeros(3,3,nFrame);
+  if anim.isProj
+    for i=1:nFrame; R(:,:,i) = rotationMatrix(P(:,1:3,i)); end
+    anim.t=reshape(P(:,4,:),3,nFrame);
+  else
+    for i=1:nFrame
+      R(:,:,i)=rotationMatrix(rotationMatrix(P(1:2,1:3,i)));
+    end
+    anim.t=reshape(P(1:2,4,:),2,nFrame); anim.t(3,:)=0;
+  end
+  anim.R=R;
+
+  % do a final bundle adjustment
+  anim=anim.setFirstRToId();
+  if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
+end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

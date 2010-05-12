@@ -47,6 +47,13 @@ if max(size(idx))==1
       anim.P=rhs;
     case 'K'
       anim.K=rhs;
+    case 'KFull'
+      if anim.isProj
+        anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(1,3,:);rhs(2,2,:);rhs(2,3,:)];
+      else
+      size(rhs)
+        anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(2,2,:)];
+      end
     case 'R'
       anim.R=rhs;
     case 't'
@@ -89,6 +96,14 @@ else
       anim.P=subsasgn(anim.P,idx(2),rhs);
     case 'K'
       anim.K=subsasgn(anim.K,idx(2),rhs);
+    case 'KFull'
+      KFull=subsasgn(anim.KFull,idx(2),rhs);
+      if anim.isProj
+        anim.K=[KFull(1,1,:);KFull(1,2,:);KFull(1,3,:);KFull(2,2,:); ...
+          KFull(2,3,:)];
+      else
+        anim.K=[KFull(1,1,:);KFull(1,2,:);KFull(2,2,:)];
+      end
     case 'R'
       anim.R=subsasgn(anim.R,idx(2),rhs);
     case 't'

@@ -16,6 +16,7 @@ function anim=Animation(varargin)
 %               K1  K2  K4
 %               0   K3  K5
 %               0   0   1
+%   KFull    - the full version of the above [ 3 x 3 nFrame ] or [ 3 x 3 ]
 %   S        - [ 3 x nPoint x nFrame ] matrix containing the 3D
 %              animation
 %              or [ 2 x nPoint x nFrame ] if working with homographies
@@ -49,10 +50,11 @@ function anim=Animation(varargin)
 %
 % IMPORTANT
 %   for coding comfort, the automatic processes happens:
-%     - when any element in l or SBasis is modified, S is geenrated
+%     - when any element in l or SBasis is modified, S is generated
 %       automatically and cannot be modified.
 %     - if R and t are not empty and filled/updated, P is generated
 %       automatically and cannot be modified.
+%     - if K or KFull is modified, so is the other one
 %
 % An Animation object has the following methods
 %   anim=generateSFromLSBasis( anim );

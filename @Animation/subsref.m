@@ -38,6 +38,8 @@ if length(idx)==1
       varargout{1}=anim.P;
     case 'K'
       varargout{1}=anim.K;
+    case 'KFull'
+      varargout{1}=KtoKFull(anim.isProj,anim.K);
     case 'R'
       varargout{1}=anim.R;
     case 't'
@@ -150,6 +152,8 @@ else
       varargout{1}=subsref(anim.P,idx(2));
     case 'K'
       varargout{1}=subsref(anim.K,idx(2));
+    case 'KFull'
+      varargout{1}=subsref(KtoKFull(anim.isProj,anim.K),idx(2));
     case 'R'
       varargout{1}=subsref(anim.R,idx(2));
     case 't'
@@ -158,4 +162,23 @@ else
     case 'misc'
       varargout{1}=subsref(anim.misc,idx(2));
   end
+end
+
+function KFull=KtoKFull(isProj,K)
+% build KFull from K
+nFrame=size(K,2);
+KFull=zeros(3,3,nFrame);
+if nFrame==0; return; end
+if isProj
+  KFull(1,1,:)=reshape(K(1,:),[1,1,nFrame]);
+  KFull(1,2,:)=reshape(K(2,:),[1,1,nFrame]);
+  KFull(1,3,:)=reshape(K(3,:),[1,1,nFrame]);
+  KFull(2,1,:)=reshape(K(4,:),[1,1,nFrame]);
+  KFull(2,2,:)=reshape(K(5,:),[1,1,nFrame]);
+else
+  KFull(1,1,:)=reshape(K(1,:),[1,1,nFrame]);
+  KFull(1,2,:)=reshape(K(2,:),[1,1,nFrame]);
+  KFull(2,1,:)=reshape(K(3,:),[1,1,nFrame]);
+end
+KFull(3,3,:)=1;
 end

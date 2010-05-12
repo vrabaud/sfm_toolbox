@@ -36,11 +36,14 @@ else
   samp = nSamp;
 end
 
+% figure out if P has to be resized
+doP=isempty(anim.t) || isempty(anim.R);
+
 s=fieldnames(anim);
 for i=1:length(s)
   if ~isempty(anim.(s{i})) && ~isempty(anim.(s{i})) && ...
       ~strcmp(s{i},'SBasis')
-    if ndims(anim.(s{i}))==3
+    if ndims(anim.(s{i}))==3 && (~strcmp(s{i},'P') || doP)
       anim=subsasgn(anim,struct('type','.','subs',s{i}),...
         anim.(s{i})(:,:,samp));
     end
