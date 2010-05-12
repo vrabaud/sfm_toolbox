@@ -81,15 +81,15 @@ switch event.Key
           case 1,
             axis( cam{i}(camMode).gca, 'on', 'vis3d' );
             set(gcf,'Color',0.8*[1 1 1]);
-            if ~isempty(hCam{i}); set(hCam{i}(:,1:8)(:),'Visible','on'); end
+            if ~isempty(hCam{i}); set(reshape(hCam{i}(:,1:8),[],1),'Visible','on'); end
           case 2,
             axis( cam{i}(camMode).gca, 'off', 'equal' );
             set(gcf,'Color',[1 1 1]);
-            if ~isempty(hCam{i}); set(hCam{i}(:,1:8)(:),'Visible','off'); end
+            if ~isempty(hCam{i}); set(reshape(hCam{i}(:,1:8),[],1),'Visible','off'); end
           case 3,
             axis( cam{i}(camMode).gca, 'on', 'vis3d' );
             set(gcf,'Color',[1 1 1]);
-            if ~isempty(hCam{i}); set(hCam{i}(:,1:8)(:),'Visible','on'); end
+            if ~isempty(hCam{i}); set(reshape(hCam{i}(:,1:8),[],1),'Visible','on'); end
         end
       end
       
