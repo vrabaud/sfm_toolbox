@@ -197,7 +197,7 @@ str{6} = str{3};
 
 
 j = 2*length(varPoint);
-A = [ vect(A(:,1:j/2),'h') vect(A(:,j/2+1:end),'h') ];
+A = [ reshape(A(:,1:j/2)',[],1)' reshape(A(:,j/2+1:end)',[],1)' ];
 str{7} = [ toC( reshape(A,1,[]), 'Aij' ) ];
 
 for i = 0 : j-1

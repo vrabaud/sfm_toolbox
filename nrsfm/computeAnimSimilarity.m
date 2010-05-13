@@ -45,28 +45,7 @@ switch abs( method )
     for i=1:nFrame-1; Sim(i,i)=0; end
     ticId = ticStatus( 'Diadic Computed' );
     anim = anim.centerW();
-    
-    %%% uncalibrated case and best reconstruction from 2 views
-    if isempty(anim.W) && ~isempty(anim.WUncal)
-      if method==2
-        W = anim.WUncal;
-        for i=1:nFrame-1
-          for j=i+1:nFrame
-            [ disc disc err errTot ] = computeSMFromW( anim.isProj, ...
-              W(:,:,[i,j]), 'method', Inf,'onlyErrorFlag',true );
-            Sim(i,j) = err;
-          end
-          Sim(i+1:end,i)=Sim(i,i+1:end);
-          tocStatus( ticId, 1-(nFrame-i)*(nFrame-i-1)/( nFrame*(nFrame-1) ));
-        end
-        return
-      else
-        %%% uncalibrated case
-        error('Sorry, not implemented yet');
-      end
-    end
-    
-    %%% calibrated case
+
     [ Sim, QTot ] = computeCsfmInfimum(anim.W);
     
     if method==2 % Best 2-view reconstruction for MSFM

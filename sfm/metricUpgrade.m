@@ -29,6 +29,7 @@ function [ H, K ] = metricUpgrade(anim, isCalibrated, vBest)
 % Licensed under the GPL [see external/gpl.txt]
 
 P=anim.P; S=anim.S; W=anim.W; nPoint=anim.nPoint; nFrame=anim.nFrame;
+K=[];
 
 if ~anim.isProj
   if isCalibrated
@@ -67,12 +68,12 @@ if ~anim.isProj
   return
 end
 
-% simple case where the camera is projectiveand calibrated
+% simple case where the camera is projective and calibrated
 if anim.isProj && isCalibrated
   piInf=Hqa'*vBest; H=eye(4); H(4,1:3)=-piInf;
   return
 end
-
+return
 % Chandraker IJCV 2009
 % globally optimal metric upgrade
 HInfinity=anim.P(:,1:3,:)-multiTimes(anim.P(:,4,:),[v(1),v(2),v(3),1],1);

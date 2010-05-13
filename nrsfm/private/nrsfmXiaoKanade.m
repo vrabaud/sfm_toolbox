@@ -212,7 +212,7 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
     RTot(:,:,i) = quaternion(q);
     
     % Recover the coefficients
-    l(1:K3,i)=(vect(RTot(1:2,:,i),'v')\reshape(M(2*i-1:2*i,1:3*K3),6,K3))';
+    l(1:K3,i)=(reshape(RTot(1:2,:,i),[],1)\reshape(M(2*i-1:2*i,1:3*K3),6,K3))';
     
     % Compute MTilde
     MTilde(2*i-1:2*i,1:3*K3)=kron(l(1:K3,i)',RTot(1:2,:,i));
@@ -485,7 +485,7 @@ for m=goodFrame
   val(n)=norm( ( A(:,2*m-1,:)*R(2,:,m) - A(:,2*m)*R(1,:,m) )*rj2, 'fro' );
   n=n+1;
 end
-val=norm([ val vect(MNull*gj2,'v')' ]);
+val=norm([ val reshape(MNull*gj2,[],1)' ]);
 end
 
 function val = optimizeGj1( x, goodFrame, MTilde, R, MNull )
@@ -500,6 +500,6 @@ for m=goodFrame
   B(n,:)=A(:,2*m-1)*R(2,:,m) - A(:,2*m)*R(1,:,m);
   n=n+1;
 end
-val=norm([ (B*rj1); vect(MNull*gj1,'v') ]);
+val=norm([ (B*rj1); reshape(MNull*gj1,[],1) ]);
 
 end

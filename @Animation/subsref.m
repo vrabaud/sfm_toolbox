@@ -163,6 +163,7 @@ else
       varargout{1}=subsref(anim.misc,idx(2));
   end
 end
+end
 
 function KFull=KtoKFull(isProj,K)
 % build KFull from K

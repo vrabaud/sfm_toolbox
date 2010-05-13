@@ -48,11 +48,12 @@ if max(size(idx))==1
     case 'K'
       anim.K=rhs;
     case 'KFull'
-      if anim.isProj
-        anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(1,3,:);rhs(2,2,:);rhs(2,3,:)];
-      else
-      size(rhs)
-        anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(2,2,:)];
+      if ~isempty(rhs)
+        if anim.isProj
+          anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(1,3,:);rhs(2,2,:);rhs(2,3,:)];
+        else
+          anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(2,2,:)];
+        end
       end
     case 'R'
       anim.R=rhs;

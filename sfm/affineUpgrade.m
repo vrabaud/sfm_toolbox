@@ -78,7 +78,7 @@ Hqa=Ha*Hq;
 
 % Yalmip does not work under octave sorry :(
 if exist('OCTAVE_VERSION','builtin')==5; return; end
-
+return
 % Chandraker IJCV 2009
 
 % free variables for the convex/concave relaxations
@@ -87,7 +87,7 @@ v=sdpvar(4,1);
 % the constraint in re >= ... is replaced by (r+e)^2 >= ...
 % as r and e are positive
 % (looser but an SOCP cone)
-FIni=set(cone(fg(:,1)-fg(:,2),re)) + set(v(4)==1);
+FIni=set(cone(fg(:,1)-fg(:,2),r+e)) + set(v(4)==1);
 
 l=repmat(-100,3,1); u=-l;
 for nItr=1:10
@@ -144,16 +144,19 @@ for nItr=1:10
         case 3,
           greek=gamma;
         case 4,
-          greek=zeros(nFrame,4); greek(:,1)=1;
+          greek=zeros(nFrame,4); greek(:,4)=1;
       end
       greekHqat(:,:,j)=greek*Hqa';
-      abcdBound(:,:,j)=max(greekHqat(:,:,j),0)*[l(:,ind),u(:,ind);1,1] + ...
-        min(greekHqat(:,:,j),0)*[u(:,ind),l(:,ind);1,1];
+      % figure out the bounds of aj, bj, cj, d
+      allProduct=bsxfun(@times,greekHqat(:,:,j),reshape(...
+        [l(:,ind) u(:,ind); 1 1],1,4,2));
+      abcdBound(:,:,j)=reshape(sum(sort(allProduct,3),2),nFrame,2);
     end
+    abcdBound
     % add constraints
     lam=sdpvar(nFrame,2); yp=sdpvar(nFrame,2); ypp=sdpvar(nFrame,2);
 	t=sdpvar(nFrame,2);
-    for k=1:2
+    for k=1:0
       F = F + convx13y(fg(:,k),greekHqat(:,:,k+2)*v,abcdBound(:,1,k+2),...
         abcdBound(:,2,k+2),greekHqat(:,:,k+1)*v,abcdBound(:,1,k+1),...
         abcdBound(:,2,k+1),yp(:,k),lam(:,k),t(:,k));
@@ -163,11 +166,11 @@ for nItr=1:10
     end
     F = F + concx83(e,greekHqat(:,:,4)*v,abcdBound(:,1,4),abcdBound(:,2,4));
     for j=1:length(F)
-    F{j}
+    F{j};
     end
     % solve the problem
     diagno = solvesdp( F,r,sdpsettings('solver', ...
-      'sdpa,csdp,sedumi,*','debug',2))
+      'sdpa,csdp,sedumi,*','dualize',true,'verbose',1));
     vBest(:,ind)=double(v);
     % compute the current best
     a=greekHqat(:,:,1)*vBest(:,ind); b=greekHqat(:,:,2)*vBest(:,ind);
@@ -178,7 +181,13 @@ for nItr=1:10
   % remove intervals for which the lower bound is higher than the current
   % best of another intervals
   badInterval=find(lowerBound>min(curBest));
+  [l;u]
+  lowerBound
+  curBest
   l(:,badInterval)=[]; u(:,badInterval)=[]; vBest(:,badInterval)=[];
+  [l;u]
+  'toto'
+  
 end
 % figure out the best v
 vBest=v(:,1);
@@ -186,7 +195,8 @@ end
 
 function conc=concx83(z,x,xl,xu)
   % compute the concave relaxation for x^(8/3)
-  conc=set(z <= nthroot(xl,3).^8+(x-xl)./(xu-xl).*(nthroot(xu,3).^8-nthroot(xl,3).^8));
+  conc=set(z <= nthroot(xl,3).^8+(x-xl)./(xu-xl).*(nthroot(xu,3).^8-...
+    nthroot(xl,3).^8));
 end
 
 function conc=concxy(z,x,xl,xu,y,yl,yu)

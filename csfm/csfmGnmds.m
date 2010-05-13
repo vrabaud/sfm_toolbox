@@ -7,7 +7,7 @@ function [ l K ] = csfmGnmds(samp,infimum,nTriplet,nPair,lam1 )
 %  samp = csfmComputeSample(anim,infimum,nSamp,minDist)
 %
 % INPUTS
-%  anim          - Animation object
+%  samp          - samples to use
 %  infimum       - infimum matrix
 %  nTriplet      - the number of triplets to use in GNMDS
 %  nPair         - the number of pairs to use in GNMDS
@@ -36,7 +36,7 @@ nTriplet = min( [ 3000 size(samp,1) nTriplet ] );
 nPair=ceil(sqrt(nPair))^2;
 nSampPer3=5;
 
-t=vect(samp(:,[1:3,5:7]),'v');
+t=reshape(samp(:,[1:3,5:7]),[],1);
 
 %%% Start defining the problem
 K=sdpvar(nFrame, nFrame);
