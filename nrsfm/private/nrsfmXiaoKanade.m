@@ -18,7 +18,7 @@ function anim = nrsfmXiaoKanade( W, nBasis )
 % See also COMPUTESMFROMW
 %
 % Vincent's Structure From Motion Toolbox      Version 3.0
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -27,7 +27,7 @@ animBest=Animation; animBest.W = W;
 
 W = reshape( permute( W, [ 1 3 2 ] ), [], nPoint );
 animBest.t = reshape( mean(W,2), 2, nFrame ); animBest.t(3,:) = 0;
-W = W - repmat( mean(W,2), [ 1 nPoint ] );
+W = bsxfun(@minus,W,mean(W,2));
 
 if nargin<2 || isempty(nBasis)
   [ U S V ] = svd(W,'econ'); S = diag(S); sumVal = S(1); Kd = 1;
@@ -54,7 +54,7 @@ while 1
   % Perform random search for 5 seconds
   t0 = clock; mini = Inf;
   while etime( clock, t0 )<5
-    indWTmp = randSample(nFrame,K3)';
+    indWTmp = randSample(nFrame,K3);
     tmp = cond( WTildeOri( indWTmp, : ) );
     if tmp < mini; mini = tmp; indW = indWTmp; end
   end
@@ -101,7 +101,7 @@ for i = indW
   % Sample the constraints
   disp('Solving the SDP');
   diagno = solvesdp( F,objRotation+objBasis,sdpsettings('solver',...
-    'sdpa,csdp,sedumi,*','dualize',1,'debug',1));
+    'sdpa,csdp,sedumi,*','dualize',1,'verbose',0));
   
   QiTmp = double(Qi);
   
@@ -118,13 +118,8 @@ end
 %  size(null(constr),2)
 %  return
 %%%%%%%%%%%%%%%%%%%%%% Get K2 and K1 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Compute K2
-K2=floor((Kd-3*K3)/2);
-while K2>0
-  if (K2^2+K2)/2>size(null(constr),2); K2=K2-1; else break; end
-end
 
-%% The explanations given by Xiao04 seem wrong to determine K1 and K2
+%% The explanations given by Xiao04 seems wrong to determine K1 and K2
 %% So, let's do it the lazy way: let's try all possible combinations of K1
 %% and K2
 errBest = Inf;
@@ -452,7 +447,7 @@ for K2 = floor((Kd-3*K3)/2) : -1 : 0
   %%%%%%%%%%%%%%%%%%%%%% Finalize the anim object %%%%%%%%%%%%%%%%%%%%%%%%%
   anim=Animation('SBasis', SBasis, 'l', l, 'R', R, 'isProj', false, ...
     't', animBest.t, 'W', animBest.W );
-  err = anim.computeError( anim ); err=err(1);
+  err = anim.computeError(); err=err(1);
   fprintf( 'Reprojection error: %f \n', err );
   
   if err<errBest; errBest=err; animBest=anim; end

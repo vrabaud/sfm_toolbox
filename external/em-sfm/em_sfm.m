@@ -137,7 +137,7 @@ for em_iter=1:max_em_iter,
          loglikbase = loglik;
       elseif (loglik < oldloglik)
          fprintf('Violation');
-         keyboard;
+%         keyboard;
       elseif 0 & ((loglik-loglikbase)<(1 + tol)*(oldloglik-loglikbase)),
          fprintf('\n');
          break;

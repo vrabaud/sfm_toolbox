@@ -16,6 +16,7 @@ function anim = computeNrsfm( method, W, varargin )
 %       - 'nBasis'        - number of shape bases.  If Torresani's method,
 %                           the first shape has a shape coefficient of 1,
 %                           and is therefore considered constant.
+%       - 'nItrSBA'       - number of bundle adjustment iterations
 %     for THB, PAMI08
 %       - 'nItr'          - maximum number of EM iterations (nItr)
 %     for MSFM
@@ -36,9 +37,9 @@ function anim = computeNrsfm( method, W, varargin )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-[ nBasis nItr nTriplet nPair ] = ...
+[ nBasis nItr nTriplet nPair nItrSBA ] = ...
   getPrmDflt( varargin, { 'nBasis' [] 'nItr' 50 'nTriplet' 0 'nPair' 0 ...
-  }, 1 );
+  'nItrSBA' 0}, 1 );
 
 nFrame = size( W, 3 ); nPoint = size( W, 2 );
 anim=Animation('W',W);
@@ -50,24 +51,26 @@ switch method
 
     % runs the non-rigid structure from motion algorithm
     use_lds = 0;
-
     tol = 0.0001;
-    MD = zeros( nFrame, nPoint );
+
+    % build the mask of themissing data
+    if ~isempty(anim.mask); MD = ~anim.mask;
+    else; MD = zeros( nFrame, nPoint );
+    end
 
     [ disc SBar V R t Z ] = em_sfm(p2_obs, MD, nBasis-1, use_lds, ...
       tol, nItr);
 
     anim.isProj = false;
     anim.W = W;
-    anim.t(3,:)=0;
-    for i=1:nFrame
-      anim.R(:,:,i) = R{i};
-      anim.t(:,i) = R{i}*[t(i,:)';0];
-    end
+    RR=zeros(3,3,nFrame); tt=zeros(3,nFrame);
+    for i=1:nFrame; RR(:,:,i) = R{i}; tt(:,i) = R{i}*[t(i,:)';0]; end
+    anim.R=RR; anim.t=tt;
     if nBasis==1; anim.S=SBar; anim.l=[]; anim.SBasis=[];
     else
-      anim.l=Z'; anim.SBasis=SBar;
+      anim.SBasis=SBar;
       for i=1:nBasis-1; anim.SBasis(:,:,i+1)=V(3*i-2:3*i,:); end
+      anim.l=Z';
     end
   case 2 % Xiao Kanade
     anim = nrsfmXiaoKanade( W, nBasis );
@@ -77,6 +80,6 @@ switch method
     anim = nrsfmCsfm( W, nBasis, nTriplet, nPair, nItr );
 end
 % Perform gradient descent on the different coefficients
-if nItr>0 && (method==1 || method==2)
-  anim = bundleAdjustment(anim);
+if nItrSBA>0 && (method==1 || method==2)
+  anim = bundleAdjustment(anim,'nItr',nItrSBA);
 end

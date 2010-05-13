@@ -110,3 +110,11 @@ anim.type=-1;
 anim.nBasis=0; anim.nPoint=0; anim.nFrame=0;
 
 anim = class( anim, 'Animation');
+
+% now, fill the quantities in anim according to varargin
+if iscell(varargin)
+  prmField = varargin(1:2:end); prmVal = varargin(2:2:end);
+  for i=1:length(prmField)
+    anim=subsasgn(anim,struct('type','.','subs',prmField{i}),prmVal{i});
+  end
+end

@@ -50,7 +50,7 @@ function anim = generateToyAnimation( type, varargin )
 % See also
 %
 % Vincent's Structure From Motion Toolbox      Version 3.0
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -99,15 +99,15 @@ switch type
         error('invalid nBasis');
     end
     for i = 1 : size(SBasis,3) % center it
-      SBasis(:,:,i) = SBasis(:,:,i) - repmat( mean(SBasis(:,:,i),2), ...
-        [ 1 nPoint ] );
+      SBasis(:,:,i) = bsxfun(@minus,SBasis(:,:,i),mean(SBasis(:,:,i),2));
     end
     
     % Create the shape coefficients
     l = zeros( sum(nBasis), nFrame );
     for k = 1 : sum(nBasis)
       %      l(k,:) = smooth( smooth( 2*rand(nFrame,1)-1 ), 25, 'loess' );
-      l(k,:) = gaussSmooth( 2*rand(nFrame,1)-1, 6, 'same', 4 );
+      l(k,:)=gaussSmooth( 2*rand(nFrame,1)-1, 6, 'same', 4 );
+      l(k,:)=l(k,:)/max(abs(l(k,:)));
     end
     
     if doSMean; l(1,:)=1; end
@@ -233,9 +233,7 @@ isGood = false;
 while ~isGood
   isGood = true;
   for i = 1 : nFrame
-    if size(S,3)==1; STmp=S;
-    else     STmp=S(:,:,i);
-    end
+    if size(S,3)==1; STmp=S; else STmp=S(:,:,i); end
     if ~allPointsInFront( STmp, R(:,:,i), t(:,i) ) || ...
         ( ~isempty(S) &&  ...
         ~allPointsInFront( STmp, R(:,:,i), t(:,i) ) )
@@ -248,7 +246,9 @@ end
 % Define some members
 anim.R=R; anim.t=t; anim.K=K;
 
-anim.S=S; anim.conn=conn; anim.isProj=isProj;
+if isempty(anim.l) || isempty(anim.SBasis); anim.S=S; end
+
+anim.conn=conn; anim.isProj=isProj;
 
 if dR~=0; anim = anim.setFirstRToId(); end
 

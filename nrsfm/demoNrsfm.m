@@ -59,7 +59,7 @@ disp('* Computing Similarities within the animation');
 Sim = computeAnimSimilarity( anim, 2 );
 disp('Visualize the similarities'); close all;
 viewAnimSimilarity(anim,-Sim);
-disp('Press enter to view ten random frames at the sam time');
+disp('Press enter to view ten random frames at the same time');
 pause
 close all;
 montageView(anim.S(:,:,randSample(50,10)));
@@ -79,14 +79,6 @@ animGT=generateToyAnimation( 0.1,'nPoint',nPoint,'nFrame',nFrame,...
   'nBasis', nBasis, 'doSMean', 1, 'dt', 0 );
 animGT=animGT.addNoise('noiseS',0);
 
-%Torresani
-disp('**Computing NRSFM with Torresani''s method');
-animTorr = computeNrsfm( 1, animGT.W, 'nBasis', 4, 'max_em_iter', 50 );
-[ err errFrame ] = animTorr.computeError( 'animGT', animGT );
-fprintf( '\nTorresani: Reprojection error %0.4f and 3D-error %0.4f\n\n',...
-  mean(errFrame{1}(1,:)),err(1));
-playAnim(animTorr,'animGT',animGT,'showGT',true);
-
 %Xiao-Kanade
 disp('**Computing NRSFM with Xiao''s method');
 animXiao = computeNrsfm( 2, animGT.W );
@@ -94,6 +86,14 @@ animXiao = computeNrsfm( 2, animGT.W );
 fprintf( '\nXiao: Reprojection error %0.4f and 3D-error %0.4f\n\n', ...
   mean(errFrame{1}(1,:)),err(1));
 playAnim(animXiao,'animGT',animGT,'showGT',true,'alignGT',true);
+
+%Torresani
+disp('**Computing NRSFM with Torresani''s method');
+animTorr = computeNrsfm( 1, animGT.W, 'nBasis', 3, 'nItr', 50 );
+[ err errFrame ] = animTorr.computeError( 'animGT', animGT );
+fprintf( '\nTorresani: Reprojection error %0.4f and 3D-error %0.4f\n\n',...
+  mean(errFrame{1}(1,:)),err(1));
+playAnim(animTorr,'animGT',animGT,'showGT',true);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -102,7 +102,8 @@ disp('Orthographic NRSFM with random degenerate data');
 %Xiao-Kanade with degenerate deformations
 nFrame = 50; nPoint = 20; nBasis = [ 1 0 1 ];
 animGT=generateToyAnimation( 0.1,'nPoint',nPoint,'nFrame',nFrame,...
-  'noise', 0.0, 'nBasis', nBasis, 'dt', 0 );
+  'nBasis', nBasis, 'dt', 0 );
+animGT=animGT.addNoise('noiseS',0);
 animXiao = computeNrsfm( 2, animGT.W );
 [ err errFrame ] = animXiao.computeError( 'animGT', animGT );
 fprintf( '\nXiao: Reprojection error %0.4f and 3D-error %0.4f\n\n', ...
@@ -114,13 +115,14 @@ end
 function demo4() %#ok<DEFNU>
 disp('Orthographic NRSFM for the shark data');
 %%% Shark data:
-animGT=generateToyAnimation( 4.2,'noise', 0.0, 'dt', 0 );
+animGT=generateToyAnimation( 4.2,'dt', 0 );
+animGT=animGT.addNoise('noiseS',0);
 animXiao = computeNrsfm( 2, animGT.W);
 [ errXiao errFrameXiao ] = animXiao.computeError( 'animGT', animGT );
 fprintf( '\nXiao: Reprojection error %0.4f and 3D-error %0.4f\n\n', ...
   sum(errFrameXiao{1}(1,:)),errXiao(1));
 
-animTorr = computeNrsfm( 1, animGT.W, 'nBasis', 3, 'max_em_iter',60 );
+animTorr = computeNrsfm( 1, animGT.W, 'nBasis', 3, 'nItr',30 );
 [ errTorr errFrameTorr ] = animTorr.computeError( 'animGT', animGT );
 fprintf( '\nTorresani: Reprojection error %0.4f and 3D-error %0.4f\n\n',...
   mean(errFrameTorr{1}(1,:)),errTorr(1));

@@ -20,7 +20,7 @@ function viewAnimSimilarity( anim1, Sim, varargin )
 % See also COMPUTEANIMSIMILARITY
 %
 % Vincent's Structure From Motion Toolbox      Version 3.0
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -88,8 +88,7 @@ end
       hCam{k} = cloudUpdate( anim{k}, hPoint{k}, x(k), 'hCam',hCam{k},...
         'nCam', nCam, 'camMode', camMode, ...
         'hGT', hGT{k}, 'hConn',hConn{k},'animGT',animGT{k}, ...
-        'showTitle', showTitle, 'showGT', showGT, 'alignGT',...
-        alignGT, 'showConn', showConn );
+        'showGT', showGT, 'alignGT', alignGT, 'showConn', showConn );
       axis( cam{k}(camMode).gca, cam{k}(camMode).axis );
     end
     
