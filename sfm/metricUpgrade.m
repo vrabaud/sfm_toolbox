@@ -32,8 +32,11 @@ function [ H, K ] = metricUpgrade(anim, varargin)
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
+[ isCalibrated vBest method ] = getPrmDflt( varargin, ...
+  { 'isCalibrated' false 'vBest' [] 'method' inf}, 1);
+
 P=anim.P; S=anim.S; W=anim.W; nPoint=anim.nPoint; nFrame=anim.nFrame;
-K=[];
+H=[]; K=[];
 
 if ~anim.isProj
   if isCalibrated && method==0
@@ -64,10 +67,10 @@ if ~anim.isProj
     end
     % define all the SOCP constraints
     for i=1:nFrame
-      F=F+set(cone(P(1:2,1:3,i)*HH*P(1:2,1:3,i)-KK,a(i)));
+      F=F+set(abs(P(1:2,1:3,i)*HH*P(1:2,1:3,i)'-KK)<a(i));
     end
     diagno = solvesdp( F, sum(a), sdpsettings('solver', ...
-        'sdpa,csdp,sedumi,*','debug',2) );
+        'sdpa,csdp,sedumi,*','verbose',0) );
     % compute the calibration matrix
     if ~isCalibrated; K=chol(double(KK)); K(3,3)=1; end
     % compute H (up to a rotation ambiguity)

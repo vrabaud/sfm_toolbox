@@ -183,10 +183,10 @@ end
 % The following should give the same low errors
 fprintf( [ 'Computing several reconstructions on %d frames with %d '...
   'noisy features.\n' ], nFrame, nPoint );
-anim = cell(4,2);
-err = zeros(4,2); err3D = err;
+anim = cell(5,2);
+err = zeros(5,2); err3D = err;
 
-for i = 1 : 4
+for i = 1 : 5
   for j = 1 : 2
     switch i
       case 1,
@@ -215,6 +215,13 @@ for i = 1 : 4
         anim{4,j} = computeSMFromW( false, animGT.W, 'method', 0, ...
           'isCalibrated', true, 'nItrSBA', (j-1)*100 );
         out = 'All the views, calibrated cameras:\n';
+        typeTransform = 'camera';
+        type3DError = '';
+      case 5,
+        animGTSample=animGT;
+        anim{5,j} = computeSMFromW( false, animGT.W, 'method', inf, ...
+          'isCalibrated', true, 'nItrSBA', (j-1)*100 );
+        out = 'All the views, calibrated cameras with SDP solving:\n';
         typeTransform = 'camera';
         type3DError = '';
     end

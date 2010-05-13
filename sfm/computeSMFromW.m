@@ -299,17 +299,20 @@ if anim.isProj
       else
         % perform a metric upgrade if requested
         if doMetricUpgrade
-          [ anim.KFull, H ]=metricUpgrade(anim, isCalibrated, vBest);
+          [ anim.KFull, H ]=metricUpgrade(anim, 'isCalibrated', ...
+            isCalibrated, 'vBest', vBest);
         end
       end
     end
   end
 else
-  if doMetricUpgrade && isCalibrated
-    H=metricUpgrade(anim, isCalibrated);
-  end
-  if doMetricUpgrade && exist('OCTAVE_VERSION','builtin')~=5
-    [ H, anim.KFull ]=metricUpgrade(anim, isCalibrated);
+  if doMetricUpgrade
+    if isCalibrated
+      H=metricUpgrade(anim, 'isCalibrated', isCalibrated, 'method', method);
+    elseif exist('OCTAVE_VERSION','builtin')~=5
+      [ H, anim.KFull ]=metricUpgrade(anim, 'isCalibrated', ...
+      isCalibrated, 'method', method);
+    end
   end
 end
 
