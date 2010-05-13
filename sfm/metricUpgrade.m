@@ -1,4 +1,4 @@
-function [ H, K ] = metricUpgrade(anim, isCalibrated, vBest)
+function [ H, K ] = metricUpgrade(anim, varargin)
 % Perform an affine upgrade
 %
 % Given projection matrices and a 3D projective structure in anim,
@@ -9,9 +9,13 @@ function [ H, K ] = metricUpgrade(anim, isCalibrated, vBest)
 %
 % INPUTS
 %  anim          - Animation object with P and S filled
-%  isCalibrated  - flag indicating if the camera is calibrated or not
+%  varargin   - list of paramaters in quotes alternating with their values
+%       - 'isCalibrated' flag indicating if the camera is calibrated or not
 %                  (K=eye(3))
-%  vBest         - optimal v found in affineUpgrade
+%       - 'vBest'  optimal v found in affineUpgrade
+%       - 'method' only used with an orthographic camera
+%                   if 0, simple metric constraints
+%                   if inf, metric constraints soolve mode exactly with SDP
 %
 % OUTPUTS
 %  H             - homography to apply to get projection matrices
@@ -32,7 +36,7 @@ P=anim.P; S=anim.S; W=anim.W; nPoint=anim.nPoint; nFrame=anim.nFrame;
 K=[];
 
 if ~anim.isProj
-  if isCalibrated
+  if isCalibrated && method==0
     % Tomasi Kanade with the metric constraint
     G=zeros( 3*nFrame, 6 );
     for i=1:nFrame
@@ -52,8 +56,12 @@ if ~anim.isProj
     % [ k1 k2 0; 0 k3 0; 0 0 1 ]
     % We therefore must have:
     % P(1:2,1:3,i)*H*H'*P(1:2,1:3,i)'=K(1:2,1:2)*K(1:2,1:2)'
-    HH=sdpvar(3,3); KK=sdpvar(2,2); a=sdpvar(1,nFrame);
-    F=set(HH>=0)+set(KK>=0);
+    HH=sdpvar(3,3); a=sdpvar(1,nFrame);
+    if isCalibrated && method==inf
+      KK=eye(2); K=eye(3); F=set(HH>=0);
+    else
+      KK=sdpvar(2,2); F=set(HH>=0)+set(KK>=0);
+    end
     % define all the SOCP constraints
     for i=1:nFrame
       F=F+set(cone(P(1:2,1:3,i)*HH*P(1:2,1:3,i)-KK,a(i)));
@@ -61,7 +69,7 @@ if ~anim.isProj
     diagno = solvesdp( F, sum(a), sdpsettings('solver', ...
         'sdpa,csdp,sedumi,*','debug',2) );
     % compute the calibration matrix
-    K=chol(double(KK)); K(3,3)=1;
+    if ~isCalibrated; K=chol(double(KK)); K(3,3)=1; end
     % compute H (up to a rotation ambiguity)
     H=chol(double(HH)); H(4,4)=1;
   end
