@@ -68,13 +68,16 @@ end
 MTilde = MTilde( :, 1:Kd )*S(1:Kd,1:Kd); gj3=zeros(Kd,3,K3);
 
 % Rotation constraints
-objRotation = 0; Qi = sdpvar( Kd, Kd );
+Qi = sdpvar( Kd, Kd );
 F = set( Qi >= 0 );
-for i = 1 : nFrame
-  objRotation = objRotation + abs( MTilde(2*i-1,:)*Qi*MTilde(2*i-1,:)' - ...
-    MTilde(2*i,:)*Qi*MTilde(2*i,:)' ) + ...
-    abs( MTilde(2*i,:)*Qi*MTilde(2*i-1,:)' );
+% vect(AXB)=kron(B',A)*vect(X)
+kron1=zeros(nFrame,Kd^2); kron2=zeros(nFrame,Kd^2);
+for i=1:nFrame
+  kron1(i,:)=kron(MTilde(2*i-1,:),MTilde(2*i-1,:)) - ...
+    kron(MTilde(2*i,:),MTilde(2*i,:));
+  kron2(i,:)=kron(MTilde(2*i,:),MTilde(2*i-1,:));
 end
+objRotation=abs(kron1*Qi(:))+abs(kron2*Qi(:));
 
 % Solve for Qk using all the constraints
 kk = 1;
