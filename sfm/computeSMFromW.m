@@ -4,10 +4,12 @@ function anim = computeSMFromW( isProj, W, varargin )
 % Essential matrix decomposition
 % Reference: HZ2, p259, Result 9.19, and p. 294
 % isProj && nFrame==2 && isCalibrated
+% fast
 % 
 % Normalized 8-point algorithm
 % Reference: HZ2, p279 and alg 11.1 p. 282
 % isProj && nFrame==2 && ~isCalibrated
+% fast
 %
 % Projective Factorization
 % Reference: HZ2, p445, Algorithm 18.2
@@ -15,26 +17,40 @@ function anim = computeSMFromW( isProj, W, varargin )
 % A Factorization Based Algorithm for Multi-Image Projective Structure and
 % Motion
 % isProj && nFrame>2 && method==0
+% slower
 %
 % Projective Factorization
 % Reference: Iterative Extensions of the Sturm/Triggs Algorithm:
 % Convergence and Nonconvergence, from Oliensis, Hartley, PAMI 07
 % isProj && nFrame>2 && method==Inf
+% slower
 %
 % Gold Standard for Affine camera matrix
 % Reference: HZ2, p351, Algorithm 14.1
 % ~isProj && nFrame==2 && onlyErrorFlag
+% fast
 %
 % Tomasi Kanade without the metric constraint
 % Affine camera matrix, MLE estimation (Tomasi Kanade)
 % Reference: HZ2, p437, Algorithm 18.1
 % ~isProj && nFrame>2
+% fast
 %
 % Tomasi Kanade with the metric constraint
-% ~isProj && nFrame>2 && isCalibrated
+% ~isProj && nFrame>2 && isCalibrated && method=0
+% fast
+%
+% Tomasi Kanade with the metric constraint (more accurate computation)
+% ~isProj && nFrame>2 && isCalibrated && method=inf
+% slow
+%
+% Tomasi Kanade and autocalibration
+% ~isProj && nFrame>2 && ~isCalibrated
+% slow
 %
 % if doAffineUpgrade and/or doMetricUpgrade are true, affine and metric
 % upgrades from Chandraker IJCV 2009 is applied
+% slow
 %
 % Returns the structure and camera parameters in an Animation object
 %
@@ -327,10 +343,7 @@ if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
   P=anim.P; KFull=anim.KFull;
   if ~isCalibrated && ~isempty(KFull)
     if size(KFull,3)==1; P=multiTimes(inv(KFull),P,1.2);
-    else
-      invKFull = zeros(3,3,nFrame);
-      for i=1:nFrame; invKFull(:,:,i) = inv(KFull(:,:,i)); end
-      P=multiTimes(invKFull,P,2);
+    else; P=multiDiv(KFull,P,2);
     end
   end
   R=zeros(3,3,nFrame);

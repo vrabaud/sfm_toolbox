@@ -39,7 +39,7 @@ P=anim.P; S=anim.S; W=anim.W; nPoint=anim.nPoint; nFrame=anim.nFrame;
 H=[]; K=[];
 
 if ~anim.isProj
-  if isCalibrated && method==0
+  if isCalibrated && (method==0 || exist('OCTAVE_VERSION','builtin'))
     % Tomasi Kanade with the metric constraint
     G=zeros( 3*nFrame, 6 );
     for i=1:nFrame
