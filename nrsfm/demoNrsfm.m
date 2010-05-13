@@ -1,4 +1,4 @@
-function demoSFM( demoNumber )
+function demoNrsfm( demoNumber )
 % Demo for several abilities of LSML.
 %
 % Run with different integer values of demoNumber to run different demos.
@@ -10,7 +10,7 @@ function demoSFM( demoNumber )
 %  4: Orthographic NRSFM with shark data
 %
 % USAGE
-%  demoSFM( demoNumber )
+%  demoNrsfm( demoNumber )
 %
 % INPUTS
 %  demoNumber - [1] value between 1 and 4
@@ -18,12 +18,12 @@ function demoSFM( demoNumber )
 % OUTPUTS
 %
 % EXAMPLE
-%  demoSFM(1)
+%  demoNrsfm(1)
 %
 % See also
 %
 % Vincent's Structure From Motion Toolbox      Version 3.0
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -40,9 +40,9 @@ in=input(['Press (n) to continue to next demo or (r) to repeat demo\n'...
   'Anything else will quit the demo\n'],'s');
 switch in
   case 'n'
-    if demoNumber<10; demoSFM(demoNumber+1); end
+    if demoNumber<4; demoNrsfm(demoNumber+1); end
   case 'r'
-    demoSFM(demoNumber);
+    demoNrsfm(demoNumber);
 end
 end
 
