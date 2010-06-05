@@ -286,8 +286,21 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+function constr=relaxxyConv(z,x,xl,xu,y,yl,yu)
+% compute the convex relaxation for x*y
+constr=[ z >= xl.*y + yl.*x - xl.*yl; z >= xu.*y + yu.*x - xu.*yu ];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function constr=relaxxyConc(z,x,xl,xu,y,yl,yu)
+% compute the concave relaxation for x*y
+constr=[ z <= xu.*y + yl.*x - xu.*yl; z <= xl.*y + yu.*x - xl.*yu ];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function constr=relaxxy(z,x,xl,xu,y,yl,yu)
-obj1=zeros(size(z,1),1);obj2=obj1;
 % precompute some date (because yalmip is slow ...)
 xly=xl.*y; ylx=yl.*x; xuy=xu.*y; yux=yu.*x;
 % compute the concave relaxation for x*y
@@ -298,17 +311,58 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [obj, constr]=relaxPartialx13y(x,xl,xu,y,yl,yu,yp)
-% compute the convex relaxation for x^(1/3)*y when xl > 0
+function obj=lineJoining(x,xl,xu)
+% basically the line in equation A.10
+obj=((nthroot(xu,3)-nthroot(xl,3))./(xu-xl)).*x+...
+  (xu.*nthroot(xl,3)-xl.*nthroot(xu,3))./(xu-xl);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function [obj, constr]=relaxx13yxposypos(x,xl,xu,y,yl,yu,yp)
+% compute the convex relaxation for x^(1/3)*y when xl > 0 and yl > 0
 % returns the under estimator and the two inequality constraints
 obj=nthroot(xl,3).*yp+nthroot(xu,3).*(y-yp);
 % precompute lam.*yl and lam.*yu (because yalmip is slow
 lamyl=(yl./(xu-xl)).*x-xl.*yl./(xu-xl);
 lamyu=(yu./(xu-xl)).*x-xl.*yu./(xu-xl);
 constr=[ yl-lamyl<=yp<=yu-lamyu; lamyl<=(y-yp)<=lamyu ];
-constr=set(yl-lamyl<=yp<=yu-lamyu)+set(lamyl<=(y-yp)<=lamyu);
-constr=[yl-lamyl<=yp<=yu-lamyu]+[lamyl<=(y-yp)<=lamyu];
-constr=[yl-lamyl<=yp<=yu-lamyu,lamyl<=(y-yp)<=lamyu];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function constr=relaxx13yxpos(z,x,xl,xu,y,yl,yu,yp,ypp,t)
+% compute the convex relaxation for x^(1/3)*y when xl > 0
+% convex relaxations for yl > 0 (like the paper)
+ind=yl>0;
+[obj, subConstr]=relaxx13yxposypos(x(ind),xl(ind),xu(ind),y(ind),yl(ind),...
+  yu(ind),yp(ind));
+constr=[ obj<=z(ind); subConstr ];
+% convex relaxations for yl <= 0
+ind=yl<0;
+% add the constraints on t=x^(1/3) and z=ty
+constr=constr+[ t(ind)>=lineJoining(x(ind),xl(ind),xu(ind)) ] + ...
+  relaxxyConv(z(ind),t(ind),nthroot(xl(ind),3),...
+  nthroot(xu(ind),3),y(ind),yl(ind),yu(ind));
+
+% concave relaxations for yu < 0 (like the paper)
+ind=yu<0;
+[obj, subConstr]=relaxx13yxposypos(x(ind),xl(ind),xu(ind),-y(ind),-yu(ind),...
+  -yl(ind),ypp(ind));
+constr=constr+[ z(ind)<=-obj; subConstr ];
+% concave relaxations for yu >= 0
+ind=yu>=0;
+% add the constraints on t=x^(1/3) and z=ty
+constr=constr+[ t(ind)<=(x(ind)+2*xu(ind))./(3*nthroot(xu(ind),3).^2); ...
+  t(ind)<=(x(ind)+2*xl(ind))./(3*nthroot(xl(ind),3).^2);] + ...
+  relaxxyConc(z(ind),t(ind),nthroot(xl(ind),3),...
+  nthroot(xu(ind),3),y(ind),yl(ind),yu(ind));
+
+
+%  constr=[ t>=lineJoining(x,xl,xu) ] + ...
+%    [ t<=(x+2*xu)./(3*nthroot(xu,3).^2); ...
+%    t<=(x+2*xl)./(3*nthroot(xl,3).^2)] + ...
+%    relaxxy(z,t,nthroot(xl,3),nthroot(xu,3),y,yl,yu);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -316,30 +370,15 @@ end
 function [constr,indTot]=relaxx13y(z,x,xl,xu,y,yl,yu,yp,ypp,t)
 % compute the convex relaxation for x^(1/3)*y
 % case 1
-indTot = [];
+indTot=[];
 ind=(xl>0); indTot(end+1)=nnz(ind);
-mini=zeros(size(x,1),1); maxi=mini; indComp=mini;
-indComp(ind)=1;
-% convex
-[obj,subConstr]=relaxPartialx13y(x(ind),xl(ind),xu(ind),...
-  y(ind),yl(ind),yu(ind),yp(ind));
-constr=[ obj<=z(ind); subConstr ];
-% concave
-[obj,subConstr]=relaxPartialx13y(x(ind),xl(ind),xu(ind),...
-  -y(ind),-yu(ind),-yl(ind),ypp(ind));
-constr=[ constr; z(ind)<=(-obj); subConstr ];
+constr=relaxx13yxpos(z(ind),x(ind),xl(ind),xu(ind),y(ind),...
+  yl(ind),yu(ind),yp(ind),ypp(ind),t(ind));
 
 % case 1 bis
 ind=(xu<0); indTot(end+1)=nnz(ind);
-indComp(ind)=2;
-% convex
-[obj,subConstr]=relaxPartialx13y(-x(ind),-xu(ind),-xl(ind),...
-  -y(ind),-yu(ind),-yl(ind),yp(ind));
-constr=[ constr; obj<=z(ind); subConstr ];
-% concave
-[obj,subConstr]=relaxPartialx13y(-x(ind),-xu(ind),-xl(ind),...
-  y(ind),yl(ind),yu(ind),ypp(ind));
-constr=[ constr; z(ind)<=(-obj); subConstr ];
+constr=constr+relaxx13yxpos(z(ind),-x(ind),-xu(ind),-xl(ind),-y(ind),...
+  -yu(ind),-yl(ind),yp(ind),ypp(ind),t(ind));
 
 % case 2
 % t convex constraints
@@ -355,10 +394,7 @@ constr=[ constr; ...
 %    t(ind)>=(x(ind)+2*xl(ind))./(3*nthroot(-xl(ind),3).^2) ];
 % t convex constraints bis
 ind=(xl<=0) & (0<=xu) & (-xu/8<=xl); indTot(end+1)=nnz(ind);
-constr=[ constr; ...
-  t(ind)>=((nthroot(xu(ind),3)-nthroot(xl(ind),3)).*x(ind)+...
-  (xu(ind).*nthroot(xl(ind),3)-xl(ind).*nthroot(xu(ind),3)))./...
-  (xu(ind)-xl(ind)) ];
+constr=[ constr; t(ind)>= lineJoining(x(ind),xl(ind),xu(ind)) ];
 % t concave constraints
 ind=(xl<=0) & (0<=xu) & (-xl/8<xu); indTot(end+1)=nnz(ind);
 constr=[ constr; ...
@@ -372,14 +408,10 @@ constr=[ constr; ...
 %    t(ind)<=(x(ind)+2*xu(ind))./(3*nthroot(xu(ind),3).^2) ];
 % t concave constraints bis
 ind=(xl<=0) & (0<=xu) & (-xl/8>=xu); indTot(end+1)=nnz(ind);
-constr=[ constr; ...
-  t(ind)<=((nthroot(xu(ind),3)-nthroot(xl(ind),3)).*x(ind)+...
-  (xu(ind).*nthroot(xl(ind),3)-xl(ind).*nthroot(xu(ind),3)))./...
-  (xu(ind)-xl(ind)) ];
+constr=[ constr; t(ind)<=lineJoining(x(ind),xl(ind),xu(ind)) ];
 
 % add the constraints on z=ty
 ind=(xl<=0) & (0<=xu); indTot(end+1)=nnz(ind);
-indComp(ind)=3;
 constr=[ constr; relaxxy(z(ind),t(ind),nthroot(xl(ind),3),...
   nthroot(xu(ind),3),y(ind),yl(ind),yu(ind)) ];
 end
