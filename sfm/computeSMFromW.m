@@ -207,6 +207,7 @@ if isProj
       end
       
       % get the best rank 4 approximation
+      % Wkm1 is for Wk minus 1
       [ Wkm1, Wkm1Hat ] = projSturmTriggsWkWkHat(lam,W,nFrame,nPoint);
       WWkm1Hat = sum(W.*Wkm1Hat,1);
       
