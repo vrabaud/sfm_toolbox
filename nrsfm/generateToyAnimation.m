@@ -63,7 +63,7 @@ dfs = {'nPoint',[], 'isProj',false,'nLoop', 1,...
 % Deal with internal parameters
 if randK
   K=eye(3);
-  K(1,1) = 100*rand(); K(2,2) = 100*rand(); K(1,2)=0.5+rand();
+  K(1,1) = 500+1000*rand(); K(2,2) = -0.5+rand(); K(1,2)=500+1000*rand();
   if isProj; K(1:2,3) = -0.5 +  rand(); end
 end
 conn=[];
@@ -250,7 +250,7 @@ if isempty(anim.l) || isempty(anim.SBasis); anim.S=S; end
 
 anim.conn=conn; anim.isProj=isProj;
 
-if dR~=0; anim = anim.setFirstRToId(); end
+if dR~=0; anim = anim.setFirstPRtToId(); end
 
 [ disc, disc, anim ]=anim.generateW('doFillW',true);
 end

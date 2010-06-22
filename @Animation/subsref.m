@@ -130,8 +130,8 @@ else
           [ varargout{1}, varargout{2} ] = sampleFrame(anim, ...
             idx(2).subs{:});
       end
-    case 'setFirstRToId',
-      varargout{1}=setFirstRToId(anim);
+    case 'setFirstPRtToId',
+      varargout{1}=setFirstPRtToId(anim);
     case 'W'
       varargout{1}=subsref(anim.W,idx(2));
     case 'mask'

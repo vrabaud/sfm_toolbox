@@ -61,7 +61,7 @@ function anim=Animation(varargin)
 %   anim=generateCamFromRt( anim );
 %   anim=generateWFromSRt( anim );
 %   anim=generateSPCA( anim, nPCA );
-%   anim=setFirstRToId( anim );
+%   anim=setFirstPRtToId( anim );
 %   [ anim meanW ]=centerW( anim );
 %   [ anim SimMin ]=sampleFrame( anim, nSamp, SimMin );
 %

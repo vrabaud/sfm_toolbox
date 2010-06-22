@@ -16,14 +16,14 @@ function anim = computeSMFromW( isProj, W, varargin )
 % Sturm and Triggs ECCV 96
 % A Factorization Based Algorithm for Multi-Image Projective Structure and
 % Motion
-% isProj && nFrame>2 && method==0
+% isProj && nFrame>2 && method==Inf
 % slower
 %
 % Projective Factorization
 % Reference: Iterative Extensions of the Sturm/Triggs Algorithm:
 % Convergence and Nonconvergence, from Oliensis, Hartley, PAMI 07
-% isProj && nFrame>2 && method==Inf
-% slower
+% isProj && nFrame>2 && method==0
+% slower and actually worth (maybe a bad implementation ...) so mehod==0
 %
 % Gold Standard for Affine camera matrix
 % Reference: HZ2, p351, Algorithm 14.1
@@ -64,9 +64,9 @@ function anim = computeSMFromW( isProj, W, varargin )
 %  varargin   - list of paramaters in quotes alternating with their values
 %       - 'isCalibrated' [false] flag indicating if the cameras are
 %                        calibrated (intrinsic parameters are identity)
-%       - 'doAffineUpgrade' [true] flag indicating if the affine upgrade
+%       - 'doAffineUpgrade' [false] flag indicating if the affine upgrade
 %                        is computed
-%       - 'doMetricUpgrade' [true] flag indicating if the metric upgrade
+%       - 'doMetricUpgrade' [false] flag indicating if the metric upgrade
 %                        is computed
 %       - 'K',[] [3 x 1 ], [ 3 x nFrame ] calibration parameters
 %                       (or [5 x 1 ], [ 5 x nFrame ] when projective)
@@ -74,7 +74,9 @@ function anim = computeSMFromW( isProj, W, varargin )
 %       - 'method', [inf] method for performing SFM (see above for details)
 %       - 'onlyErrorFlag', [false] flag indicating if only the error is
 %         needed when nFrame==2 && method==Inf && ~isProj
-%       - 'nItrSBA', [100] number of bundle adjustment iterations
+%       - 'nItrSba', [100] number of bundle adjustment iterations
+%       - 'nItrAff', [20] number of iterations in the affine upgrade
+%       - 'nItrMetr', [20] number of iterations in the metric upgrade
 %
 % OUTPUTS 1
 %  anim      - Animation object
@@ -92,13 +94,18 @@ function anim = computeSMFromW( isProj, W, varargin )
 % Licensed under the GPL [see external/gpl.txt]
 
 [ isCalibrated doAffineUpgrade doMetricUpgrade K KFull method ...
-  onlyErrorFlag nItrSBA ] = getPrmDflt( varargin, ...
-  { 'isCalibrated' false 'doAffineUpgrade' true 'doMetricUpgrade' true ...
-  'K' [] 'KFull' [] 'method' inf 'onlyErrorFlag' false 'nItrSBA' 100 }, 1);
-
-if doMetricUpgrade; doAffineUpgrade=true; end
+  onlyErrorFlag nItrSBA nItrAff nItrMetr ] = getPrmDflt( varargin, ...
+  { 'isCalibrated' false 'doAffineUpgrade' false 'doMetricUpgrade' false ...
+  'K' [] 'KFull' [] 'method' inf 'onlyErrorFlag' false 'nItrSBA' 100 ...
+  'nItrAff' 20 'nItrMetr' 20}, 1);
 
 nFrame = size(W,3); nPoint = size(W,2);
+
+if doMetricUpgrade; doAffineUpgrade=true; end
+if nFrame==2
+  doAffineUpgrade=false;
+  if ~isCalibrated; doMetricUpgrade=false; end
+end
 
 P=zeros(3,4,nFrame); P(:,:,1)=eye(3,4); if ~isProj; P(3,3:4)=[0 1]; end
 
@@ -198,20 +205,20 @@ if isProj
     C0Const = sum(WSquaredSum(:));
     for n=1:50
       % Stage 1
-      if method==0
+      if method==Inf
         for k = 1 : 10
           % normalize each column and then each row
           lam=bsxfun(@rdivide, lam, sqrt(sum(lam.^2,2)));
           lam=bsxfun(@rdivide, lam, sqrt(sum(lam.^2,3)));
         end
       end
-      
+
       % get the best rank 4 approximation
       % Wkm1 is for Wk minus 1
       [ Wkm1, Wkm1Hat ] = projSturmTriggsWkWkHat(lam,W,nFrame,nPoint);
       WWkm1Hat = sum(W.*Wkm1Hat,1);
       
-      if method==Inf
+      if method==0
         if n==1
           mu = norm(Wkm1(:)-Wkm1Hat(:))^2/norm(Wkm1(:))^4*1.1;
         else
@@ -221,13 +228,13 @@ if isProj
           C3 = mu*sum(Wkm1Hat(:).^2);
         end
       end
-      
+
       % Stage 2
       % get the optimal lambdas
       lam=sum(WWkm1Hat,1)./WSquaredSum;
-      
+
       % Stage 3
-      if method==Inf && n>1
+      if method==0 && n>1
         a = roots( [ C0, -(C0^2-2*C1), -(2*C0*C3-C2), ...
           -(4*C1*C3-2*C2*C0), C0*C3^2-2*C2*C3, ...
           2*C1*C3^2-C2^2, C2*C3^2 ] );
@@ -295,29 +302,32 @@ anim.S=S; anim.P=P;
 % do bundle adjustment
 if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
 
+% modify P so that P(:,:,1)==eye(3,4)
+anim=anim.setFirstPRtToId();
+
 % perform an affine upgrade if requested
 H=[];
 if anim.isProj
   % if we want to do an affin upgrade, and if we are not in the case
   % of the essential matrix
-  if doAffineUpgrade && ~(isCalibrated && nFrame==2)
+  if doAffineUpgrade
     % only apply the quasi affine upgrade if we are under octave
     % (as Yalmip does not work there)
     if exist('OCTAVE_VERSION','builtin')==5
       H = affineUpgrade(anim);
     else
-      [ Hqa, vBest ] = affineUpgrade(anim);
+      [ HEye, Hqa, pInf ] = affineUpgrade(anim, nItrAff);
       % if the camera is calibrated or if we do not do a metric upgrade
       % stop here
       if isCalibrated || ~doMetricUpgrade
         % apply H
-        piInf=Hqa'*vBest;
-        H=eye(4); H(4,1:3)=-piInf;
+        H=eye(4); H(4,1:3)=-pInf;
+        H=HEye*H;
       else
         % perform a metric upgrade if requested
         if doMetricUpgrade
-          [ anim.KFull, H ]=metricUpgrade(anim, 'isCalibrated', ...
-            isCalibrated, 'vBest', vBest);
+          [ anim.KFull, H ]=metricUpgrade(anim, pInf, 'isCalibrated', ...
+            isCalibrated, 'nItr', nItrMetr);
         end
       end
     end
@@ -335,8 +345,8 @@ end
 
 % apply the homography H
 if ~isempty(H)
-  anim.P=multiTimes(anim.P,H,1);
-  anim.S=normalizePoint(inv(H)*normalizePoint(anim.S,-4),4);
+  anim.P=multiTimes(anim.P,inv(H),1);
+  anim.S=normalizePoint(H*normalizePoint(anim.S,-4),4);
 end
 
 % recover rotations and translations
@@ -349,7 +359,10 @@ if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
   end
   R=zeros(3,3,nFrame);
   if anim.isProj
-    for i=1:nFrame; R(:,:,i) = rotationMatrix(P(:,1:3,i)); end
+    for i=1:nFrame
+      P(:,:,i)=P(:,:,i)/nthroot(det(P(:,1:3,i)),3);
+      R(:,:,i) = rotationMatrix(P(:,1:3,i));
+    end
     anim.t=reshape(P(:,4,:),3,nFrame);
   else
     for i=1:nFrame
@@ -360,7 +373,7 @@ if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
   anim.R=R;
 
   % do a final bundle adjustment
-  anim=anim.setFirstRToId();
+  anim=anim.setFirstPRtToId();
   if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
 end
 end

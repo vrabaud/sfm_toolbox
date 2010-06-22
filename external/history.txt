@@ -6,16 +6,16 @@ Version 3.0 ()
     - computeSFMError and computeNRSFMError are now merged in a member function computeError of the Animation class
     - require Piotr's toolbox 2.42 at least (because of the use of multiTimes)
   NEW
+    - include Chandraker's IJCV 09 for global optimization in autocalibration
     - code tested under Linux (Matlab 2008a 32-bits, Matlab 2009b 64-bits, octave 3.2.3) and Windows (Matlab 2007b 32-bits)
     - Animation now support masks and homographies (so does the bundleAdjustment function). Mask can only be used for certain parts of the code though (bundleAdjustment and display, maybe for SFM some day ...)
     - new alignTo member function to align two animations
     - noise is now handled through the addNoise member function
     - Animation objects can now easily be sampled through the sampleFrame member function
-    - auto-update of members for Animation: if you update K,R or t, it will update P automatically (sure, it's a waste of ressources but it makes things so much easier to keep track of. Wouldn't have that problem in C++)
+    - auto-update of members for Animation: if you update K,R or t, it will update P automatically (sure, it's a waste of ressources but it makes things so much easier to keep track of. Wouldn't have that problem in C++). Same for l and SBasis.
     - normalizePoint now can take sets of points
     - increased compatibility with Octave 3.2 (only display and stuff using external libraries (yalmip...) is not working). Patches are welcome.
-    - include MSFM from CVPR 08 (finally !)
-    - include CSFM from CVPR 09 (finally !)
+    - include CSFM from CVPR 09 (finally !). MSFM coming ...
     - SBA 1.6 used in bundleAdjustment. Allegedly faster.
     - new folder organization and new/more demos in SFM and NRSFM
     - quasi-affine upgrade in projective reconstruction

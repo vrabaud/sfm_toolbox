@@ -290,7 +290,7 @@ err(1) = errTmp(1); err3D(1) = err3DTmp(1);
 % perform bundle adjutment
 [ anim info ] = bundleAdjustment( anim, ...
   'KMask', [ 0 1 0 ], 'nFrameFixed', 0 );
-anim=anim.setFirstRToId();
+anim=anim.setFirstPRtToId();
 
 errTmp = anim.computeError();
 err3DTmp = anim.computeError('animGT', animGT, 'checkTransform', 'rigid' );

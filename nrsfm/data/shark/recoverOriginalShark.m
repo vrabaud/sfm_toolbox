@@ -10,9 +10,9 @@ fprintf( 'Reprojection error: %e \n', computeSFMError( 'reproj', 0, 'anim', anim
 anim.SBasis(:,:,1)=-anim.SBasis(:,:,1);
 
 anim.l(1,:)=1; anim.t(:)=0;
-anim=anim.setFirstRToId();
+anim=anim.setFirstPRtToId();
 anim = bundleAdjustment( anim, 'nItr', 100 );
-anim=anim.setFirstRToId();
+anim=anim.setFirstPRtToId();
 
 [ err ] = computeNRSFMError( animGT, anim );
 fprintf( 'Error with Xiao-Kanade: %e \n', sum(sum(err(1:2,:))) );

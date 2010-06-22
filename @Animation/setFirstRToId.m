@@ -1,7 +1,15 @@
-function anim = setFirstRToId( anim )
-% Sets the first rotation of an Animation to Id
+function [anim,HEye] = setFirstPRtToId( anim )
+% Sets the first P or (R,t) of an Animation to eye(3,4)
 %
-% Changes all the R, S and SBasis accordingly
+% The function changes all the S and SBasis accordingly to preserve the
+% projections.
+%
+% if R and t is defined, the rigid transform H is computed such that
+%   [R(:,:,1),t(:,1)]*H=eye(3,4)
+%   H is of the form [rotation,translation; 0 0 0 1]
+%
+% if R is not defined but P is, the homography H is computed such that:
+%   P(:,:,1)*H=eye(3,4)
 %
 % USAGE
 %  anim = anim.setFirstRToId()
@@ -11,6 +19,8 @@ function anim = setFirstRToId( anim )
 %
 % OUTPUTS
 %  anim     - modified Animation
+%  HEye     - [3x4] rigid transform if (R,t) are defined, or [3x4]
+%             projective transform is P is defined
 %
 % EXAMPLE
 %
@@ -21,24 +31,33 @@ function anim = setFirstRToId( anim )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-R=anim.R(:,:,1);
-% Re-generate the rotations
-% need the following line forcompatibility with octave ... otherwise
-% I would use end
-RAll=anim.R;
-if anim.nFrame>=2
-  RAll(:,:,2:anim.nFrame)=multiTimes( anim.R(:,:,2:anim.nFrame), R', 1 );
-end
-RAll(:,:,1)=eye(3); % Just for numerical stability
+if isempty(anim.R)
+  HEye=anim.P(:,:,1)\eye(3,3);
+  [disc,disc,V]=svd(anim.P(:,:,1));
+  HEye(:,4)=V(:,4);
+  % apply the homography to P
+  anim.P=multiTimes(anim.P,HEye,1);
+else
+  HEye=anim.R(:,:,1)';
+  HEye(:,4)=-anim.R(:,:,1)'*anim.t(:,1);
+  % Re-generate the rotations
+  % need the following line for compatibility with octave ... otherwise
+  % I would use end
+  PAll=anim.P;
+  if anim.nFrame>=2
+    PAll(:,:,2:anim.nFrame)=multiTimes(PAll(:,:,2:anim.nFrame),HEye,1);
+  end
+  PAll(:,:,1)=eye(3,4); % Just for numerical stability
 
-% use subsasgn so that P is modified at the same time too
-anim=subsasgn(anim,struct('type','.','subs','R'),RAll);
+  % assign values to R and t
+  anim.R=anim.P(:,1:3,:); anim.t=reshape(anim.P(:,4,:),3,anim.nFrame);
+end
 
 if anim.nBasis~=0
   % Re-generate the basis
   % use subsasgn so that S is modified at the same time too
-  anim=subsasgn(anim,struct('type','.','subs','SBasis'),...
-    multiTimes( R, anim.SBasis, 1.2 ));
+  SBasis=normalizePoint(multiTimes(inv(HEye),normalizePoint(anim.SBasis,-4),1.2),4);
+  anim=subsasgn(anim,struct('type','.','subs','SBasis'),SBasis);
 else
-  anim.S = multiTimes( R, anim.S, 1.2 );
+  anim.S=normalizePoint(multiTimes(inv(HEye),normalizePoint(anim.S,-4),1.2),4);
 end

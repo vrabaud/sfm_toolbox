@@ -129,4 +129,4 @@ for i=1:nClus
 end
 
 % Set the first rotation to Id
-anim = anim.setFirstRToId();
+anim = anim.setFirstPRtToId();
