@@ -20,7 +20,10 @@ function [ R, t, s, chirality, SAbsoluteT, SGTAbsolute ] = alignTo( ...
 %  animGT         - Animation to align to (ground truth)
 %  checkTransform - the kind of transform that can be applied to anim
 %                   ['none']. Transform that can be applied to get a
-%                   better match. Can be 'rigid' or 'homography'
+%                   better match. Can be 'homography' or 'rigid'
+%                   'rigid+scale' or 'camera' (in which case it only looks
+%                   for scale ambiguity with a projective camera, and for
+%                   depths/chirality issues for an orthographic camera)
 %
 % OUTPUTS
 %  R           - rotation to apply to the original S

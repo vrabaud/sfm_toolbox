@@ -264,8 +264,8 @@ for itr=1:nItr
   % best of another interval
   mini=min(currBest);
   badInterval=find(lowerBound>min(currBest));
-  %    [l;u]
-  % the following is necessary because of roundups
+
+% the following is necessary because of roundups
   if ~isempty(badInterval) && length(badInterval)~=length(currBest)
     l(:,badInterval)=[]; u(:,badInterval)=[]; vBest(:,badInterval)=[];
     currBest(badInterval)=[]; lowerBound(badInterval)=[];
@@ -277,7 +277,7 @@ for itr=1:nItr
   min(currBest)
   if size(l,2)==1 && norm(l-u,'fro')<eps; break; end
 end
-% figure out the best v
+% figure out the plane at infinity
 [disc,ind]=min(currBest);
 pInf=Hqa'*[vBest(:,ind);1];
 pInf=pInf(1:3)/pInf(4);

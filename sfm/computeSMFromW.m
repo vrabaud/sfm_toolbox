@@ -215,9 +215,9 @@ if isProj
       
       % get the best rank 4 approximation
       % Wkm1 is for Wk minus 1
-      [ Wkm1, Wkm1Hat ] = projSturmTriggsWkWkHat(lam,W,nFrame,nPoint);
+      [Wkm1,Wkm1Hat]=projSturmTriggsWkm1Wkm1Hat(lam,W);
       WWkm1Hat = sum(W.*Wkm1Hat,1);
-      
+
       if method==0
         if n==1
           mu = norm(Wkm1(:)-Wkm1Hat(:))^2/norm(Wkm1(:))^4*1.1;
@@ -231,7 +231,7 @@ if isProj
       
       % Stage 2
       % get the optimal lambdas
-      lam=sum(WWkm1Hat,1)./WSquaredSum;
+      lam=WWkm1Hat./WSquaredSum;
       
       % Stage 3
       if method==0 && n>1
@@ -365,7 +365,7 @@ if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
   if anim.isProj
     for i=1:nFrame
       P(:,:,i)=P(:,:,i)/nthroot(det(P(:,1:3,i)),3);
-      R(:,:,i) = rotationMatrix(P(:,1:3,i));
+      R(:,:,i)=rotationMatrix(P(:,1:3,i));
     end
     anim.t=reshape(P(:,4,:),3,nFrame);
   else
@@ -385,12 +385,12 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [ Wk, WkHat ] =projSturmTriggsWkWkHat(lam,W,nFrame,nPoint)
+function [ Wkm1, Wkm1Hat ]=projSturmTriggsWkm1Wkm1Hat(lam,W)
 % perform the computation of Wk and its rank 4 approximation
 % in Storm Triggs
-Wk = bsxfun(@times,lam,W);
-[ U S V ] = svd( reshape(permute(Wk,[1,3,2]),3*nFrame,nPoint),...
-  'econ' );
-WkHat = permute(reshape(U(:,1:4)*S(1:4,1:4)*V(:,1:4)',3,nFrame,...
+nFrame=size(W,3); nPoint=size(W,2);
+Wkm1 = bsxfun(@times,lam,W);
+[ U S V ] = svd( reshape(permute(Wkm1,[1,3,2]),3*nFrame,nPoint), 'econ' );
+Wkm1Hat = permute(reshape(U(:,1:4)*S(1:4,1:4)*V(:,1:4)',3,nFrame,...
   nPoint),[1,3,2]);
 end

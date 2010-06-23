@@ -20,7 +20,8 @@ function [ err errFrame errTot SAbsoluteT anim ] = computeError(anim, ...
 %       - 'doCheckAmbiguity' [true] if true, check for ambiguities due to
 %       the camera model (scale for isProj and necker reversal for ~isProj)
 %       - 'checkTransform' ['camera']. Transform that can be applied to get
-%       a better match. Can be 'rigid' or 'homography'
+%       a better match. Can be 'rigid', 'rigid+scale', 'homography' or
+%       'camera' (cf the alignTo function)
 %
 % OUTPUTS 'reproj'
 %  err       - [ 1 x 3 ] array of errors:
