@@ -238,10 +238,11 @@ while ~isGood
         ( ~isempty(S) &&  ...
         ~allPointsInFront( STmp, R(:,:,i), t(:,i) ) )
       % Get the camera a little bit further
-      t(3,:) = t(3,:) + span/5; isGood = false;
+      t(3,:) = t(3,:) + span/3; isGood = false;
     end
   end
 end
+t(3,:) = t(3,:) + span/3;
 
 % Define some members
 anim.isProj=isProj; anim.R=R; anim.t=t; anim.K=K;
