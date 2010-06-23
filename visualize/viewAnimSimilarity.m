@@ -24,9 +24,6 @@ function viewAnimSimilarity( anim1, Sim, varargin )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-global possibleKey showConn showFirst showGT showTitle anim ...
-  camMode alignGT hCam cam hPoint hGT hConn;
-
 showGT = false; alignGT = false; camMode = 1;
 
 [ anim2 nCam animGT showFirst ] = getPrmDflt( varargin,{ 'anim2',anim1,...
@@ -72,9 +69,15 @@ for i=1:2
     'nCam',nCam, 'c',c(i,:) );
   for j=1:3; cam{i}(j).gca = h(i); end
 end
+set(gcf,'UserData',{possibleKey,showConn,showFirst,showGT,showTitle,...
+  anim,camMode,alignGT,hCam,cam,hPoint,hGT,hConn});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function interface( src, event )
+    tmp=get(gcf,'UserData');
+    [possibleKey,showConn,showFirst,showGT,showTitle,...
+      anim,camMode,alignGT,hCam,cam,hPoint,hGT,hConn]=tmp{:};
+
     % Deal with the mouse moving around
     point = get( h(3), 'CurrentPoint' );
     x = round( point( 1, 1:2 ) );

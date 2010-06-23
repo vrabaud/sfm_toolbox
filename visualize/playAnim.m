@@ -59,10 +59,6 @@ if ~strcmp( class(animIn), 'Animation' );
   error(' Need to input an Animation object');
 end
 
-global possibleKey showConn showFirst showGT doReturn showTitle anim ...
-  camMode alignGT fps doPause hCam cam hPoint hGT hConn showPrettyAxes ...
-  animGT nCam frameNbr;
-
 anim=animIn;
 nPoint=anim.nPoint; nFrame=anim.nFrame;
 
@@ -110,20 +106,29 @@ possibleKey = { 'f' 'p' 'q' 'r' 't' '1' '2' '3' 'numpad0' 'subtract'...
 [ hPoint hConn hCam hGT ]=cloudInitialize( anim, frame(1), 'nCam',nCam, ...
   'c', [0.4,0.4,1], 'animGT', animGT,'markerScale',1 );
 
-set( gcf, 'KeyPressFcn', { @cloudInterface } );
+% set the main handle
+set(gcf,'KeyPressFcn',{@cloudInterface});
 if hConn==0; showConn = false; else possibleKey(end+1) = {'c'}; end
 if hGT==0; showGT = false; else possibleKey(end+1) = {'g'}; end
 
-axis( cam(camMode).axis );
+axis(cam(camMode).axis);
 for i=1:3; cam(i).gca = gca; end
-cloudInterface( -1, struct('Key',int2str(camMode) ) );
-cloudInterface( -1, struct('Key','' ) );
+% set the data embedded in the figure
+set(gcf,'UserData',{possibleKey,showConn,showFirst,showGT,doReturn,...
+  showTitle,anim,camMode,alignGT,fps,doPause,hCam,cam,hPoint,hGT,...
+  hConn,showPrettyAxes,animGT,nCam,0});
+cloudInterface(-1,struct('Key',int2str(camMode)));
+cloudInterface(-1,struct('Key','' ));
 
 % play the animation several times
 if nargout>0; f=1; M = repmat( getframe, 1, abs(nLoop)*length(frame) ); end
 for iLoop = 1 : abs(nLoop)
   % Play the animation once
   for frameNbr=frame
+    % embed the right data in the graph
+    set(gcf,'UserData',{possibleKey,showConn,showFirst,showGT,doReturn,...
+      showTitle,anim,camMode,alignGT,fps,doPause,hCam,cam,hPoint,hGT,...
+      hConn,showPrettyAxes,animGT,nCam,frameNbr});
     tic; try geth=get(h); catch; return; end %#ok<CTCH,NASGU>
     if doReturn; return; end
     

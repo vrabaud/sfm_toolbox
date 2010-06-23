@@ -17,9 +17,10 @@ function cloudInterface( src, event )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the Lesser GPL [see external/lgpl.txt]
 
-global possibleKey showConn showFirst showGT doReturn showTitle anim ...
-  camMode alignGT fps doPause hCam cam hPoint hGT hConn isIndep ...
-  showPrettyAxes;
+tmp=get(gcf,'UserData');
+[possibleKey,showConn,showFirst,showGT,doReturn,...
+  showTitle,anim,camMode,alignGT,fps,doPause,hCam,cam,hPoint,hGT,hConn,...
+  showPrettyAxes,animGT,nCam,frameNbr]=tmp{:};
 
 if ~iscell(anim); anim = {anim}; end
 if ~iscell(cam); cam = {cam}; end

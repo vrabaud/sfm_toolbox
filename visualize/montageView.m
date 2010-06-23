@@ -35,9 +35,6 @@ function varargout = montageView( S, varargin )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-global possibleKey showConn showFirst showTitle showPrettyAxes anim ...
-  camMode cam hPoint hConn isIndep;
-
 [ m n label conn ] = getPrmDflt( varargin, { 'm', [], 'n', [], ...
   'label', [], 'conn', [] }, 1 );
 
@@ -90,8 +87,15 @@ if isempty(hConn{1}); showConn = false; else possibleKey(end+1) = {'c'};end
 % optional output
 if( nargout>0 ); varargout={ h m n }; end
 
+set(gcf,'UserData',{possibleKey,showConn,showFirst,showTitle,...
+  showPrettyAxes,anim,camMode,camm,hPoint,hConn,isIndep});
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function interface( src, event )
+    tmp=set(gcf,'UserData');
+    [possibleKey,showConn,showFirst,showTitle,...
+      showPrettyAxes,anim,camMode,camm,hPoint,hConn,isIndep]=tmp(:);
+
     if ~isIndep; inter=1:nFrame; else inter=find(h==gca); end
     
     anim = animTot( inter );
