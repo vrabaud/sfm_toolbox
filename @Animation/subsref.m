@@ -131,7 +131,12 @@ else
             idx(2).subs{:});
       end
     case 'setFirstPRtToId',
-      varargout{1}=setFirstPRtToId(anim);
+      switch nargout
+        case 1,
+          varargout{1} = setFirstPRtToId(anim);
+        case 2,
+          [ varargout{1}, varargout{2} ] = setFirstPRtToId(anim);
+      end
     case 'W'
       varargout{1}=subsref(anim.W,idx(2));
     case 'mask'

@@ -40,6 +40,7 @@ if isempty(anim.R)
 else
   HEye=anim.R(:,:,1)';
   HEye(:,4)=-anim.R(:,:,1)'*anim.t(:,1);
+  HEye(4,:)=[0,0,0,1];
   % Re-generate the rotations
   % need the following line for compatibility with octave ... otherwise
   % I would use end
