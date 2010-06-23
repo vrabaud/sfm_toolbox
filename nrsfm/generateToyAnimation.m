@@ -244,11 +244,11 @@ while ~isGood
 end
 
 % Define some members
-anim.R=R; anim.t=t; anim.K=K;
+anim.isProj=isProj; anim.R=R; anim.t=t; anim.K=K;
 
 if isempty(anim.l) || isempty(anim.SBasis); anim.S=S; end
 
-anim.conn=conn; anim.isProj=isProj;
+anim.conn=conn;
 
 if dR~=0; anim = anim.setFirstPRtToId(); end
 

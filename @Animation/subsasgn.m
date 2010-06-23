@@ -119,26 +119,33 @@ end
 switch var
   % deal with the modified shape basis/coefficients
   case {'l','SBasis'}
-    anim.nFrame=max([ size(anim.W,3) size(anim.S,3) size(anim.l,2) ...
-      size(anim.R,3) ] );
+    anim.nFrame=max([anim.nFrame size(anim.l,2)]);
+    anim.nPoint=max([anim.nPoint size(anim.SBasis,2)]);
     if ~isempty(anim.l) && ~isempty(anim.SBasis)
       anim.nBasis=size(anim.SBasis,3);
       anim=generateSFromLSBasis(anim);
     end
-  case {'K', 'R', 't'}
-    % reset some global values
-    if size(anim.K,1)==5; anim.isProj=true;
-    elseif size(anim.K,1)==3; anim.isProj=false;
+  case {'K', 'R', 't', 'isProj'}
+    % rare case where we change the type of camera
+    switch var
+      case 'isProj'
+        if size(anim.K,1)==5 && ~anim.isProj; anim.K=anim.K(1:3,:);
+        elseif size(anim.K,1)==3 && anim.isProj; anim.K(4:5,:)=0;
+        end
+      case 'K'
+        % reset isProj otherwise
+        if size(anim.K,1)==5; anim.isProj=true;
+        elseif size(anim.K,1)==3; anim.isProj=false;
+        end
     end
-    anim.nFrame=max([ size(anim.W,3) size(anim.S,3) size(anim.l,2) ...
-      size(anim.R,3) ] );
+    anim.nFrame=max([ anim.nFrame size(anim.K,2), size(anim.R,3) ...
+      size(anim.t,2)]);
     % yeah yeah, not optimal but easier to keep everything in sync like
     % that
     if ~isempty(anim.R) && size(anim.t,2)==size(anim.R,3)
       anim.P=generateP(anim);
     end
   case {'W', 'S'}
-    anim.nPoint=max([ size(anim.W,2) size(anim.S,2) size(anim.SBasis,2)] );
-    anim.nFrame=max([ size(anim.W,3) size(anim.S,3) size(anim.l,2) ...
-      size(anim.R,3) ] );
+    anim.nPoint=max([anim.nPoint size(anim.W,2) size(anim.S,2)]);
+    anim.nFrame=max([anim.nFrame size(anim.W,3) size(anim.S,3)]);
 end
