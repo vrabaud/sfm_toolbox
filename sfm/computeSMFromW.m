@@ -5,7 +5,7 @@ function anim = computeSMFromW( isProj, W, varargin )
 % Reference: HZ2, p259, Result 9.19, and p. 294
 % isProj && nFrame==2 && isCalibrated
 % fast
-% 
+%
 % Normalized 8-point algorithm
 % Reference: HZ2, p279 and alg 11.1 p. 282
 % isProj && nFrame==2 && ~isCalibrated
@@ -112,7 +112,7 @@ P=zeros(3,4,nFrame); P(:,:,1)=eye(3,4); if ~isProj; P(3,3:4)=[0 1]; end
 if size(W,1)==3; W = normalizePoint(W,3); end
 
 % create an animation object that wil contain the output
-anim=Animation(); anim.isProj=isProj; anim.W=W; 
+anim=Animation(); anim.isProj=isProj; anim.W=W;
 
 % If calibrated, apply inv(K)
 if ~isempty(K); anim.K=K; end
@@ -138,15 +138,15 @@ if isProj
     % Normalize input data
     [x T]=normalizePoint(W(:,:,1),Inf);
     [xp Tp]=normalizePoint(W(:,:,2),Inf);
-
+    
     A=[xp([1 1],:).*x; xp(1,:); xp([2 2],:).*x;xp(2,:);x;ones(1,nPoint)]';
-
+    
     [U,S,V]=svd(A,0); F=reshape(V(:,end),[3,3])';
     [U,S,V]=svd(F,0);
     F=U*diag([S(1,1) S(2,2) 0])*V';
-
+    
     F=[ Tp; 0 0 1 ]'*F*[ T; 0 0 1 ];
-
+    
     if ~isCalibrated
       P(:,:,2) = convertPF([],F,true);
       S = computeSFromWM( true, W, P, 'method', 0 );
@@ -155,7 +155,7 @@ if isProj
       % Reference: HZ2, p259, Result 9.19, and p. 294
       [ U disc V ] = svd(F);
       if det(U)<0; U=-U; end; if det(V)<0; V=-V; end
-
+      
       % Check which of the 4 possibilities gives a point in front of both
       % cameras
       WW = [ 0 -1 0; 1 0 0; 0 0 1 ];
@@ -176,7 +176,7 @@ if isProj
         for j = 1 : 2
           % camera center (Reference: HZ2, p158-161)
           M = P(:,1:3,j);
-          C(:,j)=[ -M\P(:,4,j) ];
+          C(:,j)=-M\P(:,4,j);
           % principal axis
           v(:,j) = det(M)*M(3,:)';
         end
@@ -212,7 +212,7 @@ if isProj
           lam=bsxfun(@rdivide, lam, sqrt(sum(lam.^2,3)));
         end
       end
-
+      
       % get the best rank 4 approximation
       % Wkm1 is for Wk minus 1
       [ Wkm1, Wkm1Hat ] = projSturmTriggsWkWkHat(lam,W,nFrame,nPoint);
@@ -228,11 +228,11 @@ if isProj
           C3 = mu*sum(Wkm1Hat(:).^2);
         end
       end
-
+      
       % Stage 2
       % get the optimal lambdas
       lam=sum(WWkm1Hat,1)./WSquaredSum;
-
+      
       % Stage 3
       if method==0 && n>1
         a = roots( [ C0, -(C0^2-2*C1), -(2*C0*C3-C2), ...
@@ -288,7 +288,7 @@ else
       [ U S V ] = svd( WStack );
       P = permute(reshape(U(:,1:3),2,nFrame,3),[1 3 2]);
       P(3,4,:) = 1; P(1:2,4,:) = reshape( t, 2, 1, nFrame );
-
+      
       S=bsxfun(@times,[ S(1,1); S(2,2); S(3,3) ], V(:,1:3)');
     end
   end
@@ -299,15 +299,19 @@ if onlyErrorFlag; anim=err; return; end
 % fill the Animation object with the results
 anim.S=S; anim.P=P;
 
-% do bundle adjustment
-if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
-
-% modify P so that P(:,:,1)==eye(3,4)
-anim=anim.setFirstPRtToId();
-
 % perform an affine upgrade if requested
 H=[];
 if anim.isProj
+  % do bundle adjustment
+  if nItrSBA > 0
+    anim = bundleAdjustment( anim, 'nItr', nItrSBA );
+  else
+    anim = bundleAdjustment( anim, 'nItr', 20 );
+  end
+
+  % modify P so that P(:,:,1)==eye(3,4)
+  anim=anim.setFirstPRtToId();
+
   % if we want to do an affin upgrade, and if we are not in the case
   % of the essential matrix
   if doAffineUpgrade
@@ -338,15 +342,15 @@ else
       H=metricUpgrade(anim, 'isCalibrated', isCalibrated, 'method', method);
     elseif exist('OCTAVE_VERSION','builtin')~=5
       [ H, anim.KFull ]=metricUpgrade(anim, 'isCalibrated', ...
-      isCalibrated, 'method', method);
+        isCalibrated, 'method', method);
     end
   end
 end
 
 % apply the homography H
 if ~isempty(H)
-  anim.P=multiTimes(anim.P,inv(H),1);
-  anim.S=normalizePoint(H*normalizePoint(anim.S,-4),4);
+  anim.P=multiTimes(anim.P,H,1);
+  anim.S=normalizePoint(inv(H)*normalizePoint(anim.S,-4),4);
 end
 
 % recover rotations and translations
@@ -354,7 +358,7 @@ if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
   P=anim.P; KFull=anim.KFull;
   if ~isCalibrated && ~isempty(KFull)
     if size(KFull,3)==1; P=multiTimes(inv(KFull),P,1.2);
-    else; P=multiDiv(KFull,P,2);
+    else P=multiDiv(KFull,P,2);
     end
   end
   R=zeros(3,3,nFrame);
@@ -371,9 +375,10 @@ if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
     anim.t=reshape(P(1:2,4,:),2,nFrame); anim.t(3,:)=0;
   end
   anim.R=R;
-
+  
   % do a final bundle adjustment
   anim=anim.setFirstPRtToId();
+  
   if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
 end
 end

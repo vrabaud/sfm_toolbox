@@ -56,7 +56,7 @@ while hasChanged
   if nnz(ind) > 0
     PClean(:,:,ind)=-PClean(:,:,ind); w(:,ind)=-w(:,ind); hasChanged=true;
   end
-
+  
   ind=sum(sign(w),2)<0;
   if nnz(ind) > 0
     SHomogClean(:,ind)=-SHomogClean(:,ind); w(ind,:)=-w(ind,:); hasChanged=true;
@@ -205,12 +205,12 @@ for itr=1:nItr
   % perform branch and bound
   [l,u,vBest,currBest,lowerBound,newInd]=bnbBranch(l,u,vBest,...
     currBest,lowerBound);
-
+  
   % compute the lower bound/current best for each new interval
   for ind=newInd
     % add boundary conditions
     F=FIni+set(l(:,ind)<=v<=u(:,ind));
-
+    
     % compute the bounds on a,b,c,d
     abcdBound=zeros(nFrame,2,4);
     for j=1:4
@@ -220,7 +220,7 @@ for itr=1:nItr
         [l(:,ind) u(:,ind); 1 1],1,4,2)),3);
       abcdBound(:,:,j)=reshape(sum(allProduct,2),nFrame,2);
     end
-
+    
     % add relaxation constraints on f and g
     for k=1:2
       F = F + relaxx13y(fg(:,k),greekHqat(:,:,k+2)*[v;1],...
@@ -230,24 +230,24 @@ for itr=1:nItr
     % add the constraint on e
     F = F + concx83(e,greekHqat(1,:,4)*[v;1],abcdBound(1,1,4),...
       abcdBound(1,2,4));
-
+    
     % solve the problem
     % yop, sad but that needs to be done
     clear mexsdpa;
     diagno = solvesdp(F,r,solverSetting);
     lowerBound(ind)=double(r);
-
+    
     % make sure the best value is in the interval
     vBestTmp=min([max([double(v),l(:,ind)],[],2),u(:,ind)],[],2);
-
+    
     % check for a few random values in the interval and check if they are
     % better than the value at the optimal v
-    allV=[ vBestTmp, bsxfun(@plus,bsxfun(@times,rand(3,100),...
+    allV=[ vBestTmp, bsxfun(@plus,bsxfun(@times,rand(3,10000),...
       u(:,ind)-l(:,ind)), l(:,ind)) ];
     allMin=criterion(allV,greekHqat);
     [ disc, bestInd ]=min(allMin);
     vBestTmp=allV(:,bestInd);
-
+    
     % perform gradient descent from the best v to find a better solution
     vBestTmp=fmincon(@(x)criterion(x,greekHqat),...
       vBestTmp,[],[],[],[],l(:,ind),u(:,ind),[],optimset(...
@@ -259,16 +259,6 @@ for itr=1:nItr
     if currBestTmp<currBest(ind)
       currBest(ind)=currBestTmp; vBest(:,ind)=vBestTmp;
     end
-
-    if double(r) > currBest(ind);
-    double(r)
-    currBest(ind)
-    double(r) - currBest(ind), save('temp');
-    k=1;
-    [abcdBound(:,1,k+2),abcdBound(:,2,k+2),abcdBound(:,1,k),abcdBound(:,2,k)]
-    checkset(F)
-
-    'pprpprp', pause; end
   end
   % remove intervals for which the lower bound is higher than the current
   % best of another interval
@@ -290,7 +280,7 @@ end
 % figure out the best v
 [disc,ind]=min(currBest);
 pInf=Hqa'*[vBest(:,ind);1];
-pInf=pInf(1:3)/pInf(4)
+pInf=pInf(1:3)/pInf(4);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -373,7 +363,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [constr,indTot]=convx13yxpos(z,x,xl,xu,y,yl,yu,t1)
+function constr=convx13yxpos(z,x,xl,xu,y,yl,yu,t1)
 % compute the convex relaxation for x^(1/3)*y and xl>0
 % case 1
 ind=(0<yl);
@@ -399,7 +389,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [constr,indTot]=convx13yCaseI(z,x,xl,xu,y,yl,yu,t1)
+function constr=convx13yCaseI(z,x,xl,xu,y,yl,yu,t1)
 % convex relaxation for x^(1/3)*y, when xl>0 or xu<0 (Case I of the paper)
 % case where xl<0
 ind=(xl>0);
@@ -426,13 +416,13 @@ function constr=convx13CaseII(x,xl,xu,t)
 ind=(xl<=0) & (0<=xu) & (-xu/8>xl);
 if nnz(ind)>=1
   [a,b]=lineTangentCoeff(xl(ind));
-%    constr=[ t(ind)>=(nthroot(xu(ind),-3).^2-2/3*...
-%      nthroot(xl(ind),3)./xu(ind)).*x(ind)+2/3*nthroot(xl(ind),3); ...
-%      t(ind)>=a.*x(ind)+b ];
-% the following violates Cauchy conditions but is bounded by the
-% commented one above that does, so we are safe for the convergence
-constr=[ t(ind)>=(nthroot(xu(ind),3).^(-2)*4/3.*(x(ind)-xu(ind))+ ...
-  nthroot(xu(ind),3)); t(ind)>=a.*x(ind)+b ];
+  %    constr=[ t(ind)>=(nthroot(xu(ind),-3).^2-2/3*...
+  %      nthroot(xl(ind),3)./xu(ind)).*x(ind)+2/3*nthroot(xl(ind),3); ...
+  %      t(ind)>=a.*x(ind)+b ];
+  % the following violates Cauchy conditions but is bounded by the
+  % commented one above that does, so we are safe for the convergence
+  constr=[ t(ind)>=(nthroot(xu(ind),3).^(-2)*4/3.*(x(ind)-xu(ind))+ ...
+    nthroot(xu(ind),3)); t(ind)>=a.*x(ind)+b ];
 else
   constr=[];
 end
@@ -449,7 +439,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [constr,indTot]=relaxx13y(z,x,xl,xu,y,yl,yu,t,t1)
+function constr=relaxx13y(z,x,xl,xu,y,yl,yu,t,t1)
 % Case I: xl>0 or xu<0
 % add the convex and the concave relaxation for x^(1/3)*y
 constr=convx13yCaseI(z,x,xl,xu,y,yl,yu,t1(:,1)) + ...

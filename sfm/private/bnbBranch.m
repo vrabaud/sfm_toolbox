@@ -42,25 +42,47 @@ function [l,u,vBest,currBest,lowerBound,newInd]=bnbBranch(l,u,vBest,...
 [ disc, ind2 ]=min(currBest);
 % only do the one with the current best once in a while: if it is indeed
 % the best, we are going to refine that interval for no reason
-if rand()>0.9; goodInd=unique([ind1,ind2]);
+if rand()>0.9; goodInd=unique([ind1,ind1]);
 else; goodInd=unique([ind1,ind1]); end
+
+% also add the biggest interval
+[ disc, ind3 ]=max(prod(u-l,1));
+%  goodInd(end+1)=ind3;
+%  goodInd(end+1)=1;
+
+goodInd=unique(goodInd);
 
 for ind=goodInd(end:-1:1)
   % define the boundaries of the new interval
+  % one way of doing it is by simply splitting in the middle of the largest
+  % dimension
+
+
+  % you can also split where there is already a minimum, if it is not too
+  % far from the center
   [ disc, dim ]=max(u(:,ind)-l(:,ind));
-  l(:,end+1)=l(:,ind);
-  u(:,end+1)=u(:,ind); u(dim,end)=(u(dim,ind)+l(dim,ind))/2;
-  l(:,end+1)=l(:,ind); l(dim,end)=(u(dim,ind)+l(dim,ind))/2;
-  u(:,end+1)=u(:,ind);
+  if abs(vBest(dim,ind)-(u(dim,ind)+l(dim,ind))/2) < 0.4*(u(dim,ind)-l(dim,ind))/2
+    l(:,end+1)=l(:,ind);
+    u(:,end+1)=u(:,ind); u(dim,end)=vBest(dim,ind);
+    l(:,end+1)=l(:,ind); l(dim,end)=vBest(dim,ind);
+    u(:,end+1)=u(:,ind);
+  else
+    [ disc, dim ]=max(u(:,ind)-l(:,ind));
+    l(:,end+1)=l(:,ind);
+    u(:,end+1)=u(:,ind); u(dim,end)=(u(dim,ind)+l(dim,ind))/2;
+    l(:,end+1)=l(:,ind); l(dim,end)=(u(dim,ind)+l(dim,ind))/2;
+    u(:,end+1)=u(:,ind);
+  end
+
   vBest(:,end+1:end+2)=[vBest(:,ind),vBest(:,ind)];
 
   % keep track of the current best and lower bound
-  % those can be inherited for the interval we are splitting
+  % those can be inherited from the interval we are splitting
   if vBest(dim,ind)>=l(dim,end)
     currBest(end+1:end+2)=[Inf,currBest(ind)];
     lowerBound(end+1:end+2)=[Inf,lowerBound(ind)];
   else
-	currBest(end+1:end+2)=[currBest(ind),Inf];
+    currBest(end+1:end+2)=[currBest(ind),Inf];
     lowerBound(end+1:end+2)=[lowerBound(ind),Inf];
   end
   % remove the interval we have split
@@ -68,4 +90,4 @@ for ind=goodInd(end:-1:1)
   lowerBound(ind)=[];
 end
 
-newInd=[max([1,size(l,2)-2*length(goodInd)+1]):size(l,2)];
+newInd=[size(l,2)-2*length(goodInd)+1:size(l,2)];
