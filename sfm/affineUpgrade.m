@@ -206,7 +206,8 @@ FIni=set(cone([2*(fg(:,1)-fg(:,2));r-e],r+e)) + ...
 currBest=Inf; lowerBound=Inf;
 eps=1e-4;
 solverSetting = sdpsettings('solver','sedumi,sdpa,csdp,*','verbose',0, ...
-  'cachesolvers',0,'debug',1);
+  'cachesolvers',0);
+ticId = ticStatus('affine upgrade iterations',1,1);
 for itr=1:nItr
   % perform branch and bound
   [l,u,vBest,currBest,lowerBound,newInd]=bnbBranch(l,u,vBest,...
@@ -257,7 +258,8 @@ for itr=1:nItr
     % perform gradient descent from the best v to find a better solution
     vBestTmp=fmincon(@(x)criterion(x,greekHqat),...
       vBestTmp,[],[],[],[],l(:,ind),u(:,ind),[],optimset(...
-      'GradObj','off','Hessian','off','Algorithm','active-set'));
+      'GradObj','off','Hessian','off','Algorithm','active-set',...
+      'Display','off'));
     % make sure the best value is in the interval
     vBestTmp=min([max([vBestTmp,l(:,ind)],[],2),u(:,ind)],[],2);
     % keep that v if the criterion is better than the current one
@@ -271,16 +273,17 @@ for itr=1:nItr
   mini=min(currBest);
   badInterval=find(lowerBound>min(currBest));
 
-% the following is necessary because of roundups
+  % the following is necessary because of roundups
   if ~isempty(badInterval) && length(badInterval)~=length(currBest)
     l(:,badInterval)=[]; u(:,badInterval)=[]; vBest(:,badInterval)=[];
     currBest(badInterval)=[]; lowerBound(badInterval)=[];
   end
-  lowerBound
-  currBest
-  [l;u]
-  vBest
-  min(currBest)
+%    lowerBound
+%    currBest
+%    [l;u]
+%    vBest
+%    min(currBest)
+  tocStatus( ticId, itr/nItr );
   if size(l,2)==1 && norm(l-u,'fro')<eps; break; end
 end
 % figure out the plane at infinity

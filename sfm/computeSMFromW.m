@@ -16,14 +16,13 @@ function anim = computeSMFromW( isProj, W, varargin )
 % Sturm and Triggs ECCV 96
 % A Factorization Based Algorithm for Multi-Image Projective Structure and
 % Motion
-% isProj && nFrame>2 && method==Inf
-% slower
+% isProj && nFrame>2 && method==0
 %
 % Projective Factorization
 % Reference: Iterative Extensions of the Sturm/Triggs Algorithm:
 % Convergence and Nonconvergence, from Oliensis, Hartley, PAMI 07
-% isProj && nFrame>2 && method==0
-% slower and actually worth (maybe a bad implementation ...) so mehod==0
+% isProj && nFrame>2 && method==Inf
+% slower
 %
 % Gold Standard for Affine camera matrix
 % Reference: HZ2, p351, Algorithm 14.1
@@ -205,7 +204,7 @@ if isProj
     C0Const = sum(WSquaredSum(:));
     for n=1:50
       % Stage 1
-      if method==Inf
+      if method==0
         for k = 1 : 10
           % normalize each column and then each row
           lam=bsxfun(@rdivide, lam, sqrt(sum(lam.^2,2)));
@@ -218,7 +217,7 @@ if isProj
       [Wkm1,Wkm1Hat]=projSturmTriggsWkm1Wkm1Hat(lam,W);
       WWkm1Hat = sum(W.*Wkm1Hat,1);
 
-      if method==0
+      if method==Inf
         if n==1
           mu = norm(Wkm1(:)-Wkm1Hat(:))^2/norm(Wkm1(:))^4*1.1;
         else
@@ -234,7 +233,7 @@ if isProj
       lam=WWkm1Hat./WSquaredSum;
       
       % Stage 3
-      if method==0 && n>1
+      if method==Inf && n>1
         a = roots( [ C0, -(C0^2-2*C1), -(2*C0*C3-C2), ...
           -(4*C1*C3-2*C2*C0), C0*C3^2-2*C2*C3, ...
           2*C1*C3^2-C2^2, C2*C3^2 ] );

@@ -311,16 +311,15 @@ nFrame = 10; nPoint = 50;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
   'isProj',true,'dR', 1 );
 animGT=animGT.addNoise('noiseS', '5', 'doFillW', true);
-
 playAnim( animGT, 'frame', 1, 'nCam', 20 );
-
+save('badAffine');
 % The following should give the same low errors
 fprintf( ['Computing several reconstructions on %d frames with %d noisy'...
   ' features.\n' ], nFrame, nPoint );
-anim = cell(4,2);
-err = zeros(4,2); err3D = err;
+anim = cell(5,2);
+err = zeros(5,2); err3D = err;
 
-for i = 1 : 4
+for i = 1 : 5
   for j = 1 : 2
     switch i
       case 1,
@@ -353,10 +352,13 @@ for i = 1 : 4
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 5,
-        %         [ S(:,:,5,j) P{5} errTmp ] = computeSMFromW( true, ...
-        %           animGT.W, 'method', 0, 'isCalibrated',true,...
-        %           'nItrSBA', (j-1)*100 );
-        %         out = 'All the views, calibrated cameras:\n';
+        animGTSample=animGT;
+        anim{5,j} = computeSMFromW( true, ...
+          animGT.W, 'method', Inf, 'isCalibrated',true,...
+          'nItrSBA', (j-1)*100, 'doAffineUpgrade', true, 'nItrAff', 20 );
+        typeTransform = 'rigid+scale';
+        type3DError = 'up to a scaled rigid transform';
+        out = 'All the views, calibrated cameras:\n';
     end
     errTmp = anim{i,j}.computeError();
     err(i,j) = errTmp(1);

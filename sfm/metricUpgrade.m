@@ -1,4 +1,4 @@
-function [ H, K ] = metricUpgrade(anim, varargin)
+function [ H, K ] = metricUpgrade(anim, pInf, varargin)
 % Perform an affine upgrade
 %
 % Given projection matrices and a 3D projective structure in anim,
@@ -12,10 +12,11 @@ function [ H, K ] = metricUpgrade(anim, varargin)
 %  varargin   - list of paramaters in quotes alternating with their values
 %       - 'isCalibrated' flag indicating if the camera is calibrated or not
 %                  (K=eye(3))
-%       - 'vBest'  optimal v found in affineUpgrade
+%       - 'pInf' [3 x 1] plane at inifinty found in affineUpgrade
 %       - 'method' only used with an orthographic camera
 %                   if 0, simple metric constraints
 %                   if inf, metric constraints soolve mode exactly with SDP
+%       - 'nItr' number of iterations in the branch and bound algorithm
 %
 % OUTPUTS
 %  H             - homography to apply to get projection matrices
@@ -32,8 +33,8 @@ function [ H, K ] = metricUpgrade(anim, varargin)
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-[ isCalibrated vBest method ] = getPrmDflt( varargin, ...
-  { 'isCalibrated' false 'vBest' [] 'method' inf}, 1);
+[ isCalibrated method nItr ] = getPrmDflt( varargin, ...
+  { 'isCalibrated' false 'method' inf 'nItr', 20}, 1);
 
 P=anim.P; S=anim.S; W=anim.W; nPoint=anim.nPoint; nFrame=anim.nFrame;
 H=[]; K=[];
@@ -81,83 +82,117 @@ end
 
 % simple case where the camera is projective and calibrated
 if anim.isProj && isCalibrated
-  piInf=Hqa'*vBest; H=eye(4); H(4,1:3)=-piInf;
+  H=eye(4); H(4,1:3)=-pInf;
   return
 end
-return
+
+% Yalmip does not work under octave sorry :(
+if exist('OCTAVE_VERSION','builtin')==5; return; end
+
 % Chandraker IJCV 2009
 % globally optimal metric upgrade
-HInfinity=anim.P(:,1:3,:)-multiTimes(anim.P(:,4,:),[v(1),v(2),v(3),1],1);
+HInfinity=anim.P(:,1:3,:)-multiTimes(anim.P(:,4,:), pInf',1);
 
 % free variables for the convex/concave relaxations
 omega=sdpvar(3,3);
-omegaCol=[omega(1,1);omega(1,2);omega(1,3);omega(2,2);omega(2,3);1];
+omegaCol=[omega(1,1);omega(1,2);omega(1,3);omega(2,2);omega(2,3)];
+omegaColOne=[omegaCol;1];
 nu=sdpvar(3,3,nFrame);
-nuCol=[nu(1,1,:);nu(1,2,:);nu(1,3,:);nu(2,2,:);nu(2,3,:);nu(3,3,:)];
+nuCol=reshape([nu(1,1,:);nu(1,2,:);nu(1,3,:);nu(2,2,:);nu(2,3,:);...
+  nu(3,3,:)],[6,nFrame]);
 lam=sdpvar(1,nFrame); a=sdpvar(1,nFrame);
 
-solverSetting = sdpsettings('solver','sdpa,csdp,sedumi,*','verbose',0, ...
+solverSetting = sdpsettings('solver','sedumi,sdpa,csdp,*','verbose',0, ...
   'cachesolvers',1);
 
-FIni=set(omega >= 0) + set(omega(3,3)==1);
+FIni=[ omega >= 0, omega(3,3)==1 ];
 
-l=repmat(-100,5,1); u=-l;
+% omega=KK' so we can deduce bounds on values of omega
+kl=[0,-1000,0,-1000,-1000]; ku=[2000,1000,2000,1000,1000];
+K=sdpvar(3,3);
+F=[ kl(:)<=K([1:3,5:6,9])<=ku(:) ];
 % l and u are the bounds of omega, where the values are
+l=zeros(5,1); u=l;
+for j=1:2
+  for i=j:3
+    solvesdp( F, K(j,:)*K(:,i), solverSetting );
+    l(i+(j-1)*3)=double(K(j,:))*double(K(:,i));
+    solvesdp( F, -K(j,:)*K(:,i), solverSetting );
+    u(i+(j-1)*3)=-double(K(j,:))*double(K(:,i));
+  end
+end
+
 % [ o1 o2 o3, o2 o4 o5; o3 o5 1 ]
-omegaBest=zeros(4,1); currBest=[Inf]; lowerBound=[Inf];
-for nItr=1:10
+omegaColBest=(l+u)/2; currBest=[Inf]; lowerBound=[Inf];
+for itr=1:nItr
   % perform branch and bound
-  [l,u,vBest,currBest,lowerBound,newInd]=bnbBranch(l,u,vBest,...
-    currBest,lowerBound)
+  [l,u,omegaColBest,currBest,lowerBound,newInd]=bnbBranch(l,u,omegaColBest,...
+    currBest,lowerBound);
 
   % compute the lower bound/current best for each interval
   for ind=newInd
+    F=FIni+[ l(:,ind)<=omegaCol<=u(:,ind) ];
     % compute Li and Ui
     L=zeros(1,nFrame); U=zeros(1,nFrame);
     for i=1:nFrame
       crit=HInfinity(3,:,i)*omega*HInfinity(3,:,i)';
-      diagno = solvesdp( F, crit, sdpsettings('solver', ...
-        'sdpa,csdp,sedumi,*','debug',2) );
-      L(i)=double(crit);
-      diagno = solvesdp( F, -crit, sdpsettings('solver', ...
-        'sdpa,csdp,sedumi,*','debug',2) );
-      U(i)=double(crit);
+      diagno = solvesdp( F, -crit, solverSetting );
+      L(i)=1/double(crit);
+      diagno = solvesdp( F, crit, solverSetting );
+      U(i)=1/double(crit);
     end
     % add constraints
     F=FIni;
-    F=F+set(nuCol<=omegaCol*U+l(:,ind)*lam-l(:,ind)*U);
-    F=F+set(nuCol<=omegaCol*L+u(:,ind)*lam-u(:,ind)*L);
-    F=F+set(nuCol>=omegaCol*L+l(:,ind)*lam-l(:,ind)*L);
-    F=F+set(nuCol>=omegaCol*U+u(:,ind)*lam-u(:,ind)*U);
-    F=F+set(l(:,ind)<=omegaCol<=u(:,ind));
-    F=F+set(L<=lam<=U);
+    aa=omegaColOne*U+[l(:,ind);1]*(lam-U);
+    bb=omegaColOne*L+[u(:,ind);1]*(lam-L);
+    cc=omegaColOne*L+[l(:,ind);1]*(lam-L);
+    dd=omegaColOne*U+[u(:,ind);1]*(lam-U);
+    F=F+[ cc(:)<=nuCol(:)<=aa(:), dd(:)<=nuCol(:)<=bb(:), L<=lam<=U ];
+
+%      % define all the SOCP constraints
+%      for i=1:nFrame
+%        tmp=HInfinity(:,:,i)*nu(:,:,i)*HInfinity(:,:,i)';
+%        F=F+cone(tmp(:)-omega(:),a(i));
+%      end
+%      crit=norm(a)^2;
 
     % define all the SOCP constraints
+    crit=0;
     for i=1:nFrame
-      F=F+cone(HInfinity(:,:,i)*nu(:,:,i)*HInfinity(:,:,i)'-omega,a(i));
+      tmpHInfinity(:,:,i)*nu(:,:,i)*HInfinity(:,:,i)';
+      crit=crit+norm(tmp(:)-omega(:))^2;
     end
 
     % solve for omega
-    crit=norm(a)^2;
     diagno = solvesdp( F, crit, solverSetting );
-    lowerBound(i)=double(crit);
+    lowerBound(ind)=double(crit);
 
     % compute the current best
-    omegaBestTmp=double([omegaCol(1:3); omegaCol([2,4,5]); ...
-      omegaCol([3,5]), 1]);
-    currBestTmp=criterion(omegaBestTmp,double(lam),HInfinity);
+    omegaColBestTmp=double(omegaCol);
+    currBestTmp=criterion(omegaColBestTmp,double(lam),HInfinity);
     if currBestTmp<currBest(ind)
-      currBest(ind)=currBestTmp; omegaBest(:,:,ind)=omegaBestTmp;
+      currBest(ind)=currBestTmp; omegaColBest(:,ind)=omegaColBestTmp;
     end
   end
   % remove intervals for which the lower bound is higher than the current
   % best of another intervals
   badInterval=find(lowerBound>min(currBest));
-  l(:,badInterval)=[]; u(:,badInterval)=[]; omegaBest(:,:,badInterval)=[];
-  lowerBound(:,:,badInterval)=[]; currBest(:,:,badInterval)=[];
+  lowerBound
+  currBest
+  [l;u]
+  omegaColBest
+  min(currBest)
+  l(:,badInterval)=[]; u(:,badInterval)=[]; omegaColBest(:,badInterval)=[];
+  lowerBound(:,badInterval)=[]; currBest(:,badInterval)=[];
+  lowerBound
+  currBest
+  [l;u]
+  omegaColBest
+  min(currBest)
 end
 % figure out K from omega
-K=chol(omegaBest(:,:,1));
+[ disc, ind ]=min(currBest);
+K=chol(triToFull([omegaColBest(:,ind);1]));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -170,9 +205,17 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function res=criterion(omega,lam,HInfinity)
+function res=triToFull(x)
+% phaving a 6x1 or 1x6 vector, build the full 3x3 symmetric metrix
+res=[x(1:3);x([2,4,5]);x([3,5,6])];
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function res=criterion(omegaCol,lam,HInfinity)
+omega=triToFull([omegaCol;1]);
 bestTmp=bsxfun(@minus, omega, bsxfun(@times,...
-  reshape(lam,1,1,nFrame), multiTimes(HInfinity,...
+  reshape(lam,1,1,length(lam)), multiTimes(HInfinity,...
   multiTimes(omega,HInfinity,1.2),2)));
 res=norm(bestTmp(:))^2;
 end
