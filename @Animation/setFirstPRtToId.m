@@ -49,6 +49,7 @@ else
     PAll(:,:,2:anim.nFrame)=multiTimes(PAll(:,:,2:anim.nFrame),HEye,1);
   end
   PAll(:,:,1)=eye(3,4); % Just for numerical stability
+  anim.P=PAll;
 
   % assign values to R and t
   anim.R=anim.P(:,1:3,:); anim.t=reshape(anim.P(:,4,:),3,anim.nFrame);
