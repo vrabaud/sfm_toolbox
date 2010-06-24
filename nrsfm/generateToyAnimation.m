@@ -228,27 +228,16 @@ else
   end
 end
 
-% make sure all the points are in front of the camera
-isGood = false;
-while ~isGood
-  isGood = true;
-  for i = 1 : nFrame
-    if size(S,3)==1; STmp=S; else STmp=S(:,:,i); end
-    if ~allPointsInFront( STmp, R(:,:,i), t(:,i) ) || ...
-        ( ~isempty(S) &&  ...
-        ~allPointsInFront( STmp, R(:,:,i), t(:,i) ) )
-      % Get the camera a little bit further
-      t(3,:) = t(3,:) + span/3; isGood = false;
-    end
-  end
-end
-t(3,:) = t(3,:) + span/3;
-
-% Define some members
+% start creating the Animation
 anim.isProj=isProj; anim.R=R; anim.t=t; anim.K=K;
 
 if isempty(anim.l) || isempty(anim.SBasis); anim.S=S; end
 
+% make sure all the points are in front of the camera
+S=animGT.generateSAbsolute();
+anim.t(3,:)=anim.t(3,:)-min(S(3,:))+span/3;
+
+% Define other members
 anim.conn=conn;
 
 if dR~=0; anim = anim.setFirstPRtToId(); end
@@ -260,10 +249,4 @@ end
 function S = normalize( S, nPoint )
 S = S - repmat( mean( S, 2 ), [ 1 nPoint 1 ] );
 S = S/max(abs(S(:)))/2;
-end
-function answer = allPointsInFront( S, R, t )
-% compute image points
-X = R*S + repmat( t, [ 1 size(S,2) ] );
-% Check if they are in front
-answer = all( X(3,:) > 0 );
 end
