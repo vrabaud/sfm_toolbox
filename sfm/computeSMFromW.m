@@ -318,9 +318,10 @@ if anim.isProj
     % only apply the quasi affine upgrade if we are under octave
     % (as Yalmip does not work there)
     if exist('OCTAVE_VERSION','builtin')==5
-      H = affineUpgrade(anim);
+      [ HEye, Hqa ] = affineUpgrade(anim);
+      H=HEye*Hqa;
     else
-      [ HEye, Hqa, pInf ] = affineUpgrade(anim, nItrAff);
+      [ HEye, Hqa, pInf ] = affineUpgrade(anim, 'nItr', nItrAff);
       % if the camera is calibrated or if we do not do a metric upgrade
       % stop here
       if isCalibrated || ~doMetricUpgrade

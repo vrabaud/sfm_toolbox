@@ -1,4 +1,4 @@
-function [ HEye, Hqa, pInf ] = affineUpgrade(anim, nItr)
+function [ HEye, Hqa, pInf ] = affineUpgrade(anim, varargin)
 % Perform an affine upgrade by recovering the plane at infinity
 %
 % Given projection matrices and a 3D projective structure in anim,
@@ -12,7 +12,10 @@ function [ HEye, Hqa, pInf ] = affineUpgrade(anim, nItr)
 %
 % INPUTS
 %  anim          - Animation object with P and S filled
-%  nItr          - number of iterations in branch and bound
+%  varargin   - list of paramaters in quotes alternating with their values
+%     'doQuasiOnly'   - [false] flag indicating if we only want to do the quasi
+%                       affine upgrade
+%     'nItr'          - number of iterations in branch and bound
 %
 % OUTPUTS
 %  HEye          - homography to apply to anim.P so that
@@ -29,9 +32,12 @@ function [ HEye, Hqa, pInf ] = affineUpgrade(anim, nItr)
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-if nargin<=1; nItr=20; end
-
 if ~anim.isProj; return; end
+
+[ doQuasiOnly nItr ] = getPrmDflt( varargin, ...
+  { 'doQuasiOnly' false 'nItr' 20}, 1);
+
+if exist('OCTAVE_VERSION','builtin')==5; doQuasiOnly=true; end
 
 % make sure the first projection matrix is eye(3,4)
 [anim,HEye]=anim.setFirstPRtToId();
@@ -105,7 +111,7 @@ Ha=[ K -K*c; 0 0 0 1 ];
 Hqa=Ha*Hq;
 
 % Yalmip does not work under octave sorry :(
-if exist('OCTAVE_VERSION','builtin')==5; return; end
+if doQuasiOnly; return; end
 
 % Chandraker IJCV 2009
 
