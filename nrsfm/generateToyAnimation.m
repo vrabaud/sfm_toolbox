@@ -234,7 +234,7 @@ anim.isProj=isProj; anim.R=R; anim.t=t; anim.K=K;
 if isempty(anim.l) || isempty(anim.SBasis); anim.S=S; end
 
 % make sure all the points are in front of the camera
-S=animGT.generateSAbsolute();
+S=anim.generateSAbsolute();
 anim.t(3,:)=anim.t(3,:)-min(S(3,:))+span/3;
 
 % Define other members
