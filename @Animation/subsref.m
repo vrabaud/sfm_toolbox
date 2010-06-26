@@ -12,7 +12,7 @@ function varargout=subsref(anim,idx)
 % EXAMPLE
 %
 % Vincent's Structure From Motion Toolbox      Version 3.0
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -178,9 +178,9 @@ if nFrame==0; return; end
 if isProj
   KFull(1,1,:)=reshape(K(1,:),[1,1,nFrame]);
   KFull(1,2,:)=reshape(K(2,:),[1,1,nFrame]);
-  KFull(1,3,:)=reshape(K(3,:),[1,1,nFrame]);
-  KFull(2,1,:)=reshape(K(4,:),[1,1,nFrame]);
-  KFull(2,2,:)=reshape(K(5,:),[1,1,nFrame]);
+  KFull(1,3,:)=reshape(K(4,:),[1,1,nFrame]);
+  KFull(2,2,:)=reshape(K(3,:),[1,1,nFrame]);
+  KFull(2,3,:)=reshape(K(5,:),[1,1,nFrame]);
 else
   KFull(1,1,:)=reshape(K(1,:),[1,1,nFrame]);
   KFull(1,2,:)=reshape(K(2,:),[1,1,nFrame]);

@@ -41,18 +41,10 @@ else
   HEye=anim.R(:,:,1)';
   HEye(:,4)=-anim.R(:,:,1)'*anim.t(:,1);
   HEye(4,:)=[0,0,0,1];
-  % Re-generate the rotations
-  % need the following line for compatibility with octave ... otherwise
-  % I would use end
-  PAll=anim.P;
-  if anim.nFrame>=2
-    PAll(:,:,2:anim.nFrame)=multiTimes(PAll(:,:,2:anim.nFrame),HEye,1);
-  end
-  PAll(:,:,1)=eye(3,4); % Just for numerical stability
-  anim.P=PAll;
-
-  % assign values to R and t
-  anim.R=anim.P(:,1:3,:); anim.t=reshape(anim.P(:,4,:),3,anim.nFrame);
+  % Re-generate the rotations and translations
+  anim.R=multiTimes(anim.R,anim.R(:,:,1)',1);
+  anim=subsasgn(anim,struct('type','.','subs','t'),...
+    bsxfun(@minus,anim.t,anim.R(:,:,1)'*anim.t(:,1)));
 end
 
 if anim.nBasis~=0

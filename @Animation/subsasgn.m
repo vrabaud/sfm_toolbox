@@ -50,7 +50,7 @@ if max(size(idx))==1
     case 'KFull'
       if ~isempty(rhs)
         if anim.isProj
-          anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(1,3,:);rhs(2,2,:);rhs(2,3,:)];
+          anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(2,2,:);rhs(1,3,:);rhs(2,3,:)];
         else
           anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(2,2,:)];
         end
@@ -100,7 +100,7 @@ else
     case 'KFull'
       KFull=subsasgn(anim.KFull,idx(2),rhs);
       if anim.isProj
-        anim.K=[KFull(1,1,:);KFull(1,2,:);KFull(1,3,:);KFull(2,2,:); ...
+        anim.K=[KFull(1,1,:);KFull(1,2,:);KFull(2,2,:);KFull(1,3,:); ...
           KFull(2,3,:)];
       else
         anim.K=[KFull(1,1,:);KFull(1,2,:);KFull(2,2,:)];

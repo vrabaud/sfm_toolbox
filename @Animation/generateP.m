@@ -17,7 +17,7 @@ function [ P, anim ] = generateP(anim, doFillP)
 % See also
 %
 % Vincent's Structure From Motion Toolbox      Version 3.0
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -38,10 +38,10 @@ if ~isempty(anim.K)
   if anim.isProj
     if size(anim.K,2)==1
       P(1,:,:) = multiTimes(anim.K([1,2,4]),P,3.3);
-      P(2,:,:) = multiTimes(anim.K([3,4]),P(2:3,:,:),3.3);
+      P(2,:,:) = multiTimes(anim.K([3,5]),P(2:3,:,:),3.3);
     else
       P(1,:,:) = multiTimes(anim.K([1,2,4],:),P,3.2);
-      P(2,:,:) = multiTimes(anim.K([3,4],:),P(2:3,:,:),3.2);
+      P(2,:,:) = multiTimes(anim.K([3,5],:),P(2:3,:,:),3.2);
     end
   else
     if size(anim.K,2)==1
