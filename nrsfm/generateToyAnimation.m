@@ -63,8 +63,8 @@ dfs = {'nPoint',[], 'isProj',false,'nLoop', 1,...
 % Deal with internal parameters
 if randK
   K=eye(3);
-  K(1,1) = 500+1000*rand(); K(2,2) = -0.5+rand(); K(1,2)=500+1000*rand();
-  if isProj; K(1:2,3) = -0.5 +  rand(); end
+  K(1,1) = 0.5+rand(); K(2,2) = 0.5+rand(); K(1,2)=0.5+rand();
+  if isProj; K(1:2,3) = -0.5 +  rand(2,1); end
 end
 conn=[];
 
@@ -229,7 +229,7 @@ else
 end
 
 % start creating the Animation
-anim.isProj=isProj; anim.R=R; anim.t=t; anim.K=K;
+anim.isProj=isProj; anim.R=R; anim.t=t; anim.KFull=K;
 
 if isempty(anim.l) || isempty(anim.SBasis); anim.S=S; end
 
