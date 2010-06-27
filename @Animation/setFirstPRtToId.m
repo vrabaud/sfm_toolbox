@@ -42,9 +42,10 @@ else
   HEye(:,4)=-anim.R(:,:,1)'*anim.t(:,1);
   HEye(4,:)=[0,0,0,1];
   % Re-generate the rotations and translations
-  anim.R=multiTimes(anim.R,anim.R(:,:,1)',1);
-  anim=subsasgn(anim,struct('type','.','subs','t'),...
-    bsxfun(@minus,anim.t,anim.R(:,:,1)'*anim.t(:,1)));
+  anim.t=bsxfun(@minus,anim.t,reshape(multiTimes(anim.R, ...
+    anim.R(:,:,1)'*anim.t(:,1),1),3,anim.nFrame));
+  anim=subsasgn(anim,struct('type','.','subs','R'),...
+    multiTimes(anim.R,anim.R(:,:,1)',1));
 end
 
 if anim.nBasis~=0
