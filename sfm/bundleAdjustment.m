@@ -16,6 +16,9 @@ function [ anim info ] = bundleAdjustment( anim, varargin )
 %   0   K3  K5
 %   0   0   1
 %
+% If K is common to all cameras, it will not be optimized upon :( due to a
+% limitation in SBA
+%
 % USAGE
 %  [ anim ] = bundleAdjustment( anim, sfmCase, varargin )
 %
@@ -61,18 +64,21 @@ if isempty(anim.mask); WMask=ones(anim.nPoint, anim.nFrame);
 else WMask=anim.mask; end
 
 KAll=anim.K;
+if size(anim.K,2)==1 && ~isempty(anim.K)
+  KAll=repmat(anim.K,1,anim.nFrame);
+end
 
 % Initialize the camera parameters with what already exists
 % if there is nothing, use the full projection matrices
 if ~isempty(anim.R) && ~isempty(anim.t)
   % create P0 for rotation and stuff
-  if isempty(anim.K)
+  if isempty(KAll)
     K0=zeros(0,anim.nFrame); nK = 0; doK=0;
   else
     if isempty(KMask)
       if anim.isProj; KMask = ones(5,1); else KMask = ones(3,1); end
     end
-    doK=1; K0=anim.K(~KMask,:); nK = length(find(~KMask));
+    doK=1; K0=KAll(~KMask,:); nK = length(find(~KMask));
   end
   
   % Deal with NRSFM
@@ -201,7 +207,7 @@ else
     % the following line is just to prevent automatic update until
     % anim.t, anim.K and anim.R are all full
     anim.t = [];
-    anim.K( ~KMask, : ) = P1( 8:end, : );
+    KAll( ~KMask, : ) = P1( 8:end, : );
     anim.R = quaternion( P1(1:4,:) );
     anim.t = P1(5:7,:);
     anim.S = reshape( P(( 7 + nK)*anim.nFrame + 1 : end ), 3, ...
@@ -214,7 +220,7 @@ else
       anim.R = [];
       anim.t = P1(5:6,:); anim.t(3,:) = 0;
       anim.R = quaternion( P1(1:4,:) );
-      if size(P1,1)>=7; anim.K( ~KMask, : ) = P1( 7:end, : ); end
+      if size(P1,1)>=7; KAll( ~KMask, : ) = P1( 7:end, : ); end
       anim.S = reshape( P(( 6 + nK)*anim.nFrame + 1 : end ), 3, ...
         anim.nPoint );
     else
@@ -228,5 +234,13 @@ else
       anim.SBasis = permute( reshape( P(cnp*anim.nFrame + 1 : end ), 3, ...
         anim.nBasis, anim.nPoint ), [ 1 3 2 ] );
     end
+  end
+end
+
+if ~isempty(anim.K)
+  if size(anim.K,2)==1
+    anim.K=mean(KAll,2);
+  else
+    anim.K=KAll;
   end
 end
