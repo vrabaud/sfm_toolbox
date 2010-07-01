@@ -10,7 +10,8 @@ function demoSfm( demoNumber )
 %  4: Orthographic exterior orientation computation
 %  5: Orthographic rigid SFM examples
 %  6: Bundle adjustment on camera parameters
-%  7: Projective rigid SFM examples
+%  7: Projective calibrated rigid SFM examples
+%  8: Projective uncalibrated rigid SFM examples
 %
 % USAGE
 %  demoSfm( demoNumber )
@@ -305,14 +306,14 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function demo7() %#ok<DEFNU>
 %%% Check for projective camera
-disp('Projective rigid SFM examples');
+disp('Projective rigid SFM examples with calibrated cameras.');
 % Test animations
 nFrame = 10; nPoint = 50;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
   'isProj',true,'dR', 1 );
 animGT=animGT.addNoise('noiseS', '5', 'doFillW', true);
 playAnim( animGT, 'frame', 1, 'nCam', 20 );
-save('badAffine');
+
 % The following should give the same low errors
 fprintf( ['Computing several reconstructions on %d frames with %d noisy'...
   ' features.\n' ], nFrame, nPoint );
@@ -326,7 +327,7 @@ for i = 1 : 5
         animGTSample=animGT.sampleFrame(1:2);
         anim{1,j} = computeSMFromW( true, ...
           animGTSample.W, 'method', 0,'nItrSBA', (j-1)*100 );
-        out = '2 views, uncalibrated cameras:\n';
+        out = '2 views, projective cameras:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 2,
@@ -334,21 +335,21 @@ for i = 1 : 5
         anim{2,j} = computeSMFromW( true, ...
           animGTSample.W, 'method', 0,'isCalibrated',true,...
           'nItrSBA', (j-1)*100);
-        out = '2 views, calibrated cameras:\n';
+        out = '2 views, projective cameras:\n';
         typeTransform = 'homography';
         type3DError = '';
       case 3,
         animGTSample=animGT;
         anim{3,j} = computeSMFromW( true, ...
           animGT.W, 'method', 0, 'nItrSBA', (j-1)*100 );
-        out = 'All the views, uncalibrated cameras, Sturm Triggs:\n';
+        out = 'All the views, projective cameras, Sturm Triggs:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 4,
         animGTSample=animGT;
         anim{4,j} = computeSMFromW( true, ...
           animGT.W, 'method', Inf, 'nItrSBA', (j-1)*100 );
-        out = 'All the views, uncalibrated cameras, Oliensis Hartley:\n';
+        out = 'All the views, projective cameras, Oliensis Hartley:\n';
         typeTransform = 'homography';
         type3DError = 'up to a projective transform';
       case 5,
@@ -358,7 +359,8 @@ for i = 1 : 5
           'nItrSBA', (j-1)*100, 'doAffineUpgrade', true, 'nItrAff', 20 );
         typeTransform = 'rigid+scale';
         type3DError = 'up to a scaled rigid transform';
-        out = 'All the views, calibrated cameras:\n';
+        out = [ 'All the views, euclidean cameras (after affine ' ...
+          'upgrade on calibrated cameras):\n' ];
     end
     errTmp = anim{i,j}.computeError();
     err(i,j) = errTmp(1);
@@ -366,7 +368,8 @@ for i = 1 : 5
       'checkTransform',typeTransform);
     err3D(i,j) = err3DTmp(1);
   end
-  out =sprintf([ out 'Reprojection error %0.4f/%0.4f and 3D-error %s %0.4f/%0.4f , before/after BA\n\n'],...
+  out =sprintf([ out 'Reprojection error %0.4f/%0.4f and 3D-error ' ...
+    '%s %0.4f/%0.4f , before/after BA\n\n'],...
     err(i,1), err(i,2), type3DError, err3D(i,1), err3D(i,2) );
   fprintf(out);
 end
@@ -376,5 +379,37 @@ end
 %       'S', S(:,:,3,2), 'checkTransform', 'rigid' );
 %
 %  playAnim(anim,'animGT',animGT,'nCam',-1,'showGT',true,'alignGT',true);
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function demo8() %#ok<DEFNU>
+%%% Check for projective camera
+disp('Projective rigid SFM examples with uncalibrated cameras.');
+% Test animations
+nFrame = 10; nPoint = 50;
+animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
+  'isProj',true,'dR', 1, 'randK', true );
+animGT=animGT.addNoise('noiseS', '2', 'doFillW', true);
+
+playAnim( animGT, 'frame', 1, 'nCam', 20 );
+
+% The following should give the same low errors
+fprintf('This demo picks up where the previous demo stopped.\n');
+fprintf('Cameras are now uncalibrated so we need a metric upgrade too.\n');
+fprintf([ 'First, we will use Oliensis Hartley 07 to get a projective ' ...
+  'reconstructions.\nThen Chandraker 09 to get affine and metric ' ...
+  'upgrades.\n' ]);
+% compute the reconstruction
+anim=computeSMFromW(true,animGT.W,'doAffineUpgrade',true,...
+  'doMetricUpgrade',true);
+
+% compute the resulting errors
+err=anim.computeError();
+type3DError='rigid+scale';
+err3D=anim.computeError('animGT', animGT, ...
+  'checkTransform',type3DError);
+err3D=err3D(1);
+
+sprintf([ 'Reprojection error %0.4f and 3D-error up to %s %0.4f\n'],...
+    err, type3DError, err3D );
 
 end
