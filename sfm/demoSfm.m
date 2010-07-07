@@ -32,7 +32,7 @@ function demoSfm( demoNumber )
 % Licensed under the GPL [see external/gpl.txt]
 
 if(nargin<1), demoNumber=1; end; c
-if(demoNumber<1 || demoNumber>7), error('Invalid demo number.'); end
+if(demoNumber<1 || demoNumber>8), error('Invalid demo number.'); end
 disp('Demos of various functions in SFM toolbox.');
 disp('Steps marked w ''*'' or ''**'' may take time, please be patient.');
 disp('------------------------------------------------------------------');
@@ -44,7 +44,7 @@ in=input(['Press (n) to continue to next demo or (r) to repeat demo\n'...
   'Anything else will quit the demo\n'],'s');
 switch in
   case 'n'
-    if demoNumber<7; demoSfm(demoNumber+1); end
+    if demoNumber<8; demoSfm(demoNumber+1); end
   case 'r'
     demoSfm(demoNumber);
 end
@@ -306,7 +306,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function demo7() %#ok<DEFNU>
 %%% Check for projective camera
-disp('Projective rigid SFM examples with calibrated cameras.');
+disp('Projective/Euclidean rigid SFM examples with calibrated cameras.');
 % Test animations
 nFrame = 10; nPoint = 50;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
@@ -356,7 +356,7 @@ for i = 1 : 5
         animGTSample=animGT;
         anim{5,j} = computeSMFromW( true, ...
           animGT.W, 'method', Inf, 'isCalibrated',true,...
-          'nItrSBA', (j-1)*100, 'doAffineUpgrade', true, 'nItrAff', 20 );
+          'nItrSBA', (j-1)*100, 'doAffineUpgrade', true);
         typeTransform = 'rigid+scale';
         type3DError = 'up to a scaled rigid transform';
         out = [ 'All the views, euclidean cameras (after affine ' ...
@@ -379,11 +379,12 @@ end
 %       'S', S(:,:,3,2), 'checkTransform', 'rigid' );
 %
 %  playAnim(anim,'animGT',animGT,'nCam',-1,'showGT',true,'alignGT',true);
+end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function demo8() %#ok<DEFNU>
 %%% Check for projective camera
-disp('Projective rigid SFM examples with uncalibrated cameras.');
+disp('Euclidean rigid SFM examples with uncalibrated cameras.');
 % Test animations
 nFrame = 10; nPoint = 50;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
@@ -399,17 +400,17 @@ fprintf([ 'First, we will use Oliensis Hartley 07 to get a projective ' ...
   'reconstructions.\nThen Chandraker 09 to get affine and metric ' ...
   'upgrades.\n' ]);
 % compute the reconstruction
+%  load('bad_reconstruction')
 anim=computeSMFromW(true,animGT.W,'doAffineUpgrade',true,...
-  'doMetricUpgrade',true);
-
+  'doMetricUpgrade',true,'tolMetric',1e-3);
+anim.KFull
+animGT.KFull
 % compute the resulting errors
 err=anim.computeError();
 type3DError='rigid+scale';
-err3D=anim.computeError('animGT', animGT, ...
-  'checkTransform',type3DError);
-err3D=err3D(1);
+err3D=anim.computeError('animGT', animGT, 'checkTransform',type3DError);
 
-sprintf([ 'Reprojection error %0.4f and 3D-error up to %s %0.4f\n'],...
-    err, type3DError, err3D );
-
+fprintf([ 'Reprojection error %0.4f and 3D-error up to %s %0.4f\n'],...
+    err(1), type3DError, err3D(1) );
+save('temp')
 end

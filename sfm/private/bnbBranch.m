@@ -61,7 +61,7 @@ for ind=goodInd(end:-1:1)
   % you can also split where there is already a minimum, if it is not too
   % far from the center
   [ disc, dim ]=max(u(:,ind)-l(:,ind));
-  if abs(vBest(dim,ind)-(u(dim,ind)+l(dim,ind))/2) < 0.4*(u(dim,ind)-l(dim,ind))/2
+  if 0 && abs(vBest(dim,ind)-(u(dim,ind)+l(dim,ind))/2) < 0.4*(u(dim,ind)-l(dim,ind))/2
     l(:,end+1)=l(:,ind);
     u(:,end+1)=u(:,ind); u(dim,end)=vBest(dim,ind);
     l(:,end+1)=l(:,ind); l(dim,end)=vBest(dim,ind);

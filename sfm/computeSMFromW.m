@@ -74,8 +74,10 @@ function anim = computeSMFromW( isProj, W, varargin )
 %       - 'onlyErrorFlag', [false] flag indicating if only the error is
 %         needed when nFrame==2 && method==Inf && ~isProj
 %       - 'nItrSba', [100] number of bundle adjustment iterations
-%       - 'nItrAff', [20] number of iterations in the affine upgrade
-%       - 'nItrMetr', [20] number of iterations in the metric upgrade
+%       - 'tolAffine', [1e-5] tolerance for affine upgrade as explained in
+%                          affineUpgrade
+%       - 'tolMetric', [1e-5] tolerance for affine upgrade as explained in
+%                          metricUprgade
 %
 % OUTPUTS 1
 %  anim      - Animation object
@@ -93,10 +95,10 @@ function anim = computeSMFromW( isProj, W, varargin )
 % Licensed under the GPL [see external/gpl.txt]
 
 [ isCalibrated doAffineUpgrade doMetricUpgrade K KFull method ...
-  onlyErrorFlag nItrSBA nItrAff nItrMetr ] = getPrmDflt( varargin, ...
+  onlyErrorFlag nItrSBA tolAffine tolMetric ] = getPrmDflt( varargin, ...
   { 'isCalibrated' false 'doAffineUpgrade' false 'doMetricUpgrade' false ...
   'K' [] 'KFull' [] 'method' inf 'onlyErrorFlag' false 'nItrSBA' 100 ...
-  'nItrAff' 20 'nItrMetr' 20}, 1);
+  'tolAffine' 1e-5 'tolMetric' 1e-5}, 1);
 
 nFrame = size(W,3); nPoint = size(W,2);
 
@@ -320,7 +322,7 @@ if anim.isProj
       [ HEye, Hqa ] = affineUpgrade(anim);
       H=HEye*Hqa;
     else
-      [ HEye, Hqa, pInf ] = affineUpgrade(anim, 'nItr', nItrAff);
+      [ HEye, Hqa, pInf ] = affineUpgrade(anim, 'tol', tolAffine);
       % if the camera is calibrated or if we do not do a metric upgrade
       % stop here
       if isCalibrated || ~doMetricUpgrade
@@ -330,8 +332,9 @@ if anim.isProj
       else
         % perform a metric upgrade if requested
         if doMetricUpgrade
-          [ anim.KFull, H ]=metricUpgrade(anim, pInf, 'isCalibrated', ...
-            isCalibrated, 'nItr', nItrMetr);
+          [ H, anim.KFull ]=metricUpgrade(anim, pInf, 'isCalibrated', ...
+            isCalibrated, 'tol', tolMetric);
+		anim.KFull
         end
       end
     end

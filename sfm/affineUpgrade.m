@@ -15,7 +15,7 @@ function [ HEye, Hqa, pInf ] = affineUpgrade(anim, varargin)
 %  varargin   - list of paramaters in quotes alternating with their values
 %     'doQuasiOnly'   - [false] flag indicating if we only want to do the quasi
 %                       affine upgrade
-%     'nItr'          - number of iterations in branch and bound
+%     'tol'           - number of iterations in branch and bound
 %
 % OUTPUTS
 %  HEye          - homography to apply to anim.P so that
@@ -34,8 +34,8 @@ function [ HEye, Hqa, pInf ] = affineUpgrade(anim, varargin)
 
 if ~anim.isProj; return; end
 
-[ doQuasiOnly nItr ] = getPrmDflt( varargin, ...
-  { 'doQuasiOnly' false 'nItr' 20}, 1);
+[ doQuasiOnly tol ] = getPrmDflt( varargin, ...
+  { 'doQuasiOnly' false 'tol' 1e-5}, 1);
 
 if exist('OCTAVE_VERSION','builtin')==5; doQuasiOnly=true; end
 
@@ -208,6 +208,7 @@ eps=1e-4;
 solverSetting = sdpsettings('solver','sedumi,sdpa,csdp,*','verbose',0, ...
   'cachesolvers',0);
 ticId = ticStatus('affine upgrade iterations',1,1);
+nItr=100;
 for itr=1:nItr
   % perform branch and bound
   [l,u,vBest,currBest,lowerBound,newInd]=bnbBranch(l,u,vBest,...
@@ -244,26 +245,10 @@ for itr=1:nItr
     diagno = solvesdp(F,r,solverSetting);
     lowerBound(ind)=double(r);
     
-    % make sure the best value is in the interval
-    vBestTmp=min([max([double(v),l(:,ind)],[],2),u(:,ind)],[],2);
-    
-    % check for a few random values in the interval and check if they are
-    % better than the value at the optimal v
-    allV=[ vBestTmp, bsxfun(@plus,bsxfun(@times,rand(3,10000),...
-      u(:,ind)-l(:,ind)), l(:,ind)) ];
-    allMin=criterion(allV,greekHqat);
-    [ disc, bestInd ]=min(allMin);
-    vBestTmp=allV(:,bestInd);
-    
-    % perform gradient descent from the best v to find a better solution
-    vBestTmp=fmincon(@(x)criterion(x,greekHqat),...
-      vBestTmp,[],[],[],[],l(:,ind),u(:,ind),[],optimset(...
-      'GradObj','off','Hessian','off','Algorithm','active-set',...
-      'Display','off'));
-    % make sure the best value is in the interval
-    vBestTmp=min([max([vBestTmp,l(:,ind)],[],2),u(:,ind)],[],2);
-    % keep that v if the criterion is better than the current one
-    currBestTmp=criterion(vBestTmp,greekHqat);
+    % refine the best value
+    [vBestTmp,currBestTmp]=bnbRefine(l(:,ind),u(:,ind),double(v),...
+      @(x)criterion(x,greekHqat));
+
     if currBestTmp<currBest(ind)
       currBest(ind)=currBestTmp; vBest(:,ind)=vBestTmp;
     end
@@ -284,7 +269,7 @@ for itr=1:nItr
 %    vBest
 %    min(currBest)
   tocStatus( ticId, itr/nItr );
-  if size(l,2)==1 && norm(l-u,'fro')<eps; break; end
+  if abs(min(currBest)-min(lowerBound))<tol; break; end
 end
 % figure out the plane at infinity
 [disc,ind]=min(currBest);
@@ -338,13 +323,20 @@ function constr=convx13yxposCase2(z,x,xl,xu,y,yl,yu)
 % precompute some values as Yalmip can be slow
 a1=(nthroot(xl,3)-nthroot(xu,3)).*yu./(xl-xu);
 b1=(nthroot(xu,3).*xl-nthroot(xl,3).*xu).*yu./(xl-xu);
-lam=(y-yl)./(yu-yl);
 [a3,b3]=lineTangentCoeff(xl); [a4,b4]=lineTangentCoeff(xu);
+% instead of writing with yalmip expressions which can be slow, we will
+% write everything as polynomials [coeff in x, coeff in y, cosntant coeff]
+% and then convert to Yalmip at the last moment
 % add constraints
+ze=zeros(size(xl,1),1); on=ones(size(xl,1),1);
+lam=bsxfun(@rdivide,[ze,on,-yl],yu-yl);
+oneMinusLam=[ze,ze,on]-lam;
 constr=[];
-for t1=[ (1-lam).*xu, x-lam.*xl ]
-  for t2=[ a3.*t1 + (1-lam).*b3, a4.*t1 + (1-lam).*b4 ]
-    constr=constr+[ z>=t2.*yl + a1.*(x-t1)+lam.*b1 ];
+for t1={ oneMinusLam.*[xu,xu,xu], [on,ze,ze]-lam.*[xl,xl,xl] }
+  for t2={ [a3,a3,a3].*t1{:} + oneMinusLam.*[b3,b3,b3], ...
+    [a4,a4,a4].*t1{:} + oneMinusLam.*[b4,b4,b4] }
+    expr=t2{:}.*[yl,yl,yl] + [a1,a1,a1].*([on,ze,ze]-t1{:})+lam.*[b1,b1,b1];
+    constr=constr+[ z>= expr(:,1).*x+expr(:,2).*y+expr(:,3) ];
   end
 end
 end
@@ -471,8 +463,8 @@ end
 function [res,grad]=criterion(v,greekHqat)
 v(4,:)=1;
 a=greekHqat(:,:,1)*v; b=greekHqat(:,:,2)*v;
-c=greekHqat(:,:,3)*v; d=greekHqat(:,:,4)*v;
-res=sum((nthroot(c,3).*a-nthroot(d,3).*b).^2,1)./nthroot(d(1,:),3).^8;
+c=greekHqat(:,:,3)*v; d3=nthroot(greekHqat(1,:,4)*v,3);
+res=sum((nthroot(c,3).*a-bsxfun(@times,d3,b)).^2,1)./d3.^8;
 grad=[];
 if nargout==2;
   % compute the gradient too
