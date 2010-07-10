@@ -203,16 +203,18 @@ t=sdpvar(nFrame,2); t1=sdpvar(nFrame,2,2);
 FIni=set(cone([2*(fg(:,1)-fg(:,2));r-e],r+e)) + ...
   set(e(:)>=0) + set(r(:)>=0);
 
-currBest=Inf; lowerBound=Inf;
+currBest=Inf; lowerBound=-Inf; isRefined=false;
+[l,u,vBest,currBest,lowerBound,isRefined]=bnbRefine(...
+  @(x)criterion(x,greekHqat),l,u,vBest,currBest,lowerBound,isRefined);
 eps=1e-4;
 solverSetting = sdpsettings('solver','sedumi,sdpa,csdp,*','verbose',0, ...
-  'cachesolvers',0);
+  'cachesolvers',1);
 ticId = ticStatus('affine upgrade iterations',1,1);
 nItr=100;
 for itr=1:nItr
   % perform branch and bound
-  [l,u,vBest,currBest,lowerBound,newInd]=bnbBranch(l,u,vBest,...
-    currBest,lowerBound);
+  [l,u,vBest,currBest,lowerBound,isRefined,newInd]=bnbBranch(l,u,vBest,...
+    currBest,lowerBound,isRefined);
   
   % compute the lower bound/current best for each new interval
   for ind=newInd
@@ -244,30 +246,14 @@ for itr=1:nItr
     clear mexsdpa;
     diagno = solvesdp(F,r,solverSetting);
     lowerBound(ind)=double(r);
-    
-    % refine the best value
-    [vBestTmp,currBestTmp]=bnbRefine(l(:,ind),u(:,ind),double(v),...
-      @(x)criterion(x,greekHqat));
-
-    if currBestTmp<currBest(ind)
-      currBest(ind)=currBestTmp; vBest(:,ind)=vBestTmp;
+    if ~isRefined(ind)
+      vBest(:,ind)=double(v);
+      currBest(ind)=criterion(vBest(:,ind),greekHqat);
     end
   end
-  % remove intervals for which the lower bound is higher than the current
-  % best of another interval
-  mini=min(currBest);
-  badInterval=find(lowerBound>min(currBest));
-
-  % the following is necessary because of roundups
-  if ~isempty(badInterval) && length(badInterval)~=length(currBest)
-    l(:,badInterval)=[]; u(:,badInterval)=[]; vBest(:,badInterval)=[];
-    currBest(badInterval)=[]; lowerBound(badInterval)=[];
-  end
-%    lowerBound
-%    currBest
-%    [l;u]
-%    vBest
-%    min(currBest)
+  % refine the results if needed
+  [l,u,vBest,currBest,lowerBound,isRefined]=bnbRefine(...
+    @(x)criterion(x,greekHqat),l,u,vBest,currBest,lowerBound,isRefined);
   tocStatus( ticId, itr/nItr );
   if abs(min(currBest)-min(lowerBound))<tol; break; end
 end
@@ -281,8 +267,8 @@ end
 
 function conc=concx83(z,x,xl,xu)
 % compute the concave relaxation for x^(8/3)
-conc=[ z <= nthroot(xl,3).^8+(x-xl)./(xu-xl).*(nthroot(xu,3).^8-...
-  nthroot(xl,3).^8) ];
+conc= z <= nthroot(xl,3).^8+(x-xl).*((nthroot(xu,3).^8-...
+  nthroot(xl,3).^8)./(xu-xl));
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -292,9 +278,9 @@ function constr=relaxxy(z,x,xl,xu,y,yl,yu)
 % precompute some data (because yalmip is slow ...)
 xly=xl.*y; ylx=yl.*x; xuy=xu.*y; yux=yu.*x;
 % compute the concave relaxation for x*y
-constr=[ z <= xuy + ylx - xu.*yl; z <= xly + yux - xl.*yu ];
+constr=(z <= xuy + ylx - xu.*yl)+(z <= xly + yux - xl.*yu);
 % compute the convex relaxation for x*y
-constr=[ constr; z >= xly + ylx - xl.*yl; z >= xuy + yux - xu.*yu ];
+constr=constr+(z >= xly + ylx - xl.*yl)+(z >= xuy + yux - xu.*yu);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -313,7 +299,7 @@ a=1./(xu-xl); lam=a.*x-a.*xl;
 % precompute the linear coefficients
 a=nthroot(xl,3)-nthroot(xu,3); b=nthroot(xu,3).*y;
 % add the constraints
-constr=[ z >= a.*yu - lam.*(a.*yu) + b, z >= a.*y - lam.*(a.*yl) + b ];
+constr=(z >= a.*yu - lam.*(a.*yu) + b)+(z >= a.*y - lam.*(a.*yl) + b);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -336,7 +322,7 @@ for t1={ oneMinusLam.*[xu,xu,xu], [on,ze,ze]-lam.*[xl,xl,xl] }
   for t2={ [a3,a3,a3].*t1{:} + oneMinusLam.*[b3,b3,b3], ...
     [a4,a4,a4].*t1{:} + oneMinusLam.*[b4,b4,b4] }
     expr=t2{:}.*[yl,yl,yl] + [a1,a1,a1].*([on,ze,ze]-t1{:})+lam.*[b1,b1,b1];
-    constr=constr+[ z>= expr(:,1).*x+expr(:,2).*y+expr(:,3) ];
+    constr=constr+(z>= expr(:,1).*x+expr(:,2).*y+expr(:,3));
   end
 end
 end
@@ -345,21 +331,19 @@ end
 
 function constr=convx13yxposCase3(z,x,xl,xu,y,yl,yu,t1)
 % compute the convex relaxation for x^(1/3)*y when xl > 0 and yu < 0
-lam=(y-yl)./(yu-yl);
+a=1./(yu-yl); lam=a.*y-a.*yl;
 % precompute lam.*xl and lam.*xu (because yalmip is slow)
 lamxl=lam.*xl; lamxu=lam.*xu;
-% constraints on t1
-constr=[ xl-lamxl<=t1<=xu-lamxu; lamxl<=x-t1<=lamxu ];
 % precompute values for constraints involving t2 and t3
 [a3,b3]=lineTangentCoeff(xl); [a4,b4]=lineTangentCoeff(xu);
-ylt2Set=[(yl.*a3).*t1+(1-lam).*(yl.*b3),(yl.*a4).*t1+(1-lam).*(yl.*b4)];
-yut3Set=[(yu.*a3).*(x-t1)+lam.*(yu.*b3),(yu.*a4).*(x-t1)+lam.*(yu.*b4)];
-% create the constraints
-for ylt2=ylt2Set
-  for yut3=yut3Set
-    constr=constr+[ z>=ylt2+yut3 ];
-  end
-end
+ylt2_val1=(yl.*a3).*t1+(1-lam).*(yl.*b3);
+ylt2_val2=(yl.*a4).*t1+(1-lam).*(yl.*b4);
+yut3_val1=(yu.*a3).*(x-t1)+lam.*(yu.*b3);
+yut3_val2=(yu.*a4).*(x-t1)+lam.*(yu.*b4);
+% create the constraints (first two for t1, and then for z)
+constr=(xl-lamxl<=t1)+(t1<=xu-lamxu)+(lamxl<=x-t1)+(x-t1<=lamxu)+ ...
+  (z>=ylt2_val1+yut3_val1)+(z>=ylt2_val1+yut3_val2)+ ...
+  (z>=ylt2_val2+yut3_val1)+(z>=ylt2_val2+yut3_val2);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -422,8 +406,8 @@ if nnz(ind)>=1
   %      t(ind)>=a.*x(ind)+b ];
   % the following violates Cauchy conditions but is bounded by the
   % commented one above that does, so we are safe for the convergence
-  constr=[ t(ind)>=(nthroot(xu(ind),3).^(-2)*4/3.*(x(ind)-xu(ind))+ ...
-    nthroot(xu(ind),3)); t(ind)>=a.*x(ind)+b ];
+  constr=( t(ind)>=(nthroot(xu(ind),3).^(-2)*4/3.*(x(ind)-xu(ind))+ ...
+    nthroot(xu(ind),3))) + (t(ind)>=a.*x(ind)+b);
 else
   constr=[];
 end
@@ -434,7 +418,7 @@ if nnz(ind)>=1
   a=(nthroot(xu(ind),3)-nthroot(xl(ind),3))./(xu(ind)-xl(ind));
   b=(xu(ind).*nthroot(xl(ind),3)-xl(ind).*nthroot(xu(ind),3))./...
     (xu(ind)-xl(ind));
-  constr=[ constr; t(ind) >= a.*x(ind)+b ];
+  constr=constr+(t(ind) >= a.*x(ind)+b);
 end
 end
 
@@ -453,8 +437,8 @@ constr=constr + convx13CaseII(x,xl,xu,t) + convx13CaseII(-x,-xu,-xl,-t);
 % add the constraints on z=ty
 ind=(xl<=0) & (0<=xu);
 if nnz(ind)>=1
-  constr=[ constr; relaxxy(z(ind),t(ind),nthroot(xl(ind),3),...
-    nthroot(xu(ind),3),y(ind),yl(ind),yu(ind)) ];
+  constr=constr+relaxxy(z(ind),t(ind),nthroot(xl(ind),3),...
+    nthroot(xu(ind),3),y(ind),yl(ind),yu(ind));
 end
 end
 

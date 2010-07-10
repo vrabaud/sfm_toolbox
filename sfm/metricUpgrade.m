@@ -111,7 +111,6 @@ KVect=fminunc(@(x)criterionFromKVect(x,HInfinity),KVect,...
   optimset('GradObj','off','Hessian','off','Algorithm',...
   'active-set','Display','off'));
 
-
 % deduce bounds on K (+-200%, totally empirical)
 % K=[k1,k2,k3;0,k4,k5;0,0,1] and not K=[k1,k2,k4;0,k3,k5;0,0,1] as usual
 kl=KVect;
@@ -132,21 +131,33 @@ omegaColOne=[omegaCol;1];
 nu=sdpvar(3,3,nFrame);
 nuCol=reshape([nu(1,1,:);nu(1,2,:);nu(1,3,:);nu(2,2,:);nu(2,3,:);...
   nu(3,3,:)],[6,nFrame]);
-lam=sdpvar(1,nFrame);
+lam=sdpvar(1,nFrame); coneXMain=sdpvar(6*nFrame,1); coneYMain=sdpvar(1,1);
 
-FIni=[ omega >= 0, omega(3,3)==1 ];
+% build the objective function
+for i=1:nFrame
+  tmp=HInfinity(:,:,i)*nu(:,:,i)*HInfinity(:,:,i)';
+  coneXMain(6*i-5:6*i)=[omega([1,5,9])'-tmp([1,5,9])';...
+    sqrt(2)*(omega([4,7,8])'-tmp([4,7,8])')];
+end
+
+% build the constraints that we will respect for every interval
+FIni=[ omega >= 0, omega(3,3)==1, cone(coneXMain,coneYMain) ];
 solverSetting = sdpsettings('solver','sedumi,sdpa,csdp,*','verbose',0, ...
   'cachesolvers',1);
 
 % [ o1 o2 o3, o2 o4 o5; o3 o5 1 ]
-kVectBest=(kl+ku)/2; currBest=[Inf]; lowerBound=[Inf];
+kVectBest=(kl+ku)/2; currBest=Inf; lowerBound=-Inf; isRefined=false;
+
+[kl,ku,kVectBest,currBest,lowerBound,isRefined]=bnbRefine(...
+  @(x)criterionFromKVect(x,HInfinity),kl,ku,kVectBest,currBest,...
+  lowerBound,isRefined);
 
 ticId = ticStatus('metric upgrade iterations',1,1);
 nItr=100;
 for itr=1:nItr
   % perform branch and bound
-  [kl,ku,kVectBest,currBest,lowerBound,newInd]=bnbBranch(kl,ku,...
-    kVectBest,currBest,lowerBound);
+  [kl,ku,kVectBest,currBest,lowerBound,isRefined,newInd]=bnbBranch(...
+    kl,ku,kVectBest,currBest,lowerBound,isRefined);
 
   % compute the lower bound/current best for each interval
   for ind=newInd
@@ -155,26 +166,18 @@ for itr=1:nItr
     % to solve a bunch of SDP's. That's why we are doing bnb on k and not
     % omega
     L=zeros(1,nFrame); U=zeros(1,nFrame);
-    klFullT=KVectToKFull(kl(:,ind))'; kuFullT=KVectToKFull(ku(:,ind))';
+    kFullBound=zeros(3,3,2);
+    kFullBound(:,:,1)=KVectToKFull(kl(:,ind));
+    kFullBound(:,:,2)=KVectToKFull(ku(:,ind));
     for i=1:nFrame
-      h3=HInfinity(3,:,i)';
-      KtH3=zeros(3,2);
-      for j=1:3
-        % we want to get the minimum/maximum of the elements of K'*h
-        tmp=[klFullT(j,:).*h3';kuFullT(j,:).*h3'];
-        tmp=sort(tmp,1);
-        KtH3(j,:)=sum(tmp,2)';
-        % now deduce the bounds on the squared elements of K'*h
-        if KtH3(j,1)<=0 && KtH3(j,2)>=0
-          KtH3(j,:)=[0,max(KtH3(j,:).^2)];
-        else
-          KtH3(j,:)=sort(KtH3(j,:).^2);
-        end
-      end
+      % we want to get the minimum/maximum of the elements of h3*K
+      h3Bound=repmat(HInfinity(3,:,i),[1,1,2]);
+      bound=reshape(productBound(h3Bound,kFullBound),3,2);
       % deduce the bounds on the norm
-      % use 1e-6 for roundup errors
-      L(i)=1/double(max([sum(KtH3(:,2)),1e-6]));
-      U(i)=1/double(max([sum(KtH3(:,1)),1e-6]));
+      bound=normBound(bound);
+      % use 1e-6 so that the inverse is not too big
+      L(i)=1/max([bound(2),1e-6]);
+      U(i)=1/max([bound(1),1e-6]);
     end
 
     % omega=KK' so we can deduce bounds on values of omega
@@ -188,37 +191,25 @@ for itr=1:nItr
     dd=omegaColOne*U+[u;1]*(lam-U);
     F=F+[ cc(:)<=nuCol(:)<=aa(:), dd(:)<=nuCol(:)<=bb(:), L<=lam<=U ];
 
-    % define all the SOCP constraints
-    crit=0;
-    for i=1:nFrame
-      tmp=HInfinity(:,:,i)*nu(:,:,i)*HInfinity(:,:,i)';
-      crit=crit+norm(tmp(:)-omega(:))^2;
-    end
-
     % solve for omega
-    diagno=solvesdp( F, crit, solverSetting );
-    lowerBound(ind)=double(crit);
-    KBestTmp=kFromOmega(double(omega));
-    KVectBestTmp=[KBestTmp(1,:)';KBestTmp(2,2:3)'];
-    
-    % refine the best value
-    [KVectBestTmp,currBestTmp]=bnbRefine(kl(:,ind),ku(:,ind),...
-      KVectBestTmp,@(x)criterionFromKVect(x,HInfinity));
-
-    if currBestTmp<currBest(ind)
-      currBest(ind)=currBestTmp; kVectBest(:,ind)=KVectBestTmp;
+    diagno=solvesdp( F, coneYMain, solverSetting );
+    lowerBound(ind)=double(coneYMain)^2;
+    if ~isRefined(ind)
+      KBestTmp=kFromOmega(double(omega));
+      kVectBestTmp=[KBestTmp(1,:)';KBestTmp(2,2:3)'];
+      % as bounds on omega are deduced from bounds on K, and as there is
+      % no equivalence between the two, we need to make sure KVectBest 
+      % is the bounds for k
+      kVectBest(:,ind)=min([max([kVectBestTmp,kl(:,ind)],[],2),...
+        ku(:,ind)],[],2);
+      currBest(ind)=criterionFromKVect(kVectBest(:,ind),HInfinity);
     end
   end
-  % remove intervals for which the lower bound is higher than the current
-  % best of another intervals
-  badInterval=find(lowerBound>min(currBest));
-  if ~isempty(badInterval) && length(badInterval)~=length(currBest)
-    kl(:,badInterval)=[]; ku(:,badInterval)=[]; kVectBest(:,badInterval)=[];
-    lowerBound(:,badInterval)=[]; currBest(:,badInterval)=[];
-  end
-%    lowerBound
-%    currBest
-%    min(currBest)
+  % refine results if needed
+  [kl,ku,kVectBest,currBest,lowerBound,isRefined]=bnbRefine(...
+    @(x)criterionFromKVect(x,HInfinity),kl,ku,kVectBest,currBest,...
+    lowerBound,isRefined);
+
   tocStatus( ticId, itr/nItr );
   if abs(min(currBest)-min(lowerBound))<tol; break; end
 end
@@ -246,9 +237,27 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function K=kFromOmega(omega)
-% extract K from omega
-K=full(cholinc(sparse(omega(end:-1:1,end:-1:1)'),'inf'));
-K=K(end:-1:1,end:-1:1)';
+% make sure omega is positive semi-definite (should be very close, up to 
+% the SDP solver)
+[U,S,V]=svd(omega); S(S<0)=0; omega2=U*S*V';
+% perform homemade cholesky decomposition as the matrix can be semidefinite
+L=zeros(3,3);
+omega2=omega2(end:-1:1,end:-1:1);
+for j=1:3
+  for i=j:3
+    if i==j
+      L(i,i)=sqrt(max(omega2(i,i)-sum(L(i,1:i-1).^2),0));
+    else
+      L(i,j)=(omega2(i,j)-L(i,1:j-1)*L(j,1:j-1)')/L(j,j);
+    end
+  end
+end
+%  L=full(cholinc(sparse(omega(end:-1:1,end:-1:1)'),'0'));
+% deduce K
+L=L';
+K=L(end:-1:1,end:-1:1)';
+% just for numerical stability
+K=K/K(3,3);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -268,32 +277,39 @@ end
 
 function [l,u]=omegaBound(kl,ku)
 % get bounds on omega, from bounds on K
-l=zeros(5,1); u=l;
-ind=1;
+bound=zeros(5,2);
 klFull=KVectToKFull(kl); kuFull=KVectToKFull(ku);
 % figure out the bounds on the diagonal elements
-for i=[1,2]
-  tmp=[ klFull(i,:).*klFull(i,:); kuFull(i,:).*kuFull(i,:) ];
-  tmp(3,:)=tmp(1,:).*~(klFull(i,:)<0 & 0<kuFull(i,:));
-  if i==1; j=1; else; j=4; end
-  l(j)=sum(min(tmp,[],1)); u(j)=sum(max(tmp,[],1));
-end
-tmp=[ klFull(1,:).*klFull(2,:); kuFull(1,:).*klFull(2,:); ...
-  kuFull(1,:).*kuFull(2,:) ];
-l(i)=sum(min(tmp,[],1)); u(i)=sum(max(tmp,[],1));
+bound(1,:)=normBound([klFull(1,:)',kuFull(1,:)']);
+bound(4,:)=normBound([klFull(2,:)',kuFull(2,:)']);
+
+% figure out the bounds on the (1,2) element
+tmp1=zeros(1,3,2); tmp2=zeros(3,1,2);
+tmp1(1,:,1)=klFull(1,:); tmp1(1,:,2)=kuFull(1,:);
+tmp2(:,1,1)=klFull(2,:)'; tmp2(:,1,2)=kuFull(2,:)';
+bound(2,:)=reshape(productBound(tmp1,tmp2),1,2);
+
 % the last two elements are easy to bound
-l([3,5])=kl([3,5]); u([3,5])=ku([3,5]);
+bound([3,5],:)=[kl([3,5]), ku([3,5])];
+l=bound(:,1); u=bound(:,2);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function res=criterion(omegaCol,lam,HInfinity)
-% computes the criterion we are optimizing using omega and lambda
-omega=[omegaCol(1:3);omegaCol([2,4,5]);omegaCol([3,5]),1];
-bestTmp=bsxfun(@minus, omega, bsxfun(@times,...
-  reshape(lam,1,1,length(lam)), multiTimes(HInfinity,...
-  multiTimes(omega,permute(HInfinity,[2,1,3]),1.2),2)));
-res=norm(bestTmp(:))^2;
+function bound=productBound(A,B)
+% A is m x n x 2 and B is n x p x 2, bound is m x p x 2
+tmp=sort(bsxfun(@times,reshape(A,size(A,1),size(A,2),1,2),...
+  reshape(B,1,size(B,1),size(B,2),2)),4);
+bound=reshape(sum(tmp,2),size(A,1),size(B,2),2);
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+function bound=normBound(A)
+% A is m x 2, bound is 1 x 2
+bound=sort(A.^2,2);
+bound(A(:,1)<0 & A(:,2)>0,1)=0;
+bound=sum(bound,1);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -303,17 +319,12 @@ function res=criterionFromKVect(KVect,HInfinity)
 omega=omegaFromKVect(KVect);
 % compute the optimal lambdas
 nFrame=size(HInfinity,3); nSample=size(KVect,2);
-lam=zeros(nFrame,nSample);
-for i=1:nFrame
-  lam(i,:)=reshape(1./multiTimes(multiTimes(HInfinity(3,:,i),omega,1.2),...
-    HInfinity(3,:,i)',1),1,nSample);
-end
 % compute the criterion
 res=zeros(1,nSample);
 for i=1:nFrame
-  resTmp=omega - bsxfun(@times,...
-    reshape(lam(i,:),1,1,nSample), multiTimes(HInfinity(:,:,i),...
-    multiTimes(omega,HInfinity(:,:,i)',1),1.2));
-  res=res+reshape(sum(sum(resTmp.^2,1),2),1,nSample);
+  HOmegaHt=multiTimes(HInfinity(:,:,i),multiTimes(omega,...
+    HInfinity(:,:,i)',1),1.2);
+  res=res+sum(reshape(omega-bsxfun(@rdivide,HOmegaHt,HOmegaHt(3,3,:)),...
+    9,nSample).^2,1);
 end
 end

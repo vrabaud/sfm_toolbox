@@ -1,5 +1,5 @@
-function [l,u,vBest,currBest,lowerBound,newInd]=bnbBranch(l,u,vBest,...
-  currBest,lowerBound)
+function [l,u,vBest,currBest,lowerBound,isRefined,newInd]=bnbBranch(l,u,...
+  vBest,currBest,lowerBound,isRefined)
 % Perform the simple branching in brach an d bound
 %
 % Used in affine and metric Upgrade
@@ -17,6 +17,8 @@ function [l,u,vBest,currBest,lowerBound,newInd]=bnbBranch(l,u,vBest,...
 %                                      interval
 %  lowerBound    - [ 1 x nInterval ] underestimator of the criterion on the
 %                                      interval
+%  isRefined     - [ 1 x nInterval ] if true, the result in there has been
+%                                      refined
 %
 % OUTPUTS
 %  l             - [ dim x nInterval ] updated l
@@ -24,6 +26,7 @@ function [l,u,vBest,currBest,lowerBound,newInd]=bnbBranch(l,u,vBest,...
 %  vBest         - [ dim x nInterval ] updated vBest
 %  currBest      - [ 1 x nInterval ] updated currBest
 %  lowerBound    - [ 1 x nInterval ] updated lowerBound
+%  isRefined     - [ 1 x nInterval ] updated isRefined
 %  newInd        - array of the new intervals in l,u,vBest ...
 %
 % EXAMPLE
@@ -68,10 +71,9 @@ for ind=goodInd(end:-1:1)
     u(:,end+1)=u(:,ind);
   else
     [ disc, dim ]=max(u(:,ind)-l(:,ind));
-    l(:,end+1)=l(:,ind);
-    u(:,end+1)=u(:,ind); u(dim,end)=(u(dim,ind)+l(dim,ind))/2;
-    l(:,end+1)=l(:,ind); l(dim,end)=(u(dim,ind)+l(dim,ind))/2;
-    u(:,end+1)=u(:,ind);
+    l=l(:,[1:end,ind,ind]); u=u(:,[1:end,ind,ind]);
+    u(dim,end-1)=(u(dim,ind)+l(dim,ind))/2;
+    l(dim,end)=(u(dim,ind)+l(dim,ind))/2;
   end
 
   vBest(:,end+1:end+2)=[vBest(:,ind),vBest(:,ind)];
@@ -81,13 +83,15 @@ for ind=goodInd(end:-1:1)
   if vBest(dim,ind)>=l(dim,end)
     currBest(end+1:end+2)=[Inf,currBest(ind)];
     lowerBound(end+1:end+2)=[Inf,lowerBound(ind)];
+    isRefined(end+1:end+2)=[false,isRefined(ind)];
   else
     currBest(end+1:end+2)=[currBest(ind),Inf];
     lowerBound(end+1:end+2)=[lowerBound(ind),Inf];
+    isRefined(end+1:end+2)=[isRefined(ind),false];
   end
   % remove the interval we have split
   l(:,ind)=[]; u(:,ind)=[]; vBest(:,ind)=[]; currBest(ind)=[];
-  lowerBound(ind)=[];
+  lowerBound(ind)=[]; isRefined(ind)=[];
 end
 
 newInd=[size(l,2)-2*length(goodInd)+1:size(l,2)];

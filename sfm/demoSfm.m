@@ -397,14 +397,14 @@ playAnim( animGT, 'frame', 1, 'nCam', 20 );
 fprintf('This demo picks up where the previous demo stopped.\n');
 fprintf('Cameras are now uncalibrated so we need a metric upgrade too.\n');
 fprintf([ 'First, we will use Oliensis Hartley 07 to get a projective ' ...
-  'reconstructions.\nThen Chandraker 09 to get affine and metric ' ...
+  'reconstruction.\nThen Chandraker 09 to get affine and metric ' ...
   'upgrades.\n' ]);
 % compute the reconstruction
-%  load('bad_reconstruction')
+%  load('bad_reconstruction2')
+%  save('temp')
 anim=computeSMFromW(true,animGT.W,'doAffineUpgrade',true,...
-  'doMetricUpgrade',true,'tolMetric',1e-3);
-anim.KFull
-animGT.KFull
+  'doMetricUpgrade',true);
+
 % compute the resulting errors
 err=anim.computeError();
 type3DError='rigid+scale';
@@ -412,5 +412,4 @@ err3D=anim.computeError('animGT', animGT, 'checkTransform',type3DError);
 
 fprintf([ 'Reprojection error %0.4f and 3D-error up to %s %0.4f\n'],...
     err(1), type3DError, err3D(1) );
-save('temp')
 end

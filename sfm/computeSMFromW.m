@@ -334,7 +334,6 @@ if anim.isProj
         if doMetricUpgrade
           [ H, anim.KFull ]=metricUpgrade(anim, pInf, 'isCalibrated', ...
             isCalibrated, 'tol', tolMetric);
-		anim.KFull
         end
       end
     end
