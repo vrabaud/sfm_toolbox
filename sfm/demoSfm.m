@@ -324,6 +324,7 @@ anim = cell(5,2);
 err = zeros(5,2); err3D = err;
 
 for i = 1 : 5
+  if i==5 && exist('OCTAVE_VERSION','builtin')==5; break; end
   for j = 1 : 2
     switch i
       case 1,
@@ -406,6 +407,11 @@ fprintf([ 'First, we will use Oliensis Hartley 07 to get a projective ' ...
 % compute the reconstruction
 %  load('bad_reconstruction2')
 %  save('temp')
+if exist('OCTAVE_VERSION','builtin')==5
+  fprintf('Yalmip not working under octave sorry :(');
+  return;
+end
+
 anim=computeSMFromW(true,animGT.W,'doAffineUpgrade',true,...
   'doMetricUpgrade',true);
 

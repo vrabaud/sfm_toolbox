@@ -65,7 +65,8 @@ while hasChanged
   
   ind=sum(sign(w),2)<0;
   if nnz(ind) > 0
-    SHomogClean(:,ind)=-SHomogClean(:,ind); w(ind,:)=-w(ind,:); hasChanged=true;
+    SHomogClean(:,ind)=-SHomogClean(:,ind); w(ind,:)=-w(ind,:);
+    hasChanged=true;
   end
 end
 
@@ -83,9 +84,9 @@ for delta=-1:2:1
   % we want to minimize -d, with the parameters [v1,v2,v3,v4,d]
   A=-[SHomogClean';delta*C']; A(:,5)=1;
   if exist('OCTAVE_VERSION','builtin')==5
-    [sol,fval] = linprog([0,0,0,0,-1]',A,zeros(size(A,1),1),zeros(0,5),...
-      zeros(0,5),[-1,-1,-1,-1,-Inf]', [1,1,1,1,Inf]');
-    if ~any(isna(sol)) && sol(5)>0; sol=solTmp; break; end
+    [solTmp,fval] = linprog([0,0,0,0,-1]',A,zeros(size(A,1),1),...
+      zeros(0,5),zeros(0,5),[-1,-1,-1,-1,-Inf]', [1,1,1,1,Inf]');
+    if ~any(isna(solTmp)) && solTmp(5)>0; sol=solTmp; break; end
   else
     [solTmp,fval,exitflag] = linprog([0,0,0,0,-1]',A,zeros(size(A,1),1),...
       [],[],[-1,-1,-1,-1,-Inf]', [1,1,1,1,Inf]', [], ...
