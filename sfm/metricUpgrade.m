@@ -1,4 +1,4 @@
-function [ H, K ] = metricUpgrade(anim, pInf, varargin)
+function [ H, K ] = metricUpgrade(anim, varargin)
 % Perform an affine upgrade
 %
 % Given projection matrices and a 3D projective structure in anim,
@@ -34,8 +34,8 @@ function [ H, K ] = metricUpgrade(anim, pInf, varargin)
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-[ isCalibrated method tol ] = getPrmDflt( varargin, ...
-  { 'isCalibrated' false 'method' inf 'tol', 1e-5}, 1);
+[ isCalibrated method tol pInf ] = getPrmDflt( varargin, ...
+  { 'isCalibrated' false 'method' inf 'tol' 1e-5 'pInf' []}, 1);
 
 P=anim.P; S=anim.S; W=anim.W; nPoint=anim.nPoint; nFrame=anim.nFrame;
 H=[]; K=[];

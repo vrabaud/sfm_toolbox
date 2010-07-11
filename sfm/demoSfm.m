@@ -207,21 +207,24 @@ for i = 1 : 5
       case 3,
         animGTSample=animGT.sampleFrame(1:3);
         anim{3,j} = computeSMFromW( false, animGTSample.W, 'method', 0, ...
-          'isCalibrated', true, 'nItrSBA', (j-1)*100 );
+          'isCalibrated', true, 'doMetricUpgrade', true, ...
+          'nItrSBA', (j-1)*100 );
         out = '3 views, calibrated cameras:\n';
         typeTransform = 'camera';
         type3DError = '';
       case 4,
         animGTSample=animGT;
         anim{4,j} = computeSMFromW( false, animGT.W, 'method', 0, ...
-          'isCalibrated', true, 'nItrSBA', (j-1)*100 );
+          'isCalibrated', true, 'doMetricUpgrade', true, ...
+          'nItrSBA', (j-1)*100 );
         out = 'All the views, calibrated cameras:\n';
         typeTransform = 'camera';
         type3DError = '';
       case 5,
         animGTSample=animGT;
         anim{5,j} = computeSMFromW( false, animGT.W, 'method', inf, ...
-          'isCalibrated', true, 'nItrSBA', (j-1)*100 );
+          'isCalibrated', true, 'doMetricUpgrade', true, ...
+          'nItrSBA', (j-1)*100 );
         out = 'All the views, calibrated cameras with SDP solving:\n';
         typeTransform = 'camera';
         type3DError = '';
@@ -382,6 +385,7 @@ end
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
 function demo8() %#ok<DEFNU>
 %%% Check for projective camera
 disp('Euclidean rigid SFM examples with uncalibrated cameras.');
