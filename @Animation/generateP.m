@@ -37,16 +37,16 @@ end
 if ~isempty(anim.K)
   if anim.isProj
     if size(anim.K,2)==1
-      P(1,:,:) = multiTimes(anim.K([1,2,4]),P,3.3);
-      P(2,:,:) = multiTimes(anim.K([3,5]),P(2:3,:,:),3.3);
+      P(1,:,:) = sum(bsxfun(@times,anim.K([1,2,4]),P),1);
+      P(2,:,:) = anim.K(3)*anim.P(2,:,:)+anim.K(5)*anim.P(3,:,:);
     else
       P(1,:,:) = multiTimes(anim.K([1,2,4],:),P,3.2);
       P(2,:,:) = multiTimes(anim.K([3,5],:),P(2:3,:,:),3.2);
     end
   else
     if size(anim.K,2)==1
-      P(1,:,:) = multiTimes(anim.K([1,2]),P(1:2,:,:),3.3);
-      P(2,:,:) = multiTimes(anim.K(3),P(2,:,:),3.3);
+      P(1,:,:) = anim.K(1)*anim.P(1,:,:)+anim.K(2)*anim.P(2,:,:);
+      P(2,:,:) = anim.K(3)*P(2,:,:);
     else
       P(1,:,:) = multiTimes(anim.K([1,2],:),P(1:2,:,:),3.2);
       P(2,:,:) = multiTimes(anim.K(3,:),P(2,:,:),3.2);
