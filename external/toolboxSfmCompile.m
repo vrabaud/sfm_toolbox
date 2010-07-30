@@ -132,8 +132,8 @@ switch computer
 end
 
 % general compile options
-fs={'computeCsfmInfimumMex','refineExteriorOrientationMex', ...
-  'msfmRotationDerivativeMex'};
+fs={'computeCsfmInfimumMex','refineExteriorOrientationMex'};%, ...
+%  'msfmRotationDerivativeMex'};
 ds={'nrsfm', 'sfm', 'msfm'};
 for i=1:length(fs)
   mex(opts{:},[rd '/' ds{i} '/private/' fs{i} '.' mexext], ...
