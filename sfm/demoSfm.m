@@ -76,11 +76,12 @@ disp('Homography with bundle adjustment example');
 disp('Create points and random view');
 
 anim=Animation(); anim.W=zeros(2,100,5);
-X=rand( 2, 100 );
+X=rand(2,100);
 for i=1:5
-  H = rand( 3, 3 ); anim.mask(:,i)=logical(rand(100,1)>0.5);
-  if i>=1; H=eye(3); end
-  anim.W(:,anim.mask(:,i),i) = normalizePoint( H*normalizePoint( X(:,anim.mask(:,i)), -3 ), 3 );
+  anim.mask(:,i)=logical(rand(100,1)>0.5);
+  if i==1; H=eye(3); else H=rand(3,3); end
+  anim.W(:,anim.mask(:,i),i)=normalizePoint(H*normalizePoint( ...
+    X(:,anim.mask(:,i)),-3),3);
 end
 
 % add some noise to the measurements
