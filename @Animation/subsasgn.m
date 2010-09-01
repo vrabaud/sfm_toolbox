@@ -23,7 +23,7 @@ if max(size(idx))==1
     case 'W'
       anim.W=rhs;
     case 'mask'
-      anim.mask=logical(mask);
+      anim.mask=logical(rhs);
       % 3D / Object
     case 'S'
       % do not modify if shape basis is defined
