@@ -65,6 +65,7 @@ if doSba
 		system('nmake /f Makefile.vc sba.lib');
 	case {'GLNX86', 'GLNXA64', 'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
 		% Matlab and Octave on Linux
+		system('make cleanall');
 		system('make libsba.a');
 	end
 
