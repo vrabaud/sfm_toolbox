@@ -16,7 +16,7 @@ function [ P, anim ] = generateP(anim, doFillP)
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -45,7 +45,7 @@ if ~isempty(anim.K)
     end
   else
     if size(anim.K,2)==1
-      P(1,:,:) = anim.K(1)*anim.P(1,:,:)+anim.K(2)*anim.P(2,:,:);
+      P(1,:,:) = anim.K(1)*P(1,:,:)+anim.K(2)*P(2,:,:);
       P(2,:,:) = anim.K(3)*P(2,:,:);
     else
       P(1,:,:) = multiTimes(anim.K([1,2],:),P(1:2,:,:),3.2);

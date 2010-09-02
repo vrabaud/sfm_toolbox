@@ -1,4 +1,13 @@
-Version 3.0 ()
+Version New (Sep-10)
+  CRITICAL FIXES
+    - bad reprojection matrix for orthographic cameras with a common calibration matrix
+  FIXES
+    - little crash when recompiling (no resulting problem though)
+  IMPROVEMENTS
+    - allow to generate missing data in generateToyAnimation
+    - cleanups in bundle adjustment and better optimization when there is a common calibration matrix
+
+Version 3.0 (12-Jul-10)
   API CHANGES
     - Animation objects are now defined like in Matlab 7.5 and before (to simplify compatibility with all Matlab's and Octave)
     - removed useless members and member functions for clarity
