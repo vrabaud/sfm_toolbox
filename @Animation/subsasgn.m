@@ -11,7 +11,7 @@ function anim=subsasgn(anim,idx,rhs)
 %
 % EXAMPLE
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -46,7 +46,10 @@ if max(size(idx))==1
       end
       anim.P=rhs;
     case 'K'
-      anim.K=rhs;
+      if size(rhs,2)==1; anim.K=rhs;
+      elseif size(rhs,1)==1; anim.K=rhs';
+      else anim.K=rhs;
+      end
     case 'KFull'
       if ~isempty(rhs)
         if anim.isProj
