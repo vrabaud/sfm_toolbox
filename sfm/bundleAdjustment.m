@@ -25,8 +25,8 @@ function [ anim info ] = bundleAdjustment( anim, varargin )
 % INPUTS
 %  anim      - Animation object
 %  varargin   - list of paramaters in quotes alternating with their values
-%       - sfmCase   - 1,2,3, Inf motion+struct, motion only, struct only,
-%              NRSFM with shape basis
+%       - sfmCase   - 'motstr' for motion+struct, 'mot' motion only, 'str'
+%              for structure only (this option is only for the rigid case
 %       - 'KMask', [ 3 x 1 ] or [ 5 x 1 ] contains 1 when the calibration
 %               parameter is fixed
 %       - 'nItr' number of BA iterations
@@ -40,21 +40,22 @@ function [ anim info ] = bundleAdjustment( anim, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-[ KMask nItr covx nFrameFixed ] = ...
+[ KMask nItr nFrameFixed sfmCase ] = ...
   getPrmDflt( varargin,{ 'KMask', [], 'nItr', 500, ...
-  'covx', [], 'nFrameFixed', 1 }, 1 );
+  'nFrameFixed', 1, 'sfmCase', 'motstr'}, 1 );
 
 % Figure out where the files are located
 switch computer
   case 'PCWIN',
     projPath=[ '@' fileparts(mfilename('fullpath')) ...
       '/private/sba/sbaProjection.dll' ];
-  case {'GLNX86','i686-pc-linux-gnu', 'GLNXA64', 'x86_64-pc-linux-gnu'}
+  otherwise,
+    % Linux/Mac Matlab/Octave
     projPath=[ '@' fileparts(mfilename('fullpath')) ...
       '/private/sba/sbaProjection.so' ];
 end
@@ -112,6 +113,7 @@ if ~isempty(anim.R) && ~isempty(anim.t)
     cnp=6+size(anim.l,1);
     pnp=3*anim.nBasis;
     proj='affineNRSFM';
+    sfmCase='motstr';
   else
     P0 = [ P0(:)' anim.S(:)' ];
     if anim.isProj % Projective camera
@@ -161,22 +163,18 @@ x=WPermute(repmat(reshape(permute(WMask,[2,1]),1,...
 projac=[ proj 'Jac' projPath ];
 proj=[ proj projPath ];
 
-if ~isempty(covx)
-  [ ret P info ] = sba( nPoint, 0, nFrame, nFrameFixed, WMask+0.0, ...
-    P0, cnp, pnp, x, covx, 2, proj, projac, nItr, 0, [], 'motstr', ...
-    K0, KMask );
+if ~isempty(anim.l)
+  % NRSfM
+  isFirstCoeff1=double(isFirstCoeff1);
+  nFrameFixed = 0;
+  [ ret P info ] = sba( anim.nPoint, 0, anim.nFrame, nFrameFixed, WMask+0.0, ...
+    P0, cnp, pnp, x, 2, proj, projac, nItr, 0, [], sfmCase, isFirstCoeff1,...
+    anim.nBasis);
 else
-  if ~isempty(anim.l) % NRSFM
-    isFirstCoeff1=double(isFirstCoeff1);
-    nFrameFixed = 0;
-    [ ret P info ] = sba( anim.nPoint, 0, anim.nFrame, nFrameFixed, WMask+0.0, ...
-      P0, cnp, pnp, x, 2, proj, projac, nItr, 0, [], 'motstr',isFirstCoeff1,...
-      anim.nBasis);
-  else
-    [ ret P info ] = sba( anim.nPoint, 0, anim.nFrame, nFrameFixed, WMask+0.0, ...
-      P0, cnp, pnp, x, 2, proj, projac, nItr, 0, [], 'motstr',...
-      KAll, KMask );
-  end
+  % rigid SfM
+  [ ret P info ] = sba( anim.nPoint, 0, anim.nFrame, nFrameFixed, WMask+0.0, ...
+    P0, cnp, pnp, x, 2, proj, projac, nItr, 0, [], sfmCase,...
+    KAll, KMask );
 end
 
 %  info(1:2)
@@ -237,9 +235,45 @@ else
   end
 end
 
-if ~isempty(anim.K)
+if ~isempty(anim.K) && ~isempty(find(~KMask))
   if size(anim.K,2)==1
+    % average all the K found as a first estimate
     anim.K=mean(KAll,2);
+    err=anim.computeError(); errPrev=err(1);
+
+    % optimize K and the rest through alternate gradient descent
+    while 1
+      S=reshape(anim.generateSAbsolute(),3,[]);
+      % we want to solve K*S=W or kron(S',eye(3)) vec(K)=vec(W)
+      % K is now only its first two rows
+      if anim.isProj
+        W=bsxfun(@times,reshape(anim.W,2,[]),S(3,:));
+        A=kron(S',eye(3));
+      else
+        A=kron(S(1:2,:)',eye(2));
+      end
+      % remove the columns with 0
+      W=reshape(anim.W,[],1);
+      A(:,2)=[];
+
+      % remove the columns for which we know the values
+      if find(KMask)
+        W=W-A(:,find(KMask))*anim.K(find(KMask));
+        A(:,find(KMask))=[];
+      end
+
+      % solve for the best K
+      anim.K(find(~KMask))=A\W;
+
+      % optimize the other parameters
+      anim=bundleAdjustment(anim,'KMask',ones(size(anim.K,1),1),...
+        'nItr',nItr,'nFrameFixed',nFrameFixed,'sfmCase',sfmCase);
+      err=anim.computeError(); err=err(1);
+
+      % exit when the error changes by less than 1%
+      if (errPrev-err<0.01*errPrev); break; end
+      errPrev=err;
+    end
   else
     anim.K=KAll;
   end
