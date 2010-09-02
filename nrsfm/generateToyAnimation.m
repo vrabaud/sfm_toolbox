@@ -23,24 +23,26 @@ function anim = generateToyAnimation( type, varargin )
 % INPUTS
 %  type       - type of animation to create
 %  varargin   - list of paramaters in quotes alternating with their values
-%       - 'nPoint' [] number of points to create in the object
-%       - 'isProj' [false] flag indicating if the camera is projective
-%       - 'nLoop' [1] number of times the animation is repeated
+%       - 'doSMean' [0] if ~=0, Torresani's model, otherwise, Xiao's
+%                   (Torresani's : the first shape in the basis always has
+%                   a coefficient of 1)
 %       - 'dR' [1] set the camera rotation behavior. 0: fixed,
 %              1:random (but containing all the scene; if set, dt cannot be
 %              set to 2), 2: smooth changes around the scene
 %              if a cell containing a matrix, it is supposed to be fixed
 %              to that value
 %       - 'dt' [1] set the camera translation behavior. Same as for dR
-%       - 'nFrame' [10] number of frames in the video sequence
+%       - 'isProj' [false] flag indicating if the camera is projective
 %       - 'K' [eye(3)] calibration matrix
-%       - 'randK' [false] set the calibration matrix to random
 %       - 'nBasis' [0] dimensionality of the shape basis (for NRSFM)
 %           if an array of values, it contains the number of basis shapes
 %           of rank 3, 2, 1,   e.g : [ 1 0 1 ]
-%       - 'doSMean' [0] if ~=0, Torresani's model, otherwise, Xiao's
-%                   (Torresani's : the first shape in the basis always has
-%                   a coefficient of 1
+%       - 'nLoop' [1] number of times the animation is repeated
+%                 the animation is repeated back and forth
+%       - 'nPoint' [] number of points to create in the object
+%       - 'nFrame' [10] number of frames in the video sequence
+%       - 'percMask' [0] percentage of the points that are masked out
+%       - 'randK' [false] set the calibration matrix to random
 %
 % OUTPUTS
 %  anim           - Animation object
@@ -49,16 +51,16 @@ function anim = generateToyAnimation( type, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
 dfs = {'nPoint',[], 'isProj',false,'nLoop', 1,...
   'dR',[],'dt',[],'nFrame',10,'K',[],...
-  'randK',false,'nBasis',0,'doSMean',0};
+  'randK',false,'nBasis',0,'doSMean',0,'percMask',0};
 [ nPoint isProj nLoop dR dt nFrame K ...
-  randK nBasis doSMean ] = getPrmDflt( varargin, dfs, 1 );
+  randK nBasis doSMean percMask ] = getPrmDflt( varargin, dfs, 1 );
 
 % Deal with internal parameters
 if randK
@@ -240,8 +242,18 @@ anim.t(3,:)=anim.t(3,:)-min(S(3,:))+span/3;
 % Define other members
 anim.conn=conn;
 
+% set the first camera projection matrix to eye(3,4)
 if dR~=0; anim = anim.setFirstPRtToId(); end
 
+% generate random missing data
+if percMask>0;
+  anim.mask=ones(nFrame,nPoint);
+  tmp=randperm(nFrame*nPoint);
+  nMask=min(max(nFrame*nPoint*percMask/100,1),nFrame*nPoint);
+  anim.mask(tmp(1:nMask))=0;
+end
+
+% generate the image projections
 [ disc, disc, anim ]=anim.generateW('doFillW',true);
 end
 

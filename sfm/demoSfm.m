@@ -26,7 +26,7 @@ function demoSfm( demoNumber )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -273,37 +273,48 @@ function demo6() %#ok<DEFNU>
 disp('Simple bundle adjustment with calibration parameters');
 disp('Generate some random rigid data');
 % Test animations
-nFrame = 5; nPoint = 50; isProj = true;
+nFrame = 5; nPoint = 50; isProj = false;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
   'isProj', isProj );
-animGT.K = 5*(rand(3,nFrame)); animGT.K(2,:)=0;
-animGT.W=animGT.generateW();
+for i=1:2
+  if i==1
+    animGT.K = 5*rand(3,nFrame);
+    disp('Bundle adjustment with several calibration matrices');
+  else
+    animGT.K = 5*rand(3,1);
+    disp('Bundle adjustment with a common calibration matrix');
+  end
+  animGT.K(2,:)=0;
+  animGT.W=animGT.generateW();
 
-% Add some noise to this ground truth animation
-S0 = animGT.S + randn(3,nPoint)*0.1/max(abs(animGT.S(:)));
-R0 = quaternion(quaternion(animGT.R)+randn(4,nFrame)*0.001);
-t0 = animGT.t+randn(3,nFrame)*0.1*max(abs(animGT.t(:)));
-K0 = animGT.K+randn(3,nFrame)*0.001*max(abs(animGT.K(:))); K0(2,:)=0;
+  % Add some noise to this ground truth animation
+  S0 = animGT.S + randn(3,nPoint)*0.1/max(abs(animGT.S(:)));
+  R0 = quaternion(quaternion(animGT.R)+randn(4,nFrame)*0.001);
+  t0 = animGT.t+randn(3,nFrame)*0.1*max(abs(animGT.t(:)));
+  K0 = animGT.K+randn(3,size(animGT.K,2))*0.001*max(abs(animGT.K(:)));
+  K0(2,:)=0;
 
-anim=Animation; anim.R=R0; anim.t=t0; anim.K=K0; anim.S=S0; anim.W=animGT.W;
-errTmp = anim.computeError();
-err3DTmp = anim.computeError('animGT', animGT, ...
-  'checkTransform', 'rigid' );
+  anim=Animation; anim.isProj=animGT.isProj;
+  anim.R=R0; anim.t=t0; anim.K=K0; anim.S=S0; anim.W=animGT.W;
+  errTmp = anim.computeError();
+  err3DTmp = anim.computeError('animGT',animGT, ...
+    'checkTransform','rigid');
 
-err(1) = errTmp(1); err3D(1) = err3DTmp(1);
+  err(1) = errTmp(1); err3D(1) = err3DTmp(1);
 
-% perform bundle adjutment
-[ anim info ] = bundleAdjustment( anim, ...
-  'KMask', [ 0 1 0 ], 'nFrameFixed', 0 );
-anim=anim.setFirstPRtToId();
+  % perform bundle adjutment
+  [ anim info ] = bundleAdjustment( anim, 'KMask', [ 0 1 0 ], ...
+    'nFrameFixed', 0 );
+  anim=anim.setFirstPRtToId();
 
-errTmp = anim.computeError();
-err3DTmp = anim.computeError('animGT', animGT, 'checkTransform', 'rigid' );
-err(2) = errTmp(1); err3D(2) = err3DTmp(1);
+  errTmp = anim.computeError();
+  err3DTmp = anim.computeError('animGT',animGT,'checkTransform','rigid');
+  err(2) = errTmp(1); err3D(2) = err3DTmp(1);
 
-out =sprintf([ 'Reprojection error %0.4f/%0.4f and 3D error %0.4f/%0.4f'...
-  ', before/after BA\n\n'], err(1), err(2), err3D(1), err3D(2) );
-fprintf(out);
+  out=sprintf([ 'Reprojection error %0.4f/%0.4f and 3D error %0.4f/%0.4f'...
+    ', before/after BA\n\n'], err(1), err(2), err3D(1), err3D(2) );
+  fprintf(out);
+end
 
 end
 
@@ -394,7 +405,7 @@ disp('Euclidean rigid SFM examples with uncalibrated cameras.');
 % Test animations
 nFrame = 10; nPoint = 50;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
-  'isProj',true,'dR', 1, 'randK', true );
+  'isProj',true,'dR', 1, 'randK', true, 'percMask', 10 );
 animGT=animGT.addNoise('noiseS', '2', 'doFillW', true);
 
 playAnim( animGT, 'frame', 1, 'nCam', 20 );
