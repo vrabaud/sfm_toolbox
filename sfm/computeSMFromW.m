@@ -51,6 +51,11 @@ function anim = computeSMFromW( isProj, W, varargin )
 % upgrades from Chandraker IJCV 2009 is applied
 % slow
 %
+% If there are any missing entries:
+% Low-Rank Matrix Fitting Based on Subspace Perturbation Analysis
+% with Applications to Structure from Motion
+% Hongjun Jia, Aleix M. Martinez, PAMI 08
+%
 % Returns the structure and camera parameters in an Animation object
 %
 % USAGE
@@ -135,7 +140,7 @@ end
 if isProj
   [P,S] = computeSMFromWProjective( W, method, isCalibrated );
 else
-  [P,S] = computeSMFromWProjective( W, method, onlyErrorFlag );
+  [P,S] = computeSMFromWAffine( W, method, onlyErrorFlag );
 end
 
 if onlyErrorFlag; anim=err; return; end
@@ -223,7 +228,7 @@ if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
   
   % do a final bundle adjustment
   anim=anim.setFirstPRtToId();
-  
-  if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
 end
+
+if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
 end

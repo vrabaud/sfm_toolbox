@@ -65,23 +65,34 @@ if nFrame==2 && onlyErrorFlag
   errFrame = N'*A';
   err = norm(errFrame)^2;
 else
+  WStack = reshape( permute( W, [ 1 3 2 ] ), [], nPoint );
+
+  if hasAnyNan
+    % Low-Rank Matrix Fitting Based on Subspace Perturbation Analysis
+    % with Applications to Structure from Motion
+    % Hongjun Jia, Aleix M. Martinez, PAMI 08
+    [PStack,S]=lowRankDecomposition(WStack,4);
+    % Reconstruct the full measurements
+    WStack=PStack*S;
+  end
+
+  t = mean( WStack, 2 );
+  WStack = bsxfun(@minus, WStack, t );
+
   if ~hasAnyNan
     % Tomasi Kanade without/with the metric constraint
     % Affine camera matrix, MLE estimation (Tomasi Kanade)
     % Reference: HZ2, p437, Algorithm 18.1
-    WStack = reshape( permute( W, [ 1 3 2 ] ), [], nPoint );
 
-    t = mean( WStack, 2 );
-    WStack = bsxfun(@minus, WStack, t );
     [ U S V ] = svd( WStack );
     P = permute(reshape(U(:,1:3),2,nFrame,3),[1 3 2]);
-    P(3,4,:) = 1; P(1:2,4,:) = reshape( t, 2, 1, nFrame );
 
     S=bsxfun(@times,[ S(1,1); S(2,2); S(3,3) ], V(:,1:3)');
   else
-    % Low-Rank Matrix Fitting Based on Subspace Perturbation Analysis
-    % with Applications to Structure from Motion
-    % Hongjun Jia, Aleix M. Martinez, PAMI 08
-    
+    [PStack,S]=lowRankDecomposition(WStack,3);
+
+    P(1:2,1:3,:)=permute(reshape(PStack,2,nFrame,3),[1,3,2]);
   end
+  % assign the translation
+  P(3,4,:) = 1; P(1:2,4,:) = reshape( t, 2, 1, nFrame );
 end

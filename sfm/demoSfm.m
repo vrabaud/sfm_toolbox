@@ -12,6 +12,7 @@ function demoSfm( demoNumber )
 %  6: Bundle adjustment on camera parameters
 %  7: Projective calibrated rigid SFM examples
 %  8: Projective uncalibrated rigid SFM examples
+%  9: Affine/Projective calibrated rigid SFM examples with missing entries
 %
 % USAGE
 %  demoSfm( demoNumber )
@@ -32,7 +33,7 @@ function demoSfm( demoNumber )
 % Licensed under the GPL [see external/gpl.txt]
 
 if(nargin<1), demoNumber=1; end; c
-if(demoNumber<1 || demoNumber>8), error('Invalid demo number.'); end
+if(demoNumber<1 || demoNumber>9), error('Invalid demo number.'); end
 disp('Demos of various functions in SFM toolbox.');
 disp('Steps marked w ''*'' or ''**'' may take time, please be patient.');
 disp('------------------------------------------------------------------');
@@ -44,7 +45,7 @@ in=input(['Press (n) to continue to next demo or (r) to repeat demo\n'...
   'Anything else will quit the demo\n'],'s');
 switch in
   case 'n'
-    if demoNumber<8; demoSfm(demoNumber+1); end
+    if demoNumber<9; demoSfm(demoNumber+1); end
   case 'r'
     demoSfm(demoNumber);
 end
@@ -321,7 +322,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function demo7() %#ok<DEFNU>
 %%% Check for projective camera
-disp('Projective/Euclidean rigid SFM examples with calibrated cameras.');
+disp('Rigid SFM examples with calibrated projective cameras.');
 % Test animations
 nFrame = 10; nPoint = 50;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
@@ -401,11 +402,11 @@ end
 
 function demo8() %#ok<DEFNU>
 %%% Check for projective camera
-disp('Euclidean rigid SFM examples with uncalibrated cameras.');
+disp('Rigid SFM examples with uncalibrated projective cameras.');
 % Test animations
 nFrame = 10; nPoint = 50;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
-  'isProj',true,'dR', 1, 'randK', true, 'percMask', 10 );
+  'isProj',true,'dR', 1, 'randK', true );
 animGT=animGT.addNoise('noiseS', '2', 'doFillW', true);
 
 playAnim( animGT, 'frame', 1, 'nCam', 20 );
@@ -434,4 +435,55 @@ err3D=anim.computeError('animGT', animGT, 'checkTransform',type3DError);
 
 fprintf([ 'Reprojection error %0.4f and 3D-error up to %s %0.4f\n'],...
     err(1), type3DError, err3D(1) );
+end
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function demo9() %#ok<DEFNU>
+%%% Check for projective camera
+disp('Rigid SFM examples with missing measurements.');
+% Test animations
+nFrame = 10; nPoint = 50; percMask = 10;
+animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
+  'isProj',false,'dR', 1, 'percMask', percMask );
+animGT=animGT.addNoise('noiseS', '5', 'doFillW', true);
+
+% The following should give the same low errors
+fprintf( ['Computing several reconstructions on %d frames with %d noisy'...
+  ' features, %d%% of them missing.\n' ], nFrame, nPoint, percMask );
+anim = cell(5,2);
+err = zeros(5,2); err3D = err;
+
+for i = 1 : 2
+  for j = 1 : 2
+    switch i
+      case 1,
+        animGT.isProj=false;
+        anim{1,j} = computeSMFromW( animGT.isProj, ...
+          animGT.W, 'method', 0, 'nItrSBA', (j-1)*100 );
+        anim{1,j}.mask = animGT.mask;
+        typeTransform = 'homography';
+        out = 'Affine camera reconstruction:\n';
+        type3DError = 'up to a projective transform';
+      case 2,
+        animGT.isProj=true;
+        anim{1,j} = computeSMFromW( animGT.isProj, ...
+          animGT.W, 'method', 0, 'nItrSBA', (j-1)*100 );
+        anim{1,j}.mask = animGT.mask;
+        out = 'Projective camera reconstruction:\n';
+        typeTransform = 'homography';
+        type3DError = 'up to a projective transform';
+    end
+    errTmp = anim{i,j}.computeError();
+    err(i,j) = errTmp(1);
+    err3DTmp = anim{i,j}.computeError('animGT', animGT, ...
+      'checkTransform',typeTransform);
+    err3D(i,j) = err3DTmp(1);
+    anim{1,1}.S=anim{1,1}.S+rand(3,anim{1,1}.nPoint)*1000;
+  end
+  out =sprintf([ out 'Reprojection error %0.4f/%0.4f and 3D-error ' ...
+    '%s %0.4f/%0.4f , before/after BA\n\n'],...
+    err(i,1), err(i,2), type3DError, err3D(i,1), err3D(i,2) );
+  fprintf(out);
+end
+
 end
