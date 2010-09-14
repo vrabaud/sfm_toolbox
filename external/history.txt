@@ -1,6 +1,7 @@
 Version New (Sep-10)
   CRITICAL FIXES
     - bad reprojection matrix for orthographic cameras with a common calibration matrix
+    - crashes when using the mask member
   FIXES
     - little crash when recompiling (no resulting problem though)
   IMPROVEMENTS

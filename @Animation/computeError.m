@@ -106,8 +106,7 @@ switch method
     % if there is a mask, only keep certain points on certain frames
     if ~isempty(anim.mask)
       % set to 0 the ones that are 0 in the mask
-      mask = repmat(reshape(~anim.mask,1,nPoint,nFrame), ...
-        [size(anim.S,1), 1, 1]);
+      mask = repmat(reshape(~anim.mask,1,nPoint,nFrame), [2, 1, 1]);
       tmp(mask) = 0;
     end
     

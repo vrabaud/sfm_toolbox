@@ -7,8 +7,8 @@ function anim = addNoise( anim, varargin )
 % INPUTS
 %  anim     - Animation object (help Animation for details)
 %  varargin  - list of paramaters in quotes alternating with their values
-%        'noiseS'  - standard variation of the Gaussian noise to add
-%                     of, if in quotes (e.g. '20'), it is the percentage as
+%        'noiseS'  - standard variation of the Gaussian noise to add,
+%                     if in quotes (e.g. '20'), it is the percentage as
 %                     defined in Torresani PAMI08 p. 884
 %        'noiseW'  - standard variation of the Gaussian noise to add
 %        'doFillS'  - update S with its noisy value: in case of a rigid
@@ -17,13 +17,13 @@ function anim = addNoise( anim, varargin )
 %        'doFillW'  - re-compute the reprojection values
 %
 % OUTPUTS
-%  anim     - modified Animation anime
+%  anim     - modified Animation
 %
 % EXAMPLE
 %
 % See also ANIMATION
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -33,8 +33,12 @@ function anim = addNoise( anim, varargin )
 
 % deal with the noise in S
 if ischar(noiseS)
-  noiseS=sqrt(str2double(noiseS)/100*norm(anim.W(:),'fro')/...
-    anim.nPoint/anim.nFrame);
+  if isempty(anim.mask)
+    avNormW=norm(anim.W(:),'fro')/anim.nPoint/anim.nFrame;
+  else
+    avNormW=norm(anim.W(~isnan(anim.W)),'fro')/nnz(anim.mask);
+  end
+  noiseS=sqrt(str2double(noiseS)/100*avNormW);
 end
 if noiseS > 0
   if size(anim.S,3)==1

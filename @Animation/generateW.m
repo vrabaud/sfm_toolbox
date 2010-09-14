@@ -61,11 +61,10 @@ if ~isempty(anim.S)
     else W = W(1:2,:,:);
     end
   end
-  
-  if doFillW; anim.W=W; end
 end
 
-if doFillP; anim.P=P; end
-
 % set missing values to NaN
-if ~isempty(anim.mask); anim.W(:,find(~anim.mask(:)))=NaN; end
+if ~isempty(anim.mask); W(:,find(~anim.mask(:)))=NaN; end
+
+if doFillW; anim.W=W; end
+if doFillP; anim.P=P; end
