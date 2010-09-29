@@ -46,17 +46,29 @@ if max(size(idx))==1
       end
       anim.P=rhs;
     case 'K'
-      if size(rhs,2)==1; anim.K=rhs;
-      elseif size(rhs,1)==1; anim.K=rhs';
-      else anim.K=rhs;
+      if isempty(rhs); anim.K=[];
+      else
+        if size(rhs,2)==1; anim.K=rhs;
+        elseif size(rhs,1)==1; anim.K=rhs';
+        else anim.K=rhs;
+        end
+        assert((size(anim.K,1)==5 && anim.isProj) || (size(anim.K,1)==3 ...
+          && ~anim.isProj), 'K dimensions do not fit isProj');
       end
     case 'KFull'
-      if ~isempty(rhs)
+      if isempty(rhs); anim.K=[];
+      else
+        assert(all(rhs(2,1,:)==0) && all(rhs(3,1:2,:)==0) && ...
+          all(rhs(3,3,:)==1), 'KFull needs 0 and 1 at the right place');
         if anim.isProj
           anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(2,2,:);rhs(1,3,:);rhs(2,3,:)];
         else
+          assert(all(rhs(1,3,:)==0) && all(rhs(2,3,:)==0), ...
+            'KFull needs 0 in the top right');
           anim.K=[rhs(1,1,:);rhs(1,2,:);rhs(2,2,:)];
         end
+        assert((size(anim.K,1)==5 && anim.isProj) || (size(anim.K,1)==3 ...
+          && ~anim.isProj), 'KFull dimensions do not fit isProj');
       end
     case 'R'
       anim.R=rhs;
