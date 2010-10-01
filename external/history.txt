@@ -1,12 +1,15 @@
 Version New (Sep-10)
+  NEW
+    - rank decomposition for matrices with missing entries
+    - 3D reconstruction for affine cameras when there are missing entries
   CRITICAL FIXES
-    - bad reprojection matrix for orthographic cameras with a common calibration matrix
+    - bad camera matrices for orthographic cameras with a common calibration matrix
     - crashes when using the mask member
   FIXES
     - little crash when recompiling (no resulting problem though)
   IMPROVEMENTS
     - allow to generate missing data in generateToyAnimation
-    - cleanups in bundle adjustment and better optimization when there is a common calibration matrix
+    - cleanups in bundle adjustment and better optimization when there is a common calibration matrix (SBA does nto provide that so I implemented a simple gradient descent in that case)
 
 Version 3.0 (12-Jul-10)
   API CHANGES

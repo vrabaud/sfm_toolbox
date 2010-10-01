@@ -48,6 +48,7 @@ function [ anim info ] = bundleAdjustment( anim, varargin )
 [ KMask nItr nFrameFixed sfmCase ] = ...
   getPrmDflt( varargin,{ 'KMask', [], 'nItr', 500, ...
   'nFrameFixed', 1, 'sfmCase', 'motstr'}, 1 );
+KMaskOri=KMask;
 
 % Figure out where the files are located
 switch computer
@@ -65,7 +66,7 @@ if isempty(anim.mask); WMask=ones(anim.nPoint, anim.nFrame);
 else WMask=anim.mask; end
 
 KAll=anim.K;
-if size(anim.K,2)==1 && ~isempty(anim.K)
+if size(KAll,2)==1 && ~isempty(KAll)
   KAll=repmat(anim.K,1,anim.nFrame);
 end
 
@@ -75,13 +76,20 @@ if ~isempty(anim.R) && ~isempty(anim.t)
   % create P0 for rotation and stuff
   if isempty(KAll)
     K0=zeros(0,anim.nFrame); nK = 0; doK=0;
+    if anim.isProj; KMask = zeros(5,1); else KMask = zeros(3,1); end
   else
-    if isempty(KMask)
+    doK=1;
+    if isempty(KMaskOri)
       if anim.isProj; KMask = ones(5,1); else KMask = ones(3,1); end
     end
-    doK=1; K0=KAll(~KMask,:); nK = length(find(~KMask));
+    if size(anim.K,2)==1
+      % do not optimize over K if it is a common K (we will optimize later)
+      K0=zeros(0,anim.nFrame); nK = 0;
+    else
+      K0=KAll(~KMask,:); nK = length(find(~KMask));
+    end
   end
-  
+
   % Deal with NRSFM
   switch size(anim.l,1)
     case anim.nBasis, %Xiao
@@ -205,9 +213,9 @@ else
     % the following line is just to prevent automatic update until
     % anim.t, anim.K and anim.R are all full
     anim.t = [];
-    KAll( ~KMask, : ) = P1( 8:end, : );
     anim.R = quaternion( P1(1:4,:) );
     anim.t = P1(5:7,:);
+    if size(P1,1)>=8; KAll( ~KMask, : ) = P1( 8:end, : ); end
     anim.S = reshape( P(( 7 + nK)*anim.nFrame + 1 : end ), 3, ...
       anim.nPoint );
   else % Affine camera
@@ -235,7 +243,7 @@ else
   end
 end
 
-if ~isempty(anim.K) && ~isempty(find(~KMask))
+if ~isempty(anim.K) && (isempty(KMaskOri) || ~isempty(find(~KMaskOri)))
   if size(anim.K,2)==1
     % average all the K found as a first estimate
     anim.K=mean(KAll,2);
@@ -248,14 +256,18 @@ if ~isempty(anim.K) && ~isempty(find(~KMask))
       % K is now only its first two rows
       if anim.isProj
         W=bsxfun(@times,reshape(anim.W,2,[]),S(3,:));
-        A=kron(S',eye(3));
+        A=kron(S',eye(2));
       else
         A=kron(S(1:2,:)',eye(2));
       end
+
       % remove the columns with 0
       W=reshape(anim.W,[],1);
-      A(:,2)=[];
-
+      if anim.isProj
+        A(:,2)=[];
+      else
+        A(:,[2,5,6])=[];
+      end
       % remove the columns for which we know the values
       if find(KMask)
         W=W-A(:,find(KMask))*anim.K(find(KMask));
