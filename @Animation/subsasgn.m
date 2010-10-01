@@ -141,14 +141,14 @@ switch var
       anim.nBasis=size(anim.SBasis,3);
       anim=generateSFromLSBasis(anim);
     end
-  case {'K', 'R', 't', 'isProj'}
+  case {'K', 'KFull', 'R', 't', 'isProj'}
     % rare case where we change the type of camera
     switch var
       case 'isProj'
         if size(anim.K,1)==5 && ~anim.isProj; anim.K=anim.K(1:3,:);
         elseif size(anim.K,1)==3 && anim.isProj; anim.K(4:5,:)=0;
         end
-      case 'K'
+      case {'K', 'KFull'}
         % reset isProj otherwise
         if size(anim.K,1)==5; anim.isProj=true;
         elseif size(anim.K,1)==3; anim.isProj=false;
