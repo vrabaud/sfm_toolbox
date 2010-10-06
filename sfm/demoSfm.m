@@ -18,7 +18,7 @@ function demoSfm( demoNumber )
 %  demoSfm( demoNumber )
 %
 % INPUTS
-%  demoNumber - [1] value between 1 and 7
+%  demoNumber - [1] value between 1 and 9
 %
 % OUTPUTS
 %
@@ -190,47 +190,48 @@ anim = cell(5,2);
 err = zeros(5,2); err3D = err;
 
 for i = 1 : 5
+  switch i
+    case 1,
+      animGTSample=animGT.sampleFrame(1:3);
+      anim{1,1} = computeSMFromW( false, animGTSample.W, 'method', 0, ...
+        'nItrSBA', 0 );
+      out = '3 views, uncalibrated cameras:\n';
+      typeTransform = 'homography';
+      type3DError = 'up to a projective transform';
+    case 2,
+      animGTSample=animGT;
+      anim{2,1} = computeSMFromW( false, animGT.W, 'method', 0, ...
+        'nItrSBA', 0 );
+      out = 'All the views, uncalibrated cameras:\n';
+      typeTransform = 'homography';
+      type3DError = 'up to a projective transform';
+    case 3,
+      animGTSample=animGT.sampleFrame(1:3);
+      anim{3,1} = computeSMFromW( false, animGTSample.W, 'method', 0, ...
+        'isCalibrated', true, 'doMetricUpgrade', true, ...
+        'nItrSBA', 0 );
+      out = '3 views, calibrated cameras:\n';
+      typeTransform = 'camera';
+      type3DError = '';
+    case 4,
+      animGTSample=animGT;
+      anim{4,1} = computeSMFromW( false, animGT.W, 'method', 0, ...
+        'isCalibrated', true, 'doMetricUpgrade', true, ...
+        'nItrSBA', 0 );
+      out = 'All the views, calibrated cameras:\n';
+      typeTransform = 'camera';
+      type3DError = '';
+    case 5,
+      animGTSample=animGT;
+      anim{5,1} = computeSMFromW( false, animGT.W, 'method', inf, ...
+        'isCalibrated', true, 'doMetricUpgrade', true, ...
+        'nItrSBA', 0 );
+      out = 'All the views, calibrated cameras with SDP solving:\n';
+      typeTransform = 'camera';
+      type3DError = '';
+  end
   for j = 1 : 2
-    switch i
-      case 1,
-        animGTSample=animGT.sampleFrame(1:3);
-        anim{1,j} = computeSMFromW( false, animGTSample.W, 'method', 0, ...
-          'nItrSBA', (j-1)*100 );
-        out = '3 views, uncalibrated cameras:\n';
-        typeTransform = 'homography';
-        type3DError = 'up to a projective transform';
-      case 2,
-        animGTSample=animGT;
-        anim{2,j} = computeSMFromW( false, animGT.W, 'method', 0, ...
-          'nItrSBA', (j-1)*100 );
-        out = 'All the views, uncalibrated cameras:\n';
-        typeTransform = 'homography';
-        type3DError = 'up to a projective transform';
-      case 3,
-        animGTSample=animGT.sampleFrame(1:3);
-        anim{3,j} = computeSMFromW( false, animGTSample.W, 'method', 0, ...
-          'isCalibrated', true, 'doMetricUpgrade', true, ...
-          'nItrSBA', (j-1)*100 );
-        out = '3 views, calibrated cameras:\n';
-        typeTransform = 'camera';
-        type3DError = '';
-      case 4,
-        animGTSample=animGT;
-        anim{4,j} = computeSMFromW( false, animGT.W, 'method', 0, ...
-          'isCalibrated', true, 'doMetricUpgrade', true, ...
-          'nItrSBA', (j-1)*100 );
-        out = 'All the views, calibrated cameras:\n';
-        typeTransform = 'camera';
-        type3DError = '';
-      case 5,
-        animGTSample=animGT;
-        anim{5,j} = computeSMFromW( false, animGT.W, 'method', inf, ...
-          'isCalibrated', true, 'doMetricUpgrade', true, ...
-          'nItrSBA', (j-1)*100 );
-        out = 'All the views, calibrated cameras with SDP solving:\n';
-        typeTransform = 'camera';
-        type3DError = '';
-    end
+    if j==2; anim{i,2}=bundleAdjustment(anim{i,1},'nItr',100); end
     errTmp = anim{i,j}.computeError();
     err(i,j) = errTmp(1);
     err3DTmp = anim{i,j}.computeError('animGT', animGTSample, ...
@@ -337,48 +338,47 @@ anim = cell(5,2);
 err = zeros(5,2); err3D = err;
 
 for i = 1 : 5
-  if i==5 && exist('OCTAVE_VERSION','builtin')==5; break; end
+  if i==5 && exist('OCTAVE_VERSION','builtin')==5; continue; end
+  switch i
+    case 1,
+      animGTSample=animGT.sampleFrame(1:2);
+      anim{1,1} = computeSMFromW( true, animGTSample.W, 'method', 0, ...
+        'nItrSBA',0);
+      out = '2 views, projective cameras:\n';
+      typeTransform = 'homography';
+      type3DError = 'up to a projective transform';
+    case 2,
+      animGTSample=animGT.sampleFrame(1:2);
+      anim{2,1} = computeSMFromW( true, animGTSample.W, 'method', 0,...
+        'isCalibrated',true,'nItrSBA',0);
+      out = '2 views, projective cameras:\n';
+      typeTransform = 'homography';
+      type3DError = '';
+    case 3,
+      animGTSample=animGT;
+      anim{3,1} = computeSMFromW( true, animGT.W, 'method', 0, ...
+        'nItrSBA',0);
+      out = 'All the views, projective cameras, Sturm Triggs:\n';
+      typeTransform = 'homography';
+      type3DError = 'up to a projective transform';
+    case 4,
+      animGTSample=animGT;
+      anim{4,1} = computeSMFromW( true, animGT.W, 'method', Inf, ...
+        'nItrSBA',0);
+      out = 'All the views, projective cameras, Oliensis Hartley:\n';
+      typeTransform = 'homography';
+      type3DError = 'up to a projective transform';
+    case 5,
+      animGTSample=animGT;
+      anim{5,1} = computeSMFromW( true,  animGT.W, 'method', Inf, ...
+        'isCalibrated',true,'nItrSBA',0,'doAffineUpgrade', true);
+      typeTransform = 'rigid+scale';
+      type3DError = 'up to a scaled rigid transform';
+      out = [ 'All the views, euclidean cameras (after affine ' ...
+        'upgrade on calibrated cameras):\n' ];
+  end
   for j = 1 : 2
-    switch i
-      case 1,
-        animGTSample=animGT.sampleFrame(1:2);
-        anim{1,j} = computeSMFromW( true, ...
-          animGTSample.W, 'method', 0,'nItrSBA', (j-1)*100 );
-        out = '2 views, projective cameras:\n';
-        typeTransform = 'homography';
-        type3DError = 'up to a projective transform';
-      case 2,
-        animGTSample=animGT.sampleFrame(1:2);
-        anim{2,j} = computeSMFromW( true, ...
-          animGTSample.W, 'method', 0,'isCalibrated',true,...
-          'nItrSBA', (j-1)*100);
-        out = '2 views, projective cameras:\n';
-        typeTransform = 'homography';
-        type3DError = '';
-      case 3,
-        animGTSample=animGT;
-        anim{3,j} = computeSMFromW( true, ...
-          animGT.W, 'method', 0, 'nItrSBA', (j-1)*100 );
-        out = 'All the views, projective cameras, Sturm Triggs:\n';
-        typeTransform = 'homography';
-        type3DError = 'up to a projective transform';
-      case 4,
-        animGTSample=animGT;
-        anim{4,j} = computeSMFromW( true, ...
-          animGT.W, 'method', Inf, 'nItrSBA', (j-1)*100 );
-        out = 'All the views, projective cameras, Oliensis Hartley:\n';
-        typeTransform = 'homography';
-        type3DError = 'up to a projective transform';
-      case 5,
-        animGTSample=animGT;
-        anim{5,j} = computeSMFromW( true, ...
-          animGT.W, 'method', Inf, 'isCalibrated',true,...
-          'nItrSBA', (j-1)*100, 'doAffineUpgrade', true);
-        typeTransform = 'rigid+scale';
-        type3DError = 'up to a scaled rigid transform';
-        out = [ 'All the views, euclidean cameras (after affine ' ...
-          'upgrade on calibrated cameras):\n' ];
-    end
+    if j==2; anim{i,2}=bundleAdjustment(anim{i,1},'nItr',100); end
     errTmp = anim{i,j}.computeError();
     err(i,j) = errTmp(1);
     err3DTmp = anim{i,j}.computeError('animGT', animGTSample, ...
@@ -445,7 +445,7 @@ disp('Rigid SFM examples with missing measurements.');
 nFrame = 10; nPoint = 50; percMask = 10;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame,...
   'isProj',false,'dR', 1, 'percMask', percMask );
-animGT=animGT.addNoise('noiseS', '5', 'doFillW', true);
+%animGT=animGT.addNoise('noiseS', '5', 'doFillW', true);
 
 % The following should give the same low errors
 fprintf( ['Computing several reconstructions on %d frames with %d noisy'...
@@ -454,31 +454,30 @@ anim = cell(5,2);
 err = zeros(5,2); err3D = err;
 
 for i = 1 : 2
+  switch i
+    case 1,
+      animGT.isProj=false;
+      anim{1,1} = computeSMFromW( animGT.isProj, ...
+        animGT.W, 'method', 0, 'nItrSBA', 0 );
+      typeTransform = 'homography';
+      out = 'Affine camera reconstruction:\n';
+      type3DError = 'up to a projective transform';
+    case 2,
+      animGT.isProj=true;
+      animGT.W=animGT.generateW();
+      anim{2,1} = computeSMFromW( animGT.isProj, ...
+        animGT.W, 'method', 0, 'nItrSBA', 0 );
+      out = 'Projective camera reconstruction:\n';
+      typeTransform = 'homography';
+      type3DError = 'up to a projective transform';
+  end
   for j = 1 : 2
-    switch i
-      case 1,
-        animGT.isProj=false;
-        anim{1,j} = computeSMFromW( animGT.isProj, ...
-          animGT.W, 'method', 0, 'nItrSBA', (j-1)*100 );
-        anim{1,j}.mask = animGT.mask;
-        typeTransform = 'homography';
-        out = 'Affine camera reconstruction:\n';
-        type3DError = 'up to a projective transform';
-      case 2,
-        animGT.isProj=true;
-        anim{1,j} = computeSMFromW( animGT.isProj, ...
-          animGT.W, 'method', 0, 'nItrSBA', (j-1)*100 );
-        anim{1,j}.mask = animGT.mask;
-        out = 'Projective camera reconstruction:\n';
-        typeTransform = 'homography';
-        type3DError = 'up to a projective transform';
-    end
+    if j==2; anim{i,2}=bundleAdjustment(anim{i,1}); end
     errTmp = anim{i,j}.computeError();
     err(i,j) = errTmp(1);
     err3DTmp = anim{i,j}.computeError('animGT', animGT, ...
       'checkTransform',typeTransform);
     err3D(i,j) = err3DTmp(1);
-    anim{1,1}.S=anim{1,1}.S+rand(3,anim{1,1}.nPoint)*1000;
   end
   out =sprintf([ out 'Reprojection error %0.4f/%0.4f and 3D-error ' ...
     '%s %0.4f/%0.4f , before/after BA\n\n'],...
