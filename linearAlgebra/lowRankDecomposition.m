@@ -36,11 +36,24 @@ function [WHat,coeff]=lowRankDecomposition(W,r)
 m=size(W,1); n=size(W,2);
 WIsnan=isnan(W);
 hasAnyNan=any(WIsnan(:));
+nIter=100;
+N=zeros(m,nIter*m); NWidth=0;
+% figure out the number of top columns we need
+nCol=r;
+while nchoosek(nCol,r) < nIter*m
+  nCol=nCol+1;
+end
 
-N=zeros(m,1000); NWidth=0;
-for i=1:1000
-  colSubset=randperm(n)(1:r);
+% sort the columns by the number of missing elements they have
+colCount=sum(WIsnan,1); [disc,colInd]=sort(colCount);
+colInd=find(colCount>=colInd(nCol));
+randInd=1; randArray=randperm(nCol);
+
+for i=1:nIter
+  colSubset=randArray(randInd:randInd+r-1); randInd=randInd+r;
+  if (randInd+r-1)>length(randArray); randInd=1; randArray=randperm(n); end
   Bi=W(:,colSubset);
+
   % remove rows that have a NaN
   if hasAnyNan
     goodRow=~any(WIsnan(:,colSubset),2);
@@ -52,12 +65,12 @@ for i=1:1000
   Mi=null(Ai');
   pMinusR=size(Ai,1)-r;
   % expand N if needed (for speed issues)
-  if NWidth+pMinusR>size(N,2); N(1,NWidth+100)=0; end
+  if NWidth+pMinusR>size(N,2); N(1,NWidth+500)=0; end
   % add Ni
   if hasAnyNan
     N(goodRow,NWidth+1:NWidth+pMinusR)=Mi(:,1:pMinusR);
   else
-    N(:,NWidth+1:NWidth+pMinusR)=Mi(:,1:pMinusR);    
+    N(:,NWidth+1:NWidth+pMinusR)=Mi(:,1:pMinusR);
   end
   NWidth=NWidth+pMinusR;
 end
@@ -72,7 +85,6 @@ if hasAnyNan
     col=W(:,i);
     % remove rows that have a NaN
     goodRow=~any(isnan(col),2);
-    WHat(goodRow,:)\col(goodRow);
     coeff(:,i)=WHat(goodRow,:)\col(goodRow);
   end
 else
