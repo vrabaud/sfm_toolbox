@@ -15,7 +15,7 @@ function [ H, K ] = metricUpgrade(anim, varargin)
 %       - 'pInf' [3 x 1] plane at infinity found in affineUpgrade
 %       - 'method' only used with an orthographic camera
 %                   if 0, simple metric constraints
-%                   if inf, metric constraints soolve mode exactly with SDP
+%                   if inf, metric constraints solve more exactly with SDP
 %       - 'tol' [1e-5] difference between lower bound and optimal value
 %               to stop at in the branch and bound algorithm
 %
@@ -29,7 +29,7 @@ function [ H, K ] = metricUpgrade(anim, varargin)
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -41,50 +41,54 @@ P=anim.P; S=anim.S; W=anim.W; nPoint=anim.nPoint; nFrame=anim.nFrame;
 H=[]; K=[];
 
 if ~anim.isProj
-  if isCalibrated && (method==0 || exist('OCTAVE_VERSION','builtin'))
+  if isCalibrated && (method==0 || exist('OCTAVE_VERSION','builtin')==5)
     % Tomasi Kanade with the metric constraint
-    G=zeros( 3*nFrame, 6 );
-    for i=1:nFrame
-      G(i,:) = g( P(1,:,i), P(1,:,i) );
-      G(nFrame+i,:) = g( P(2,:,i), P(2,:,i) );
-      G(2*nFrame+i,:) = g( P(1,:,i), P(2,:,i) );
-    end
-    % Solve for the square root matrix
-    l = G\[ ones(2*nFrame,1); zeros(nFrame,1) ];
-    L = [ l(1:3)'; l(2) l(4:5)'; l(3) l(5:6)' ];
-    [ U S V ] = svd(L); S(S<0) = 0; H = U*sqrt(S)*V';
-
-    H(4,4)=1;
+    H=getPCloseToRotation(P,2);
   else
-    % solve for K and A such that P(1:2,1:3,i)*H=K(1:2,1:2)*R(1:2,:,i),
+    if ~exist('OCTAVE_VERSION','builtin')
+      error(['Cannot do an orthographic uncalibrated metric upgrade ' ...
+        'under Octave']);
+    end
+    % solve for K and H such that P(1:2,1:3,i)*H=K(1:2,1:2)*R(1:2,:,i),
     % with R(:,:,i) a rotation and K is the calibration matrix of the form:
     % [ k1 k2 0; 0 k3 0; 0 0 1 ]
     % We therefore must have:
     % P(1:2,1:3,i)*H*H'*P(1:2,1:3,i)'=K(1:2,1:2)*K(1:2,1:2)'
-    HH=sdpvar(3,3); a=sdpvar(1,nFrame);
+    HHt=sdpvar(3,3); a=sdpvar(1,nFrame);
     if isCalibrated && method==inf
-      KK=eye(2); K=eye(3); F=set(HH>=0);
+      KKt=eye(2); K=eye(3); F=set(HHt>=0);
     else
-      KK=sdpvar(2,2); F=set(HH>=0)+set(KK>=0);
+      KKt=sdpvar(2,2); F=set(HHt>=0)+set(KK>=0);
     end
     % define all the SOCP constraints
+    obj=sdpvar(2*nFrame,2);
     for i=1:nFrame
-      F=F+cone(P(1:2,1:3,i)*HH*P(1:2,1:3,i)'-KK,a(i));
+      obj(2*i-1:2*i,:)=P(1:2,1:3,i)*HHt*P(1:2,1:3,i)'-KKt;
     end
-    diagno = solvesdp( F, sum(a), sdpsettings('solver', ...
-        'sdpa,csdp,sedumi,*','verbose',0) );
+    diagno = solvesdp( F, norm(obj), sdpsettings('solver', ...
+        'sedumi,sdpa,csdp,*','verbose',0) )';
     % compute the calibration matrix
-    if ~isCalibrated; K=chol(double(KK)); K(3,3)=1; end
+    if ~isCalibrated; K=chol(double(KKt)); K(3,3)=1; end
     % compute H (up to a rotation ambiguity)
-    H=chol(double(HH)); H(4,4)=1;
+    H=chol(double(HHt)); H(4,4)=1;
   end
   return
 end
 
 % simple case where the camera is projective and calibrated
 if anim.isProj && isCalibrated
-  H=eye(4); H(4,1:3)=-reshape(pInf,1,3);
-  return
+  if exist('OCTAVE_VERSION','builtin')~=5
+    % we have pInf from an affine upgrade so it's all good
+    H=eye(4); H(4,1:3)=-reshape(pInf,1,3);
+    return;
+  end
+  % we do like Tomasi-Kanade with the metric constraint
+  H=getPCloseToRotation(P,3);
+  return;
+end
+if exist('OCTAVE_VERSION','builtin')==5
+  error(['Cannot do an affine uncalibrated metric upgrade ' ...
+    'under Octave']);
 end
 
 % solve for omega the conventional way, just to get bounds on it
@@ -221,10 +225,25 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function res=g(a,b)
-% perform some simple product for Kanade factorization
-res=[ a(1)*b(1) a(1)*b(2)+a(2)*b(1) a(1)*b(3)+a(3)*b(1) a(2)*b(2) ...
-  a(2)*b(3)+a(3)*b(2) a(3)*b(3) ];
+function H=getPCloseToRotation(P,nRow)
+% Find H such that the top nRow rows of P*H is a bunch of rotations
+% P is 3*4*nFrame and nRow is 2 or 3
+% we therefore want P(1:nRow,:)*H*H'*P(1:nRow,:)'=eye(nRow), or again
+% kron(P(1:nRow,:),P(1:nRow,:))*vect(H*H')=vect(eye(nRow))
+nFrame=size(P,3); PKron=zeros(2*nRow,4*4,nFrame);
+for row=1:nRow
+  for i=1:4
+    PKron(nRow*(row-1)+1:nRow*row,4*i-3:4*i,:)=bsxfun(@times,...
+      P(row,i,:),P(1:nRow,:,:));
+  end
+end
+A=eye(nRow); A=repmat(A(:),[nFrame,1]);
+HHt=reshape(reshape(permute(PKron,[1,3,2]),nRow*nRow*nFrame,16)\A,4,4);
+% now, artificially make sure it is symmetric
+HHt=(HHt+HHt')/2;
+% now, artificially make sure it is positive semi-definite
+[ U S V ]=svd(HHt); S=diag(U'*HHt*U); SNeg=S<0; S(SNeg)=0;
+H=U*diag(sqrt(S)); H(:,SNeg)=[]; H(:,4)=[0;0;0;1];
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
