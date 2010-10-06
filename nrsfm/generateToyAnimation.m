@@ -247,7 +247,7 @@ if dR~=0; anim = anim.setFirstPRtToId(); end
 
 % generate random missing data
 if percMask>0;
-  anim.mask=ones(nFrame,nPoint);
+  anim.mask=ones(nPoint,nFrame);
   tmp=randperm(nFrame*nPoint);
   nMask=min(max(nFrame*nPoint*percMask/100,1),nFrame*nPoint);
   anim.mask(tmp(1:nMask))=0;
