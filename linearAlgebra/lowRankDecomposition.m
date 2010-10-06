@@ -22,7 +22,7 @@ function [WHat,coeff]=lowRankDecomposition(W,r)
 % EXAMPLE
 %  m=10; n=5; r=3;
 %  W=rand(m,r)*rand(r,n); WFull=W;
-%  W(rand(m,n)>0.9)=NaN;
+%  W(rand(m,n)>0.9)=NaN; W=W+rand(m,n)*0.001;
 %  [P,Q]=lowRankDecomposition(W,r);
 %  norm(P*Q-WFull,'fro')
 %
@@ -40,18 +40,20 @@ nIter=100;
 N=zeros(m,nIter*m); NWidth=0;
 % figure out the number of top columns we need
 nCol=r;
-while nchoosek(nCol,r) < nIter*m
+while (nchoosek(nCol,r)) < nIter*m && (nCol<n)
   nCol=nCol+1;
 end
 
 % sort the columns by the number of missing elements they have
 colCount=sum(WIsnan,1); [disc,colInd]=sort(colCount);
-colInd=find(colCount>=colInd(nCol));
+colInd=find(colCount<=colCount(colInd(nCol)));
 randInd=1; randArray=randperm(nCol);
 
 for i=1:nIter
-  colSubset=randArray(randInd:randInd+r-1); randInd=randInd+r;
-  if (randInd+r-1)>length(randArray); randInd=1; randArray=randperm(n); end
+  colSubset=colInd(randArray(randInd:randInd+r-1)); randInd=randInd+r;
+  if (randInd+r-1)>length(randArray);
+    randInd=1; randArray=randperm(nCol);
+  end
   Bi=W(:,colSubset);
 
   % remove rows that have a NaN
@@ -63,7 +65,7 @@ for i=1:nIter
   end
   % get the null space
   Mi=null(Ai');
-  pMinusR=size(Ai,1)-r;
+  pMinusR=size(Ai,1)-r; if pMinusR<1; continue; end
   % expand N if needed (for speed issues)
   if NWidth+pMinusR>size(N,2); N(1,NWidth+500)=0; end
   % add Ni
