@@ -28,7 +28,7 @@ function [ anim info ] = bundleAdjustment( anim, varargin )
 %       - sfmCase   - 'motstr' for motion+struct, 'mot' motion only, 'str'
 %              for structure only (this option is only for the rigid case
 %       - 'KMask', [ 3 x 1 ] or [ 5 x 1 ] contains 1 when the calibration
-%               parameter is fixed
+%               parameter is fixed. By default, all of K is optimized upon
 %       - 'nItr' number of BA iterations
 %       - 'nFrameFixed' [1], number of frames (starting from the first)
 %                       whose camera parameters are fixed
@@ -261,21 +261,18 @@ if ~isempty(anim.K) && (isempty(KMaskOri) || ~isempty(find(~KMaskOri)))
         A=kron(S(1:2,:)',eye(2));
       end
 
-      % remove the columns with 0
+      % remove the column where K has a value of 0
       W=reshape(anim.W,[],1);
-      if anim.isProj
-        A(:,2)=[];
-      else
-        A(:,[2,5,6])=[];
-      end
+      A(:,2)=[];
+
       % remove the columns for which we know the values
-      if find(KMask)
-        W=W-A(:,find(KMask))*anim.K(find(KMask));
-        A(:,find(KMask))=[];
+      if find(KMaskOri)
+        W=W-A(:,find(KMaskOri))*anim.K(find(KMaskOri));
+        A(:,find(KMaskOri))=[];
       end
 
       % solve for the best K
-      anim.K(find(~KMask))=A\W;
+      anim.K(find(~KMaskOri))=A\W;
 
       % optimize the other parameters
       anim=bundleAdjustment(anim,'KMask',ones(size(anim.K,1),1),...
