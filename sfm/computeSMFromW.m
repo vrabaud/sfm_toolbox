@@ -74,6 +74,8 @@ function anim = computeSMFromW( isProj, W, varargin )
 %                        is computed
 %       - 'K',[] [3 x 1 ], [ 3 x nFrame ] calibration parameters
 %                       (or [5 x 1 ], [ 5 x nFrame ] when projective)
+%                       If given, they won't be optimized upon, you will
+%                       need to run bundle adjustment after that
 %       - 'KFull',[] [3 x 3 ] or [ 3 x 3 x nFrame ] calibration matrices
 %       - 'method', [inf] method for performing SFM (see above for details)
 %       - 'onlyErrorFlag', [false] flag indicating if only the error is
@@ -94,7 +96,7 @@ function anim = computeSMFromW( isProj, W, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -118,23 +120,23 @@ P=zeros(3,4,nFrame); P(:,:,1)=eye(3,4); if ~isProj; P(3,3:4)=[0 1]; end
 if size(W,1)==3; W = normalizePoint(W,3); end
 
 % create an animation object that wil contain the output
-anim=Animation(); anim.isProj=isProj; anim.W=W;
+anim=Animation(); anim.isProj=isProj; WOri=W;
 
 % If calibrated, apply inv(K)
 if ~isempty(K); anim.K=K; end
 if ~isempty(KFull); anim.KFull=KFull; end
-if ~isempty(anim.K)
+KFull=anim.KFull;
+if ~isempty(KFull)
   isCalibrated=true;
-  % unapply the calibration to the measurements
-  KFull=anim.KFull;
+  anim.KFull=[];
+  % unapply the internal parameter matrix to the measurements
   if size(KFull,3)==1
-    invKFull = repmat( inv(KFull), [ 1 1 nFrame ] );
-    KFull = repmat( KFull, [ 1 1 nFrame ] );
+    W = normalizePoint(multiTimes(inv(KFull),normalizePoint(W,-3),1.2),3);
   else
     invKFull = zeros(3,3,nFrame);
     for i=1:nFrame; invKFull(:,:,i) = inv(KFull(:,:,i)); end
+    W = normalizePoint(multiTimes(inv(KFull),normalizePoint(W,-3),2),3);
   end
-  W = normalizePoint( multiTimes( invKFull, normalizePoint( W, -3 ), 2), 3 );
 end
 
 if isProj
@@ -142,11 +144,10 @@ if isProj
 else
   [P,S] = computeSMFromWAffine( W, method, onlyErrorFlag );
 end
-
 if onlyErrorFlag; anim=err; return; end
 
 % fill the Animation object with the results
-anim.S=S; anim.P=P;
+anim.S=S; anim.P=P; anim.W=W;
 
 % perform an affine upgrade if requested
 H=[];
@@ -161,39 +162,38 @@ if anim.isProj
   % modify P so that P(:,:,1)==eye(3,4)
   anim=anim.setFirstPRtToId();
 
-  % if we want to do an affin upgrade, and if we are not in the case
-  % of the essential matrix
+  % if we want to do an affine upgrade
   if doAffineUpgrade
     % only apply the quasi affine upgrade if we are under octave
     % (as Yalmip does not work there)
     if exist('OCTAVE_VERSION','builtin')==5
+      warning("Only performing a quasi-affine upgrade under Octave");
       [ HEye, Hqa ] = affineUpgrade(anim);
       H=HEye*Hqa;
     else
       [ HEye, Hqa, pInf ] = affineUpgrade(anim, 'tol', tolAffine);
       % if the camera is calibrated or if we do not do a metric upgrade
       % stop here
-      if isCalibrated || ~doMetricUpgrade
+      if ~doMetricUpgrade
         % apply H
         H=eye(4); H(4,1:3)=-pInf;
         H=HEye*H;
+      end
+    end
+    if doMetricUpgrade
+      % perform a metric upgrade if requested
+      if exist('OCTAVE_VERSION','builtin')==5
+        H=metricUpgrade(anim, ...
+          'isCalibrated', isCalibrated);
       else
-        % perform a metric upgrade if requested
-        if doMetricUpgrade
-          [ H, anim.KFull ]=metricUpgrade(anim, 'pInf', pInf, ...
-            'isCalibrated', isCalibrated, 'tol', tolMetric);
-        end
+        [ H, anim.KFull ]=metricUpgrade(anim, 'pInf', pInf, ...
+          'isCalibrated', isCalibrated, 'tol', tolMetric);
       end
     end
   end
 else
   if doMetricUpgrade
-    if isCalibrated
-      H=metricUpgrade(anim, 'isCalibrated', isCalibrated, 'method', method);
-    elseif exist('OCTAVE_VERSION','builtin')~=5
-      [ H, anim.KFull ]=metricUpgrade(anim, 'isCalibrated', ...
-        isCalibrated, 'method', method);
-    end
+    H=metricUpgrade(anim, 'isCalibrated', isCalibrated, 'method', method);
   end
 end
 
@@ -205,10 +205,10 @@ end
 
 % recover rotations and translations
 if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
-  P=anim.P; KFull=anim.KFull;
-  if ~isCalibrated && ~isempty(KFull)
-    if size(KFull,3)==1; P=multiTimes(inv(KFull),P,1.2);
-    else P=multiDiv(KFull,P,2);
+  P=anim.P;
+  if ~isCalibrated && ~isempty(anim.KFull)
+    if size(anim.KFull,3)==1; P=multiTimes(inv(anim.KFull),P,1.2);
+    else P=multiDiv(anim.KFull,P,2);
     end
   end
   R=zeros(3,3,nFrame);
@@ -225,10 +225,17 @@ if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
     anim.t=reshape(P(1:2,4,:),2,nFrame); anim.t(3,:)=0;
   end
   anim.R=R;
-  
-  % do a final bundle adjustment
+
   anim=anim.setFirstPRtToId();
 end
 
+% update the mask if any
+mask=reshape(any(~isnan(W),1),nPoint,nFrame);
+if any(mask==0); anim.mask=mask; end
+
+% do a final bundle adjustment
 if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
+
+% Re-assign the KFull from the input arguments if any
+if ~isempty(KFull); anim.KFull=KFull; anim.W=WOri; end
 end
