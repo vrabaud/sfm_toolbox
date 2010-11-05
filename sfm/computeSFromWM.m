@@ -31,7 +31,7 @@ function S = computeSFromWM( isProj, W, P, varargin )
 dfs = {'K',[],'method',0};
 [ K method ] = getPrmDflt( varargin, dfs, 1 );
 
-nFrame = size(W,2); nPoint = size(W,2);
+nFrame = size(W,3); nPoint = size(W,2);
 
 % If uncalibrated or if a third coordinate
 if ~isempty(K)
