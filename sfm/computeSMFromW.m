@@ -167,7 +167,7 @@ if anim.isProj
     % only apply the quasi affine upgrade if we are under octave
     % (as Yalmip does not work there)
     if exist('OCTAVE_VERSION','builtin')==5
-      warning("Only performing a quasi-affine upgrade under Octave");
+      warning('Only performing a quasi-affine upgrade under Octave');
       [ HEye, Hqa ] = affineUpgrade(anim);
       H=HEye*Hqa;
     else
