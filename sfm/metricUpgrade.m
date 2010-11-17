@@ -45,7 +45,7 @@ if ~anim.isProj
     % Tomasi Kanade with the metric constraint
     H=getPCloseToRotation(P,2);
   else
-    if ~exist('OCTAVE_VERSION','builtin')
+    if exist('OCTAVE_VERSION','builtin')==5
       error(['Cannot do an orthographic uncalibrated metric upgrade ' ...
         'under Octave']);
     end
