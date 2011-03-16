@@ -132,9 +132,12 @@ switch method
       catch %#ok<CTCH>
         warning(['GloptiPoly3 not installed or Gloptypoly failed,' ...
           'using ePnP']);
-        mset clear;
-        [ R t ] = efficient_pnp( x', xp', eye(3,3) );
-        t=t(1:2);
+        try
+          mset clear;
+        catch %#ok<CTCH>
+          [ R t ] = efficient_pnp( x', xp', eye(3,3) );
+          t=t(1:2);
+        end
       end
     else
       R=RIni;
