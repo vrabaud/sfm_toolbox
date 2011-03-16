@@ -1,6 +1,9 @@
 function [ xHat T ] = normalizePoint( x, method )
 % Normalize 2D/3D points for SFM
 %
+% The points can contain NaN and the entries are ignored in the case of
+% isotropic scaling.
+%
 % USAGE
 %  [ xHat T ] = normalizePoint(x,method)
 %
@@ -29,12 +32,31 @@ xHat=x; nCoord = size(x,1); nSet = size(x,3);
 
 if nargin<2 || isempty(method); method = nCoord; end
 
+xIsnan=isnan(x); 
+if any(xIsnan(:)); xIsnan=sum(xIsnan,1)>0; else xIsnan=[]; end
+
 if abs(method)==Inf
-  % isotropic scaling
-  % Get the centroid
-  c = mean( x, 2 );
-  % Get the scale factor
-  scale = sqrt(2)./mean(sqrt(sum( bsxfun(@minus, x, c).^2, 1)),2);
+  if ~isempty(xIsnan)
+    c=zeros(nCoord, 1, nSet);
+    scale=zeros(1, 1, nSet);
+    for i=1:nSet
+      % isotropic scaling
+      % Get the centroid
+      x_mask = x(:,~xIsnan(1,:,i),i);
+      c(:,1,i) = mean( x_mask, 2 );
+      % Get the scale factor
+      scale(1,1,i) = sqrt(2)/mean(sqrt(sum( bsxfun(@minus, x_mask, ...
+         c(:,1,i)).^2, 1)),2);
+    end
+  else
+    % isotropic scaling
+    % Get the centroid
+    c = mean( x, 2 );
+    % Get the scale factor
+    scale = sqrt(2)./mean(sqrt(sum( bsxfun(@minus, x, c).^2, 1)),2);
+  end
+
+
   T = repmat(eye(nCoord),[1,1,nSet]);
   T(:,end+1,:) = -c; T = bsxfun(@times,scale,T);
   
@@ -54,5 +76,11 @@ else
     else
       xHat( abs(method), : ) = finite;
     end
+  end
+end
+
+if ~isempty(xIsnan)
+  for i=1:nSet
+    xHat(:,xIsnan(1,:,i),i)=NaN;
   end
 end
