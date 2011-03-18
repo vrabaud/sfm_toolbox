@@ -4,14 +4,11 @@ function toolboxSfmCompile(doSba,gccVer)
 % This function can recompile all that you need for the toolbox to run.
 % That includes:
 %  - the SBA static library that is needed to build the ...
-%  - SBA mex file
+%  - ... SBA mex file
 %  - 3 normal mex files
-% By default, the toolbox comes with precompiled binaries for windows
-% and 
-%
-% if you get warnings on linux because yourgcc is too old/new, you can
-% force the gcc version this way
-%  opts = {'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1' etc
+% By default, the toolbox comes with precompiled binaries for windows 32
+% It is easy to compile on Linux and I am developing on Linux so it works
+% for sure there.
 %
 % USAGE
 %  toolboxCompile()
@@ -20,7 +17,8 @@ function toolboxSfmCompile(doSba,gccVer)
 %  doSba      - [false] if true, it will compile the static library of SBA
 %               as well as the mex file for SBA
 %  gccVer     - on Linux, specify your gcc version here (e.g. 4.2 if
-%               gcc-4.2 is a supported compiler on Matlab)
+%               gcc-4.2 is a supported compiler on Matlab), which can be
+%               useful if matlab thinks your gcc is too old/new
 %
 % OUTPUTS
 %
@@ -34,7 +32,7 @@ function toolboxSfmCompile(doSba,gccVer)
 % Licensed under the Lesser GPL [see external/lgpl.txt]
 
 if nargin==0; doSba=false; end
-if nargin<=1; gccVer=num2str(4.2); end
+if nargin<=1; gccVer=num2str(4.2); else gccVer=num2str(gccVer); end
 
 if strcmp(computer,'GLNX86') || strcmp(computer,'GLNXA64')
   gcc_extra = [ 'CXX=g++-' gccVer ' CC=g++-' gccVer ' LD=g++-' gccVer ];
@@ -53,7 +51,7 @@ if doSba
 	'sba_crsm.o', 'sba_chkjac.o', 'libsba.a', 'sba.lib', ...
 	'matlab/sba.mexw32'};
 	for i=1:length(fileList)
-	if exist(fileList{i}, 'file'), delete(fileList{i}); end
+	if exist([dirSBA, '/', fileList{i}], 'file'), delete(fileList{i}); end
 	end
 
 	switch computer
@@ -63,7 +61,9 @@ if doSba
 		%       set INCLUDE="C:\Program Files\Microsoft Visual Studio
 		%       8\VC\include"
 		system('nmake /f Makefile.vc sba.lib');
-	case {'GLNX86', 'GLNXA64', 'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
+	case {'GLNX86', 'GLNXA64', 'i686-pc-linux-gnu', ...
+	    'i686-unknown-linux-gnu', 'x86_64-pc-linux-gnu', ...
+	    'x86_64-unknown-linux-gnu'},
 		% Matlab and Octave on Linux
 		system('make cleanall');
 		system('make libsba.a');
@@ -86,7 +86,8 @@ if doSba
 		'../../blasLapack/linux64/libf77blas.a ' ...
 		'../../blasLapack/linux64/libatlas.a '
 		]);
-	case {'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
+	case {'i686-pc-linux-gnu', 'i686-unknown-linux-gnu', ...
+	'x86_64-pc-linux-gnu', 'x86_64-unknown-linux-gnu'},
 		% Octave on Linux
 		mkoctfile --mex ./sba.c -I../ -lsba -L../
 	end
@@ -100,7 +101,8 @@ switch computer
   case 'PCWIN',
     % Matlab on Windows 32 (not sure about 64)
     system('cl /nologo /O2 sbaProjection.c /link /dll /out:sbaProjection.dll');
-  case {'GLNX86','GLNXA64','i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
+  case {'GLNX86','GLNXA64','i686-pc-linux-gnu', 'i686-unknown-linux-gnu', ...
+	'x86_64-pc-linux-gnu', 'x86_64-unknown-linux-gnu'},
     % Matlab and Octave on Linux
     system('gcc -Wall -fPIC -O3 -shared -o sbaProjection.so sbaProjection.c');
 end
@@ -127,7 +129,8 @@ switch computer
 	% adding those options: 'CXX=g++-4.1' 'CC=g++-4.1' 'LD=g++-4.1'
 	opts = { ['CXX=g++-' gccVer] ['CC=g++-' gccVer] ['LD=g++-' ...
 	  gccVer] '-largeArrayDims' '-l' 'mwlapack' '-l' 'mwblas' '-output'};
-  case {'i686-pc-linux-gnu', 'x86_64-pc-linux-gnu'},
+  case {'i686-pc-linux-gnu', 'i686-unknown-linux-gnu', ...
+	'x86_64-pc-linux-gnu', 'x86_64-unknown-linux-gnu'},
 	% Octave on Linux
 	opts = {'-o'};
 end
