@@ -201,7 +201,42 @@ end
 % with Applications to Structure from Motion
 % Hongjun Jia, Aleix M. Martinez, PAMI 08
 if nFrame>2 && ismember(method,[ 0 Inf ]) && hasAnyNan
-  
+  % Normalize coordinates
+  [ q TW ] = normalizePoint(W, -Inf);
+  HHat=reshape(permute(q,[1,3,2]),3*nFrame,nPoint);
+  TInv=1./permute(sum(q.*q,1),[3,2,1]);
+  Sk=HHat;
+  for k = 1 : 30
+    % Sk is HHat (homogeneous W) but scaled by lambda, initialized to 1
+    [PStack,S]=lowRankDecomposition(Sk,4);
+
+    % make sure the columns of PStack are orthonormal
+    [PStack,SDiag,V]=svd(PStack,'econ');
+    S = SDiag*V'*S;
+    err=(Sk-PStack*S).^2;
+norm(err(~isnan(err)))
+    P = permute(reshape(PStack,3,nFrame,4),[1,3,2]);
+sumTot=0;
+    for j=1:nPoint
+      mask=~isnan(TInv(:,j));
+      Cj=permute(sum(bsxfun(@times,q(:,j,mask),P(:,:,mask)),1),[3,2,1]);
+      % Solve the maximum of the Rayleigh quotient
+      % it is the highest eigenvector of A*v=lam*(1./TjInv)*v
+      % or heighest eigen value of TjInv*A*v=lam*v
+      A=Cj*Cj';
+      [lamjTmp,val]=eigs(bsxfun(@times,TInv(mask,j),A),1,'lm');
+      lamj=zeros(1,1,nFrame); lamj(mask)=lamjTmp;
+sumTot=sumTot+lamjTmp'*Cj*Cj'*lamjTmp/(lamjTmp'*diag(1./TInv(mask,j))*lamjTmp);
+      Sk(:,j)=reshape(bsxfun(@times,q(:,j,:),lamj),3*nFrame,1);
+    end
+sumTot;
+  end
+  [PStack,S]=lowRankDecomposition(Sk,4);
+
+  PTmp = PStack;
+  S = normalizePoint(S,4);
+  P = zeros(3,4,nFrame);
+  for i=1:nFrame; P(:,:,i) = TW(:,:,i)\PTmp(3*i-2:3*i,:); end
 end
 
 end
