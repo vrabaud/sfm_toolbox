@@ -321,7 +321,7 @@ oneMinusLam=[ze,ze,on]-lam;
 constr=[];
 for t1={ oneMinusLam.*[xu,xu,xu], [on,ze,ze]-lam.*[xl,xl,xl] }
   for t2={ [a3,a3,a3].*t1{:} + oneMinusLam.*[b3,b3,b3], ...
-    [a4,a4,a4].*t1{:} + oneMinusLam.*[b4,b4,b4] }
+      [a4,a4,a4].*t1{:} + oneMinusLam.*[b4,b4,b4] }
     expr=t2{:}.*[yl,yl,yl] + [a1,a1,a1].*([on,ze,ze]-t1{:})+lam.*[b1,b1,b1];
     constr=constr+(z>= expr(:,1).*x+expr(:,2).*y+expr(:,3));
   end
