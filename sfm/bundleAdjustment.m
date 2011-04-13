@@ -52,7 +52,7 @@ KMaskOri=KMask;
 
 % Figure out where the files are located
 switch computer
-  case 'PCWIN',
+  case {'PCWIN','PCWIN64'},
     projPath=[ '@' fileparts(mfilename('fullpath')) ...
       '/private/sba/sbaProjection.dll' ];
   otherwise,
