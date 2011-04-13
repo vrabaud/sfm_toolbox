@@ -1,0 +1,5 @@
+The windows binaries for windows 64 where obtained here:
+http://www.netlib.org/clapack/LIB_WINDOWS/prebuilt_libraries_windows.html
+
+The windows 32 ones were obtained from http://www.fi.muni.cz/~xsvobod2/misc/lapack/ as suggested on the SBA webpage http://www.ics.forth.gr/~lourakis/sba/faq.html
+Then again maybe the windows 64 page works too, I just don't have a 32 windows to test it on.
