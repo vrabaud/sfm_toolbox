@@ -80,9 +80,14 @@ __inline double matrixMultiplyABt(double *A, double *B, double *C,
 
 /* Compute trace(A*B'), A and B are of size 2*2 */
 __inline double matrixTraceProductABt(double *A, double *B, mwSignedIndex elemNbr) {
-	mwSignedIndex one = 1;
-
-	return ddot(&elemNbr, A, &one, B, &one);
+  double res = 0;
+  double *A_end = A+elemNbr;
+  for(;A<A_end;++A,++B)
+    res += (*A)*(*B);
+  return res;
+  /* The following crashes on my new Matlab for some reason ... */
+	/*mwSignedIndex one = 1;
+	return ddot(&elemNbr, A, &one, B, &one);*/
 }
 
 __inline double reconstrPairVal(double *quaternion, double wWtTrace, double *sSt, double *wSt, double *r, double *rtR) {
@@ -413,14 +418,14 @@ __inline double reconstrPairValGrad(double *quaternion, double *gradient, double
 	rtDR[35] = d*t162;
 	
 	/* Compute the gradient */
-	for (k = 0; k < 4; ++k)
-		gradient[k] = 2*matrixTraceProductABt(sSt, rtDR + 9 * k, 9) - 2*matrixTraceProductABt(dR + 6 * k, wSt, 6);
+	for (k = 0; k < 4; ++k, rtDR += 9, dR += 6)
+		gradient[k] = 2*matrixTraceProductABt(sSt, rtDR, 9) - 2*matrixTraceProductABt(dR, wSt, 6);
 
 	/* Return the error */
 	return (wWtTrace - 2*matrixTraceProductABt(r, wSt, 6) + matrixTraceProductABt(rtR, sSt, 9));
 }
 
-void gradientDescent(double wWtTrace, double *sSt, double *wSt, double *errArray, double *quaternionArray, int iFrame, int iFrameIni, int nFrame, double *r, double *dR, double *rtR, double *rtDR, double *quaternionTmp, double *gradient) {
+void gradientDescent(double wWtTrace, double *sSt, double *wSt, double *errArray, double *quaternionArray, int iFrame, int iFrameIni, double *r, double *dR, double *rtR, double *rtDR, double *quaternionTmp, double *gradient) {
 	int k;
 
 	/* Figure out the best guess to start from */
@@ -438,8 +443,9 @@ void gradientDescent(double wWtTrace, double *sSt, double *wSt, double *errArray
 	for (nItr = 0; nItr < 40; ++nItr) {
 		errMin = reconstrPairValGrad(quaternionMin, gradient, wWtTrace, sSt, wSt, r, dR, rtR, rtDR );
 
-		/* stop if the gradient is too small or the error too */
+    /* stop if the gradient is too small or the error too */
 		normGradSq = normSq(4,gradient);
+
 		if ((normGradSq < NUM_TOL_SQ) || (errMin < NUM_TOL ))
 			break;
 
@@ -469,6 +475,7 @@ void gradientDescent(double wWtTrace, double *sSt, double *wSt, double *errArray
 	/* update if nothing before or if the current result is better than before */
 	if ((errMin < errArray[iFrame]) || (errArray[iFrame]<0))
 		errArray[iFrame] = errMin;
+/*   fprintf( stdout, "Hello %f\n", errArray[0] );*/
 }
 
 void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
@@ -523,10 +530,10 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 	pWSt = mxCreateDoubleMatrix(6, nFrame, mxREAL);
 	wSt = mxGetPr(pWSt);
 	
-	for ( i = 0; i < nFrame; ++i ) {
-		wWtTrace[i] = matrixTraceProductABt(w + i * 2 * nPoint, w + i * 2 * nPoint, 2*nPoint);
-		matrixMultiplyABt(s + i * 3 * nPoint, s + i * 3 * nPoint, sSt + 9*i, 3, nPoint, 3);
-		matrixMultiplyABt(w + i * 2 * nPoint, s + i * 3 * nPoint, wSt + 6*i, 2, nPoint, 3);
+	for ( i = 0; i < nFrame; ++i, w += 2 * nPoint, s += 3 * nPoint, sSt += 9, wSt += 6 ) {
+		wWtTrace[i] = matrixTraceProductABt(w, w, 2*nPoint);
+		matrixMultiplyABt(s, s, sSt, 3, nPoint, 3);
+		matrixMultiplyABt(w, s, wSt, 2, nPoint, 3);
 	}
 	
 	/* create some cache some temporary matrices */
@@ -543,19 +550,19 @@ void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray * prhs[]) {
 	pGradient = mxCreateDoubleMatrix(4, 1, mxREAL);
 	gradient = mxGetPr(pGradient);
 
-	for (iFrame = 0; iFrame < nFrame; ++iFrame)
-		gradientDescent(wWtTrace[iFrame], sSt+9*iFrame, wSt+6*iFrame, errArray, quaternionOut, iFrame, iFrame, nFrame, r, dR, rtR, rtDR, quaternionTmp, gradient);
+	for (iFrame = 0; iFrame < nFrame; ++iFrame, sSt += 9, wSt += 6)
+		gradientDescent(wWtTrace[iFrame], sSt, wSt, errArray, quaternionOut, iFrame, iFrame, r, dR, rtR, rtDR, quaternionTmp, gradient);
 
-	/* do everything else */
+  /* do everything else a few times */
 	for( i = 0; i < 5; ++i ) {
 		for (iFrame = 1; iFrame < nFrame; ++iFrame)
-			gradientDescent(wWtTrace[iFrame], sSt+9*iFrame, wSt+6*iFrame, errArray, quaternionOut, iFrame, iFrame-1, nFrame, r, dR, rtR, rtDR, quaternionTmp, gradient);
+			gradientDescent(wWtTrace[iFrame], sSt+9*iFrame, wSt+6*iFrame, errArray, quaternionOut, iFrame, iFrame-1, r, dR, rtR, rtDR, quaternionTmp, gradient);
 
-		/* do everything else in reverse order */
+    /* do everything else in reverse order */
 		for (iFrame = nFrame-2; iFrame >= 0; --iFrame)
-			gradientDescent(wWtTrace[iFrame], sSt+9*iFrame, wSt+6*iFrame, errArray, quaternionOut, iFrame, iFrame+1, nFrame, r, dR, rtR, rtDR, quaternionTmp, gradient);
+			gradientDescent(wWtTrace[iFrame], sSt+9*iFrame, wSt+6*iFrame, errArray, quaternionOut, iFrame, iFrame+1, r, dR, rtR, rtDR, quaternionTmp, gradient);
 	}
-	
+
 	/* Free memory */
 	mxDestroyArray(pWWtTrace);
 	mxDestroyArray(pSSt);
