@@ -123,6 +123,7 @@ switch method
         % define the problem and solve it
         mset('verbose',false);
         P=msdp(min(g0),K);
+
         [ status obj ] = msol(P);
         
         R=rotationMatrix( double(R) );
@@ -130,7 +131,7 @@ switch method
         if nargout>=2; t=[ double(t); 0]; end
         if nargout==3; s=double(s); end
       catch %#ok<CTCH>
-        warning(['GloptiPoly3 not installed or Gloptypoly failed,' ...
+        warning(['GloptiPoly3 not installed or Gloptypoly crashed,' ...
           'using ePnP']);
         try
           mset clear;
@@ -138,6 +139,11 @@ switch method
           [ R t ] = efficient_pnp( x', xp', eye(3,3) );
           t=t(1:2);
         end
+      end
+      if any(isnan(R))
+        warning(['GloptiPoly failed, using ePnP']);
+        [ R t ] = efficient_pnp( x', xp', eye(3,3) );
+        t=t(1:2);
       end
     else
       R=RIni;
