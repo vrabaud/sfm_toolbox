@@ -55,8 +55,8 @@ for i=1:length(fileList)
   if exist([dir_sba, '/', fileList{i}], 'file'), delete(fileList{i}); end
 end
 
-sba_files = [ 'sba.c ../sba_levmar_wrap.c ../sba_levmar.c ' ...
-  '../sba_lapack.c ../sba_crsm.c ../sba_chkjac.c' ];
+sba_files = [ 'sba.c ../sba_chkjac.c ../sba_levmar_wrap.c ../sba_levmar.c ' ...
+  '../sba_lapack.c ../sba_crsm.c' ];
 
 cd matlab
 switch computer
@@ -81,8 +81,12 @@ switch computer
       '/usr/lib/libgfortran.so.3' ]);
   case {'GLNXA64'},
     % Matlab on Linux 64
-    eval([ 'mex -lgfortran ' gcc_extra ' -I../ -O -ldl ' sba_files ...
-      ' /usr/lib/liblapack_pic.a ' ...
+    cd ../
+    system('make cleanall');
+    system('make libsba.a');
+    cd matlab
+    eval([ 'mex -lgfortran ' gcc_extra ' -I../ -O -ldl sba.c ' ...
+      '../libsba.a /usr/lib/liblapack_pic.a ' ...
       '../../blasLapack/linux64/libf77blas.a ' ...
       '../../blasLapack/linux64/libatlas.a '
       ]);
