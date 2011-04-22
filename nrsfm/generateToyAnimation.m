@@ -162,9 +162,9 @@ switch type
     conn{3}=[ 1 31 32 33 31 ]; % head
     conn{4}=[ 38 39 43 11 ]; % right arm
     conn{5}=[ 40 41 4 ]; % left arm
-    
-    for i=1:size(anim.S,2)
-      text(anim.S(1,i,1),anim.S(2,i,1),anim.S(3,i,1),int2str(i));
+
+    for i=1:size(S,2)
+      text(S(1,i,1),S(2,i,1),S(3,i,1),int2str(i));
       hold on;
     end
     axis([-1 1 -1 1 -1 1]/2)
