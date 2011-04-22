@@ -37,7 +37,7 @@ function [ H, K ] = metricUpgrade(anim, varargin)
 [ isCalibrated method tol pInf ] = getPrmDflt( varargin, ...
   { 'isCalibrated' false 'method' inf 'tol' 1e-5 'pInf' []}, 1);
 
-P=anim.P; S=anim.S; W=anim.W; nPoint=anim.nPoint; nFrame=anim.nFrame;
+P=anim.P; nFrame=anim.nFrame;
 H=[]; K=[];
 
 if ~anim.isProj
@@ -54,7 +54,7 @@ if ~anim.isProj
     % [ k1 k2 0; 0 k3 0; 0 0 1 ]
     % We therefore must have:
     % P(1:2,1:3,i)*H*H'*P(1:2,1:3,i)'=K(1:2,1:2)*K(1:2,1:2)'
-    HHt=sdpvar(3,3); a=sdpvar(1,nFrame);
+    HHt=sdpvar(3,3);
     if isCalibrated && method==inf
       KKt=eye(2); K=eye(3); F=set(HHt>=0);
     else
@@ -66,7 +66,7 @@ if ~anim.isProj
       obj(2*i-1:2*i,:)=P(1:2,1:3,i)*HHt*P(1:2,1:3,i)'-KKt;
     end
     diagno = solvesdp( F, norm(obj), sdpsettings('solver', ...
-        'sedumi,sdpa,csdp,*','verbose',0) )';
+      'sedumi,sdpa,csdp,*','verbose',0) )';
     % compute the calibration matrix
     if ~isCalibrated; K=chol(double(KKt)); K(3,3)=1; end
     % compute H (up to a rotation ambiguity)
@@ -76,7 +76,7 @@ if ~anim.isProj
 end
 
 % simple case where the camera is projective and calibrated
-if anim.isProj && isCalibrated
+if isCalibrated
   if exist('OCTAVE_VERSION','builtin')~=5
     % we have pInf from an affine upgrade so it's all good
     H=eye(4); H(4,1:3)=-reshape(pInf,1,3);
@@ -100,15 +100,24 @@ end
 % we are solving for sum norm(omega-Hinf*omega*Hinf')
 A=zeros(9*nFrame,9);
 for i=1:nFrame
-  A(9*i-8:9*i,:)=kron(eye(3),eye(3))-...
-    kron(HInfinity(:,:,i),HInfinity(:,:,i));
+  A(9*i-8:9*i,:)=eye(9)-kron(HInfinity(:,:,i),HInfinity(:,:,i));
 end
-[U,S,V]=svd(A); omega=reshape(V(:,end),3,3); omegaOri=omega;
+% impose the symmetry on omega
+A(:,2)=A(:,2)+A(:,4);
+A(:,3)=A(:,3)+A(:,7);
+A(:,6)=A(:,6)+A(:,8);
+A(:,[4,7,8])=[];
+[U,S,V]=svd(A); omega=[V(1:3,end)';V(2,end),V(4:5,end)';...
+  V(3,end),V(5:6,end)'];
+
 % impose semidefinitess artificially
-[U,S,V]=svd(omega); S(S<0)=0; omega=U*S*U';
+[U,S,V]=svd(omega);
+
+S(S<0)=0; omega=U*S*U';
 omega=omega/omega(3,3);
 % get the KK' transformation (kindof like cholesky which is R'R)
 K=kFromOmega(omega);
+
 % optimize K a bit more
 KVect=[K(1,:)';K(2,2:3)'];
 KVect=fminunc(@(x)criterionFromKVect(x,HInfinity),KVect,...
@@ -119,10 +128,7 @@ KVect=fminunc(@(x)criterionFromKVect(x,HInfinity),KVect,...
 % K=[k1,k2,k3;0,k4,k5;0,0,1] and not K=[k1,k2,k4;0,k3,k5;0,0,1] as usual
 kl=KVect;
 ku=kl+2*abs(kl); kl=kl-2*abs(kl);
-if kl(1)<0; kl(1)=0; end; if kl(4)<0; kl(4)=0; end
-
-% Yalmip does not work under octave sorry :(
-if exist('OCTAVE_VERSION','builtin')==5; return; end
+kl(1)=0; kl(4)=0;
 
 % Chandraker IJCV 2009
 % globally optimal metric upgrade
@@ -162,7 +168,7 @@ for itr=1:nItr
   % perform branch and bound
   [kl,ku,kVectBest,currBest,lowerBound,isRefined,newInd]=bnbBranch(...
     kl,ku,kVectBest,currBest,lowerBound,isRefined);
-
+  
   % compute the lower bound/current best for each interval
   for ind=newInd
     % let us deduce L and U from the bounds on K
@@ -183,18 +189,18 @@ for itr=1:nItr
       L(i)=1/max([bound(2),1e-6]);
       U(i)=1/max([bound(1),1e-6]);
     end
-
+    
     % omega=KK' so we can deduce bounds on values of omega
     [l,u]=omegaBound(kl(:,ind),ku(:,ind));
     F=FIni+[ l<=omegaCol<=u ];
-
+    
     % add constraints
     aa=omegaColOne*U+[l;1]*(lam-U);
     bb=omegaColOne*L+[u;1]*(lam-L);
     cc=omegaColOne*L+[l;1]*(lam-L);
     dd=omegaColOne*U+[u;1]*(lam-U);
     F=F+[ cc(:)<=nuCol(:)<=aa(:), dd(:)<=nuCol(:)<=bb(:), L<=lam<=U ];
-
+    
     % solve for omega
     diagno=solvesdp( F, coneYMain, solverSetting );
     lowerBound(ind)=double(coneYMain)^2;
@@ -202,7 +208,7 @@ for itr=1:nItr
       KBestTmp=kFromOmega(double(omega));
       kVectBestTmp=[KBestTmp(1,:)';KBestTmp(2,2:3)'];
       % as bounds on omega are deduced from bounds on K, and as there is
-      % no equivalence between the two, we need to make sure KVectBest 
+      % no equivalence between the two, we need to make sure KVectBest
       % is the bounds for k
       kVectBest(:,ind)=min([max([kVectBestTmp,kl(:,ind)],[],2),...
         ku(:,ind)],[],2);
@@ -213,7 +219,7 @@ for itr=1:nItr
   [kl,ku,kVectBest,currBest,lowerBound,isRefined]=bnbRefine(...
     @(x)criterionFromKVect(x,HInfinity),kl,ku,kVectBest,currBest,...
     lowerBound,isRefined);
-
+  
   tocStatus( ticId, itr/nItr );
   if abs(min(currBest)-min(lowerBound))<tol; break; end
 end
@@ -256,7 +262,7 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function K=kFromOmega(omega)
-% make sure omega is positive semi-definite (should be very close, up to 
+% make sure omega is positive semi-definite (should be very close, up to
 % the SDP solver)
 [U,S,V]=svd(omega); S(S<0)=0; omega2=U*S*V';
 % perform homemade cholesky decomposition as the matrix can be semidefinite

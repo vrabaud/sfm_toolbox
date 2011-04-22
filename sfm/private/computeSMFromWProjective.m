@@ -71,15 +71,15 @@ if nFrame==2
   % Normalize input data
   [x T]=normalizePoint(W(:,:,1),Inf);
   [xp Tp]=normalizePoint(W(:,:,2),Inf);
-
+  
   A=[xp([1 1],:).*x; xp(1,:); xp([2 2],:).*x;xp(2,:);x;ones(1,nPoint)]';
-    
+  
   [U,S,V]=svd(A,0); F=reshape(V(:,end),[3,3])';
   [U,S,V]=svd(F,0);
   F=U*diag([S(1,1) S(2,2) 0])*V';
-
+  
   F=[ Tp; 0 0 1 ]'*F*[ T; 0 0 1 ];
-
+  
   if ~isCalibrated
     P(:,:,2) = convertPF([],F,true);
     S = computeSFromWM( true, W, P, 'method', 0 );
@@ -88,7 +88,7 @@ if nFrame==2
     % Reference: HZ2, p259, Result 9.19, and p. 294
     [ U disc V ] = svd(F);
     if det(U)<0; U=-U; end; if det(V)<0; V=-V; end
-
+    
     % Check which of the 4 possibilities gives a point in front of both
     % cameras
     WW = [ 0 -1 0; 1 0 0; 0 0 1 ];
@@ -104,7 +104,7 @@ if nFrame==2
         case 4,
           P(:,:,2) = [ U*WW'*V' -U(:,3) ];
       end
-        
+      
       C = zeros(3,2); v = C;
       for j = 1 : 2
         % camera center (Reference: HZ2, p158-161)
@@ -131,7 +131,7 @@ end
 if nFrame>2 && ismember(method,[ 0 Inf ]) && ~hasAnyNan
   % Normalize coordinates
   [ W T ] = normalizePoint(W,-Inf);
-
+  
   % Initialize
   lam = ones( 1, nPoint, nFrame );
   WSquaredSum = sum(W.^2,1);
@@ -145,12 +145,12 @@ if nFrame>2 && ismember(method,[ 0 Inf ]) && ~hasAnyNan
         lam=bsxfun(@rdivide, lam, sqrt(sum(lam.^2,3)));
       end
     end
-
+    
     % get the best rank 4 approximation
     % Wkm1 is for Wk minus 1
     [Wkm1,Wkm1Hat]=projSturmTriggsWkm1Wkm1Hat(lam,W);
     WWkm1Hat = sum(W.*Wkm1Hat,1);
-
+    
     if method==Inf
       if n==1
         mu = norm(Wkm1(:)-Wkm1Hat(:))^2/norm(Wkm1(:))^4*1.1;
@@ -161,18 +161,18 @@ if nFrame>2 && ismember(method,[ 0 Inf ]) && ~hasAnyNan
         C3 = mu*sum(Wkm1Hat(:).^2);
       end
     end
-
+    
     % Stage 2
     % get the optimal lambdas
     lam=WWkm1Hat./WSquaredSum;
-
+    
     % Stage 3
     if method==Inf && n>1
       a = roots( [ C0, -(C0^2-2*C1), -(2*C0*C3-C2), ...
         -(4*C1*C3-2*C2*C0), C0*C3^2-2*C2*C3, ...
         2*C1*C3^2-C2^2, C2*C3^2 ] );
       a = real(a(abs(imag(a))<1e-10)); a = a(a>=0);
-
+      
       if length(a)>1
         zkm1=C3*C0/C2;
         if abs(zkm1-1)>eps
@@ -184,13 +184,13 @@ if nFrame>2 && ismember(method,[ 0 Inf ]) && ~hasAnyNan
       %        [a,sqrt(a/(a^2*C0+2*a*C1+C2)), mean(lam(:)), std(lam(:))]
     end
   end
-
+  
   % De-normalize coordinates
   Wk = bsxfun(@times,lam,W);
   [ U S V ] = svd( reshape(permute(Wk,[1,3,2]),3*nFrame,nPoint),...
     'econ' );
   P = U(:,1:4)*S(1:4,1:4); S = V(:,1:4)';
-
+  
   PTmp = P;
   S = normalizePoint(S,4);
   P = zeros(3,4,nFrame);
@@ -209,14 +209,13 @@ if nFrame>2 && ismember(method,[ 0 Inf ]) && hasAnyNan
   for k = 1 : 30
     % Sk is HHat (homogeneous W) but scaled by lambda, initialized to 1
     [PStack,S]=lowRankDecomposition(Sk,4);
-
+    
     % make sure the columns of PStack are orthonormal
     [PStack,SDiag,V]=svd(PStack,'econ');
     S = SDiag*V'*S;
-    err=(Sk-PStack*S).^2;
-norm(err(~isnan(err)))
+    
     P = permute(reshape(PStack,3,nFrame,4),[1,3,2]);
-sumTot=0;
+    %sumTot=0;
     for j=1:nPoint
       mask=~isnan(TInv(:,j));
       Cj=permute(sum(bsxfun(@times,q(:,j,mask),P(:,:,mask)),1),[3,2,1]);
@@ -226,13 +225,14 @@ sumTot=0;
       A=Cj*Cj';
       [lamjTmp,val]=eigs(bsxfun(@times,TInv(mask,j),A),1,'lm');
       lamj=zeros(1,1,nFrame); lamj(mask)=lamjTmp;
-sumTot=sumTot+lamjTmp'*Cj*Cj'*lamjTmp/(lamjTmp'*diag(1./TInv(mask,j))*lamjTmp);
+      %sumTot=sumTot+lamjTmp'*Cj*Cj'*lamjTmp/(lamjTmp'*diag(1./ ...
+      % TInv(mask,j))*lamjTmp);
       Sk(:,j)=reshape(bsxfun(@times,q(:,j,:),lamj),3*nFrame,1);
     end
-sumTot;
+    %sumTot;
   end
   [PStack,S]=lowRankDecomposition(Sk,4);
-
+  
   PTmp = PStack;
   S = normalizePoint(S,4);
   P = zeros(3,4,nFrame);

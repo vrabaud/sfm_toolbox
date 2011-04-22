@@ -13,8 +13,8 @@ function [ HEye, Hqa, pInf ] = affineUpgrade(anim, varargin)
 % INPUTS
 %  anim          - Animation object with P and S filled
 %  varargin   - list of paramaters in quotes alternating with their values
-%     'doQuasiOnly'   - [false] flag indicating if we only want to do the quasi
-%                       affine upgrade
+%     'doQuasiOnly'   - [false] flag indicating if we only want to do the
+%                       quasi affine upgrade
 %     'tol'           - number of iterations in branch and bound
 %
 % OUTPUTS
@@ -43,8 +43,7 @@ if exist('OCTAVE_VERSION','builtin')==5; doQuasiOnly=true; end
 [anim,HEye]=anim.setFirstPRtToId();
 
 PClean=anim.P; SHomogClean=normalizePoint(anim.S,-4); W=anim.W;
-nPoint=anim.nPoint; nFrame=anim.nFrame;
-Hqa=eye(4);
+nFrame=anim.nFrame;
 
 % notations from Chandraker IJCV 2009
 % compute Hq that takes the projective frame to some quasi-affine frame
@@ -207,7 +206,6 @@ FIni=set(cone([2*(fg(:,1)-fg(:,2));r-e],r+e)) + ...
 currBest=Inf; lowerBound=-Inf; isRefined=false;
 [l,u,vBest,currBest,lowerBound,isRefined]=bnbRefine(...
   @(x)criterion(x,greekHqat),l,u,vBest,currBest,lowerBound,isRefined);
-eps=1e-4;
 solverSetting = sdpsettings('solver','sedumi,sdpa,csdp,*','verbose',0, ...
   'cachesolvers',1);
 ticId = ticStatus('affine upgrade iterations',1,1);

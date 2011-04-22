@@ -115,8 +115,6 @@ if nFrame==2
   if ~isCalibrated; doMetricUpgrade=false; end
 end
 
-P=zeros(3,4,nFrame); P(:,:,1)=eye(3,4); if ~isProj; P(3,3:4)=[0 1]; end
-
 if size(W,1)==3; W = normalizePoint(W,3); end
 
 % create an animation object that wil contain the output
@@ -144,7 +142,7 @@ if isProj
 else
   [P,S] = computeSMFromWAffine( W, method, onlyErrorFlag );
 end
-if onlyErrorFlag; anim=err; return; end
+if onlyErrorFlag; anim=P; return; end
 
 % fill the Animation object with the results
 anim.S=S; anim.P=P; anim.W=W;
@@ -158,10 +156,10 @@ if anim.isProj
   else
     anim = bundleAdjustment( anim, 'nItr', 20 );
   end
-
+  
   % modify P so that P(:,:,1)==eye(3,4)
   anim=anim.setFirstPRtToId();
-
+  
   % if we want to do an affine upgrade
   if doAffineUpgrade
     % only apply the quasi affine upgrade if we are under octave
@@ -183,8 +181,7 @@ if anim.isProj
     if doMetricUpgrade
       % perform a metric upgrade if requested
       if exist('OCTAVE_VERSION','builtin')==5
-        H=metricUpgrade(anim, ...
-          'isCalibrated', isCalibrated);
+        H=metricUpgrade(anim, 'isCalibrated', isCalibrated);
       else
         [ H, anim.KFull ]=metricUpgrade(anim, 'pInf', pInf, ...
           'isCalibrated', isCalibrated, 'tol', tolMetric);
@@ -200,7 +197,7 @@ end
 % apply the homography H
 if ~isempty(H)
   anim.P=multiTimes(anim.P,H,1);
-  anim.S=normalizePoint(inv(H)*normalizePoint(anim.S,-4),4);
+  anim.S=normalizePoint(H\normalizePoint(anim.S,-4),4);
 end
 
 % recover rotations and translations
@@ -225,7 +222,7 @@ if doMetricUpgrade && (exist('OCTAVE_VERSION','builtin')~=5 || isCalibrated)
     anim.t=reshape(P(1:2,4,:),2,nFrame); anim.t(3,:)=0;
   end
   anim.R=R;
-
+  
   anim=anim.setFirstPRtToId();
 end
 
