@@ -89,7 +89,7 @@ if ~isempty(anim.R) && ~isempty(anim.t)
       K0=KAll(~KMask,:); nK = length(find(~KMask));
     end
   end
-
+  
   % Deal with NRSFM
   switch size(anim.l,1)
     case anim.nBasis, %Xiao
@@ -97,7 +97,8 @@ if ~isempty(anim.R) && ~isempty(anim.t)
     case anim.nBasis-1, %Torresani
       isFirstCoeff1=true;
     otherwise
-      if ~isempty(anim.l); error('Problem with the dimension of l and SBasis');end
+      if ~isempty(anim.l); error([ 'Problem with the dimension of l ' ...
+          'and SBasis' ]);end
   end
   
   % Get the quaternion from the rotation matrices
@@ -198,10 +199,12 @@ if fullP
     anim.P = reshape( P, [ 3 3 anim.nFrame ] );
   else
     if anim.isProj
-      P1 = permute( reshape( P(1:12*anim.nFrame ), [ 4 3 anim.nFrame ] ), [ 2 1 3 ] );
+      P1 = permute( reshape( P(1:12*anim.nFrame ), ...
+        [ 4 3 anim.nFrame ] ), [ 2 1 3 ] );
       anim.S = reshape( P(12*anim.nFrame + 1 : end ), 3, anim.nPoint );
     else
-      P1 = permute( reshape( P(1:8*anim.nFrame ), [ 4 2 anim.nFrame ] ), [ 2 1 3 ] );
+      P1 = permute( reshape( P(1:8*anim.nFrame ), ...
+        [ 4 2 anim.nFrame ] ), [ 2 1 3 ] );
       P1(3,4,:) = 1;
       anim.S = reshape( P(8*anim.nFrame + 1 : end ), 3, anim.nPoint );
     end
@@ -243,42 +246,49 @@ else
   end
 end
 
-if ~isempty(anim.K) && (isempty(KMaskOri) || ~isempty(find(~KMaskOri)))
+if isempty(KMaskOri)
+  if anim.isProj; KMaskOri = zeros(5,1); else KMaskOri = zeros(3,1); end
+else
+  KMaskOri = KMaskOri>0;
+end
+
+if ~isempty(anim.K) && any(~KMaskOri)
   if size(anim.K,2)==1
     % average all the K found as a first estimate
     anim.K=mean(KAll,2);
     err=anim.computeError(); errPrev=err(1);
-
+    
     % optimize K and the rest through alternate gradient descent
     while 1
       S=reshape(anim.generateSAbsolute(),3,[]);
-      % we want to solve K*S=W or kron(S',eye(3)) vec(K)=vec(W)
+      % we want to solve K*S=W or kron(S',eye(2)) vec(K)=vec(W)
       % K is now only its first two rows
       if anim.isProj
         W=bsxfun(@times,reshape(anim.W,2,[]),S(3,:));
         A=kron(S',eye(2));
       else
+        W=anim.W;
         A=kron(S(1:2,:)',eye(2));
       end
-
+      
       % remove the column where K has a value of 0
-      W=reshape(anim.W,[],1);
+      W=reshape(W,[],1);
       A(:,2)=[];
-
+      
       % remove the columns for which we know the values
-      if find(KMaskOri)
-        W=W-A(:,find(KMaskOri))*anim.K(find(KMaskOri));
-        A(:,find(KMaskOri))=[];
+      if any(KMaskOri)
+        W=W-A(:,KMaskOri)*anim.K(KMaskOri);
+        A(:,KMaskOri)=[];
       end
-
+      
       % solve for the best K
-      anim.K(find(~KMaskOri))=A\W;
-
+      anim.K(~KMaskOri)=A\W;
+      
       % optimize the other parameters
       anim=bundleAdjustment(anim,'KMask',ones(size(anim.K,1),1),...
         'nItr',nItr,'nFrameFixed',nFrameFixed,'sfmCase',sfmCase);
       err=anim.computeError(); err=err(1);
-
+      
       % exit when the error changes by less than 1%
       if (errPrev-err<0.01*errPrev); break; end
       errPrev=err;
