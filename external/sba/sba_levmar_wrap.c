@@ -193,7 +193,7 @@ static void sba_motstr_Qs_fdjac(
   Asz=mnp*cnp; Bsz=mnp*pnp; ABsz=Asz+Bsz;
 
   /* allocate memory for hxij, hxxij */
-  if((hxij=malloc(2*mnp*sizeof(double)))==NULL){
+  if((hxij=(double*) malloc(2*mnp*sizeof(double)))==NULL){
     fprintf(stderr, "memory allocation request failed in sba_motstr_Qs_fdjac()!\n");
     exit(1);
   }
@@ -389,7 +389,7 @@ static void sba_mot_Qs_fdjac(
   Asz=mnp*cnp;
 
   /* allocate memory for hxij, hxxij */
-  if((hxij=malloc(2*mnp*sizeof(double)))==NULL){
+  if((hxij=(double*) malloc(2*mnp*sizeof(double)))==NULL){
     fprintf(stderr, "memory allocation request failed in sba_mot_Qs_fdjac()!\n");
     exit(1);
   }
@@ -553,7 +553,7 @@ static void sba_str_Qs_fdjac(
   Bsz=mnp*pnp;
 
   /* allocate memory for hxij, hxxij */
-  if((hxij=malloc(2*mnp*sizeof(double)))==NULL){
+  if((hxij=(double*) malloc(2*mnp*sizeof(double)))==NULL){
     fprintf(stderr, "memory allocation request failed in sba_str_Qs_fdjac()!\n");
     exit(1);
   }
