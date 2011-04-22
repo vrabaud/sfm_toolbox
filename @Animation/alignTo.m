@@ -115,7 +115,7 @@ for i = 1 : nFrame
         errBest = Inf;
         for j=1:2
           STmp=S;
-          if j==1 STmp(3,:)=-STmp(3,:); end
+          if j==1; STmp(3,:)=-STmp(3,:); end
           STmp=bsxfun(@plus,STmp,tChir{j}(:,i));
           
           errTmp=norm(STmp-SGT);
@@ -128,7 +128,7 @@ for i = 1 : nFrame
   end
 end
 
-if nargout <=4 return; end
+if nargout <=4; return; end
 
 % coompute the transformed S
 switch checkTransform
