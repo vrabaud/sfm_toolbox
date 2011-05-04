@@ -99,10 +99,15 @@ cd ../../..
 
 cd sfm/private/sba
 switch computer
-  case {'PCWIN','PCWIN64'},
+  case {'PCWIN'},
     if doSba
       % Matlab on Windows 32/64
-      system('cl /nologo /O2 sbaProjection.c /link /dll /out:sbaProjection.dll');
+      system('cl /nologo /O2 sbaProjection.c /link /dll /out:sbaProjection32.dll');
+    end
+  case {'PCWIN64'},
+    if doSba
+      % Matlab on Windows 32/64
+      system('cl /nologo /O2 sbaProjection.c /link /dll /out:sbaProjection64.dll');
     end
   case {'GLNX86','GLNXA64','i686-pc-linux-gnu', 'i686-unknown-linux-gnu', ...
       'x86_64-pc-linux-gnu', 'x86_64-unknown-linux-gnu'},

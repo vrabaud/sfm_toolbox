@@ -52,9 +52,12 @@ KMaskOri=KMask;
 
 % Figure out where the files are located
 switch computer
-  case {'PCWIN','PCWIN64'},
+  case {'PCWIN'},
     projPath=[ '@' fileparts(mfilename('fullpath')) ...
-      '/private/sba/sbaProjection.dll' ];
+      '\private\sba\sbaProjection32.dll' ];
+  case {'PCWIN64'},
+    projPath=[ '@' fileparts(mfilename('fullpath')) ...
+      '\private\sba\sbaProjection64.dll' ];
   otherwise,
     % Linux/Mac Matlab/Octave
     projPath=[ '@' fileparts(mfilename('fullpath')) ...
