@@ -49,8 +49,7 @@ dir_sba = [ dir_external 'sba/'];
 cd(dir_sba);
 % delete previous object files
 fileList = {'sba_levmar.o', 'sba_levmar_wrap.o', 'sba_lapack.o', ...
-  'sba_crsm.o', 'sba_chkjac.o', 'libsba.a', 'sba.lib', ...
-  'matlab/sba.mexw32', 'matlab/sba.mexw64'};
+  'sba_crsm.o', 'sba_chkjac.o', 'libsba.a', 'sba.lib'};
 for i=1:length(fileList)
   if exist([dir_sba, '/', fileList{i}], 'file'), delete(fileList{i}); end
 end
@@ -101,13 +100,16 @@ cd sfm/private/sba
 switch computer
   case {'PCWIN'},
     if doSba
-      % Matlab on Windows 32/64
+      % Matlab on Windows 32
       system('cl /nologo /O2 sbaProjection.c /link /dll /out:sbaProjection32.dll');
     end
   case {'PCWIN64'},
     if doSba
-      % Matlab on Windows 32/64
-      system('cl /nologo /O2 sbaProjection.c /link /dll /out:sbaProjection64.dll');
+      % Matlab on Windows 64
+      cc = mex.getCompilerConfigurations('C');
+      system([ '"' cc.Location '\VC\bin\amd64\cl.exe" /nologo /O2 ' ...
+        '/GS- sbaProjection.c /link /dll /NOENTRY ' ...
+        '/out:sbaProjection64.dll']);
     end
   case {'GLNX86','GLNXA64','i686-pc-linux-gnu', 'i686-unknown-linux-gnu', ...
       'x86_64-pc-linux-gnu', 'x86_64-unknown-linux-gnu'},

@@ -16,6 +16,7 @@
 #if defined(_MSC_VER) /* DLL directives for MSVC */
 #define API_MOD    __declspec(dllexport)
 #define CALL_CONV  __cdecl
+int _fltused = 0;
 #else /* define empty */
 #define API_MOD 
 #define CALL_CONV
