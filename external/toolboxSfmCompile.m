@@ -92,7 +92,8 @@ switch computer
   case {'i686-pc-linux-gnu', 'i686-unknown-linux-gnu', ...
       'x86_64-pc-linux-gnu', 'x86_64-unknown-linux-gnu'},
     % Octave on Linux
-    mkoctfile --mex ./sba.c -I../ -lsba -L../
+    mkoctfile --mex ./sba.c ../sba_chkjac.c ../sba_levmar_wrap.c ../sba_levmar.c ...
+    ../sba_lapack.c ../sba_crsm.c -I../
 end
 cd ../../..
 
