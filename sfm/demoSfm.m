@@ -73,7 +73,7 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function demo2() %#ok<DEFNU>
-disp('Homography with bundle adjustment example');
+disp('Homography with missing entries and bundle adjustment example');
 disp('Create points and random view');
 
 anim=Animation(); anim.W=zeros(2,100,5);
@@ -112,7 +112,8 @@ fprintf(out);
 color = [ 1 1 0; 0 1 1; 1 0 1; 1 0 0; 0 1 0; 0 0 1; 0 0 0; 1 1 1 ];
 
 for i=1:5
-  plot(anim.W(1,anim.mask(:,i),i),anim.W(2,anim.mask(:,i),i),'.','color',...
+  if i==1; style='*'; else style='.'; end
+  plot(anim.W(1,anim.mask(:,i),i),anim.W(2,anim.mask(:,i),i),style,'color',...
     color(i,:));
   hold on;
 end
