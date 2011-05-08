@@ -29,8 +29,8 @@ function [ H, K ] = metricUpgrade(anim, varargin)
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
-% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Vincent's Structure From Motion Toolbox      Version 3.1
+% Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
@@ -58,7 +58,7 @@ if ~anim.isProj
     if isCalibrated && method==inf
       KKt=eye(2); K=eye(3); F=set(HHt>=0);
     else
-      KKt=sdpvar(2,2); F=set(HHt>=0)+set(KK>=0);
+      KKt=sdpvar(2,2); F=set(HHt>=0)+set(KKt>=0);
     end
     % define all the SOCP constraints
     obj=sdpvar(2*nFrame,2);

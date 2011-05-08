@@ -96,8 +96,8 @@ function anim = computeSMFromW( isProj, W, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version NEW
-% Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Vincent's Structure From Motion Toolbox      Version 3.1
+% Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 

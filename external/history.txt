@@ -1,4 +1,4 @@
-Version New (Sep-10)
+Version 3.1 (08-May-11)
   NEW
     - rank decomposition for matrices with missing entries
     - 3D reconstruction for affine/projective cameras when there are missing entries (issue 3)

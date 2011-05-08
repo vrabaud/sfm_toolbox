@@ -23,7 +23,7 @@ function [ H nMax ] = computeHomography( x1, x2, method, thres, Sim )
 % See also
 %
 % Vincent's Structure From Motion Toolbox      Version 2.1
-% Copyright (C) 2009 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
+% Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
