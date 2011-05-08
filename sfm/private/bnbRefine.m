@@ -1,6 +1,6 @@
 function [l,u,vBest,currBest,lowerBound,isRefined]=bnbRefine(...
   criterionHandle,l,u,vBest,currBest,lowerBound,isRefined)
-% Perform the simple branching in brach an d bound
+% Perform the simple branching in branch an d bound
 %
 % Used in affine and metric Upgrade
 %
@@ -49,7 +49,6 @@ end
 % add the minimum in case it was not refined
 [disc,ind]=min(lowerBound);
 if ~isRefined(ind); badInd=unique([badInd,ind]); end
-minCurrBest=min(currBest);
 for ind=badInd
   % make sure the best value is in the interval
   vBestTmp=min([max([vBest(:,ind),l(:,ind)],[],2),u(:,ind)],[],2);

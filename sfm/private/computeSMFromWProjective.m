@@ -211,8 +211,7 @@ if nFrame>2 && ismember(method,[ 0 Inf ]) && hasAnyNan
     [PStack,S]=lowRankDecomposition(Sk,4);
     
     % make sure the columns of PStack are orthonormal
-    [PStack,SDiag,V]=svd(PStack,'econ');
-    S = SDiag*V'*S;
+    [PStack,disc,disc]=svd(PStack,'econ');
     
     P = permute(reshape(PStack,3,nFrame,4),[1,3,2]);
     %sumTot=0;
