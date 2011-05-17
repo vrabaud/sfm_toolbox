@@ -20,7 +20,7 @@ function A = skew(a)
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 1.1
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -32,7 +32,7 @@ if numel(a)==3
   return
 end
 
-if all(size(e)==[3,3])
+if all(size(a)==[3,3])
   % returns the vector that created the closest skew matrix
   A=0.5*[ a(3,2)-a(2,3); a(1,3)-a(3,1); a(2,1)-a(1,2)];
   return
