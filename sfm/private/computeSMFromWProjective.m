@@ -53,7 +53,7 @@ function [P,S] = computeSMFromWProjective( W, method, isCalibrated )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.1
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -217,6 +217,7 @@ if nFrame>2 && ismember(method,[ 0 Inf ]) && hasAnyNan
     %sumTot=0;
     for j=1:nPoint
       mask=~isnan(TInv(:,j));
+      if all(~mask); continue; end
       Cj=permute(sum(bsxfun(@times,q(:,j,mask),P(:,:,mask)),1),[3,2,1]);
       % Solve the maximum of the Rayleigh quotient
       % it is the highest eigenvector of A*v=lam*(1./TjInv)*v

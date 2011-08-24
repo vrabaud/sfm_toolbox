@@ -64,7 +64,8 @@ function anim = computeSMFromW( isProj, W, varargin )
 %
 % INPUTS
 %  isProj     - flag indicating if the camera is projective
-%  W          - [] [ 2 x nPoint x nFrame ] 2D projected features
+%  W          - [] [ 2 x nPoint x nFrame ] 2D projected features (NaN if
+%               missing entry
 %  varargin   - list of paramaters in quotes alternating with their values
 %       - 'isCalibrated' [false] flag indicating if the cameras are
 %                        calibrated (intrinsic parameters are identity)
@@ -96,7 +97,7 @@ function anim = computeSMFromW( isProj, W, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.1
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -106,6 +107,10 @@ function anim = computeSMFromW( isProj, W, varargin )
   { 'isCalibrated' false 'doAffineUpgrade' false 'doMetricUpgrade' false ...
   'K' [] 'KFull' [] 'method' inf 'onlyErrorFlag' false 'nItrSBA' 100 ...
   'tolAffine' 1e-5 'tolMetric' 1e-5}, 1);
+
+% Remove points that do not have two views with no NaN's
+good_point_mask = sum(~any(isnan(W),1),3) >=2;
+W = W(:,good_point_mask,:);
 
 nFrame = size(W,3); nPoint = size(W,2);
 
@@ -232,6 +237,11 @@ if any(mask==0); anim.mask=mask; end
 
 % do a final bundle adjustment
 if nItrSBA > 0; anim = bundleAdjustment( anim, 'nItr', nItrSBA ); end
+
+W = anim.W; S = anim.S;
+anim.W = zeros(2, length(good_point_mask), nFrame);
+anim.S = zeros(3, length(good_point_mask), nFrame);
+anim.W = W; anim.S = S;
 
 % Re-assign the KFull from the input arguments if any
 if ~isempty(KFull); anim.KFull=KFull; anim.W=WOri; end

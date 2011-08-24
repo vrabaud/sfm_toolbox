@@ -65,7 +65,7 @@ function [ err errFrame errTot SAbsoluteT anim ] = computeError(anim, ...
 %
 % See also Animation
 %
-% Vincent's Structure From Motion Toolbox      Version 3.1
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -104,16 +104,19 @@ switch method
     tmp = W - anim.W;
     
     % if there is a mask, only keep certain points on certain frames
+    WNorm = W;
     if ~isempty(anim.mask)
       % set to 0 the ones that are 0 in the mask
       mask = repmat(reshape(~anim.mask,1,nPoint,nFrame), [2, 1, 1]);
       tmp(mask) = 0;
+      WNorm(mask) = 0;
     end
+    WNorm = sum(reshape(W,[],nFrame).^2, 1);
     
     errTot = abs(tmp);
     errFrame(1,:) = sum(reshape(tmp,[],nFrame).^2,1);
     errFrame(2,:) = sum(reshape(errTot,[],nFrame),1)./spanW;
-    errFrame(3,:) = sqrt(errFrame(1,:)./sum(reshape(W,[],nFrame).^2,1));
+    errFrame(3,:) = sqrt(errFrame(1,:)./WNorm);
     
     err = mean( errFrame, 2 );
   case '3D'
