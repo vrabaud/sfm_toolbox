@@ -32,7 +32,7 @@ function anim = computeNrsfm( method, W, varargin )
 %
 % See also COMPUTESMFROMW
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -73,10 +73,22 @@ switch method
       anim.l=Z';
     end
   case 2 % Xiao Kanade
+    if exist('OCTAVE_VERSION','builtin')==5
+      warning('Method not supported under Octave');
+      return;
+    end
     anim = nrsfmXiaoKanade( W, nBasis );
   case 3,
+    if exist('OCTAVE_VERSION','builtin')==5
+      warning('Method not supported under Octave');
+      return;
+    end
     anim = nrsfmMsfm( W, nBasis, nTriplet, nPair, nItr );
   case 4,
+    if exist('OCTAVE_VERSION','builtin')==5
+      warning('Method not supported under Octave');
+      return;
+    end
     anim = nrsfmCsfm( W, nBasis, nTriplet, nPair, nItr );
 end
 % Perform gradient descent on the different coefficients

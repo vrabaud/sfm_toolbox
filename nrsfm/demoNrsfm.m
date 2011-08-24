@@ -81,11 +81,15 @@ animGT=animGT.addNoise('noiseS',0);
 
 %Xiao-Kanade
 disp('**Computing NRSFM with Xiao''s method');
-animXiao = computeNrsfm( 2, animGT.W );
-[ err errFrame ] = animXiao.computeError( 'animGT', animGT );
-fprintf( '\nXiao: Reprojection error %0.4f and 3D-error %0.4f\n\n', ...
-  mean(errFrame{1}(1,:)),err(1));
-playAnim(animXiao,'animGT',animGT,'showGT',true,'alignGT',true);
+if exist('OCTAVE_VERSION','builtin')==5
+  warning('Demo unsupported under Octave');
+else
+  animXiao = computeNrsfm( 2, animGT.W );
+  [ err errFrame ] = animXiao.computeError( 'animGT', animGT );
+  fprintf( '\nXiao: Reprojection error %0.4f and 3D-error %0.4f\n\n', ...
+    mean(errFrame{1}(1,:)),err(1));
+  playAnim(animXiao,'animGT',animGT,'showGT',true,'alignGT',true);
+end
 
 %Torresani
 disp('**Computing NRSFM with Torresani''s method');
@@ -99,6 +103,10 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function demo3() %#ok<DEFNU>
 disp('Orthographic NRSFM with random degenerate data');
+if exist('OCTAVE_VERSION','builtin')==5
+  warning('Demo unsupported under Octave');
+  return;
+end
 %Xiao-Kanade with degenerate deformations
 nFrame = 50; nPoint = 20; nBasis = [ 1 0 1 ];
 animGT=generateToyAnimation( 0.1,'nPoint',nPoint,'nFrame',nFrame,...
@@ -114,6 +122,11 @@ end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function demo4() %#ok<DEFNU>
 disp('Orthographic NRSFM for the shark data');
+if exist('OCTAVE_VERSION','builtin')==5
+  warning('Demo unsupported under Octave');
+  return;
+end
+
 %%% Shark data:
 animGT=generateToyAnimation( 4.2,'dt', 0 );
 animGT=animGT.addNoise('noiseS',0);

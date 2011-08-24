@@ -19,7 +19,7 @@ function viewAnimSimilarity( anim1, Sim, varargin )
 %
 % See also COMPUTEANIMSIMILARITY
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -43,9 +43,15 @@ end
 
 % Create the plots
 figure(gcf); clf; % bring to focus
-h(1) = subplot( 'position', [ 0, 0, 0.3, 0.92 ] );
-h(2) = subplot( 'position', [ 0.3, 0, 0.3, 0.92 ] );
-h(3) = subplot( 'position', [ 0.6, 0, 0.4, 0.92 ] );
+if exist('OCTAVE_VERSION','builtin')==5
+  for i = 1 : 3
+    h(i) = subplot(1,3,i);
+  end
+else
+  h(1) = subplot( 'position', [ 0, 0, 0.3, 0.92 ] );
+  h(2) = subplot( 'position', [ 0.3, 0, 0.3, 0.92 ] );
+  h(3) = subplot( 'position', [ 0.6, 0, 0.4, 0.92 ] );
+end
 pos=get(gcf,'Position'); pos(1)=pos(1)-1.5*pos(3); pos(3)=3*pos(3);
 set(gcf,'Position',pos);
 
@@ -69,6 +75,7 @@ for i=1:2
     'nCam',nCam, 'c',c(i,:) );
   for j=1:3; cam{i}(j).gca = h(i); end
 end
+showConn=false; showTitle=true;
 set(gcf,'UserData',{possibleKey,showConn,showFirst,showGT,showTitle,...
   anim,camMode,alignGT,hCam,cam,hPoint,hGT,hConn});
 

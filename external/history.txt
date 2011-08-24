@@ -1,3 +1,8 @@
+version NEW
+  CRITICAL FIXES
+    - fix crashes in some NRSFM visualization functions
+    - fix crashes under Octave for NRSFM using yalmip
+
 Version 3.1 (08-May-11)
   NEW
     - rank decomposition for matrices with missing entries

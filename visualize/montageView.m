@@ -30,7 +30,7 @@ function varargout = montageView( S, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 2.1
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -56,7 +56,11 @@ k=1; h=zeros(1,nFrame);
 hPoint = cell( 1, nFrame ); hConn = hPoint; animTot = hPoint; cam = hPoint;
 for j=1:m
   for i=1:n
-    h(k)=subplot('position',[(i-1)/n,1-1/m-(j-1)/m,1/n,1/m]);
+    if exist('OCTAVE_VERSION','builtin')==5
+      h(k)=subplot(m,n,k);
+    else
+      h(k)=subplot('position',[(i-1)/n,1-1/m-(j-1)/m,1/n,1/m]);
+    end
     if k<=nFrame
       anim=Animation; anim.S=S(:,:,k);
       [ cam{k} animTot{k} ] = cloudInitializeCam( anim, -1 );
@@ -78,7 +82,7 @@ if size(S,1)==3
   set( gcf, 'WindowButtonMotionFcn', { @interface } );
   set( gcf, 'KeyPressFcn', { @interface } );
 end
-isIndep=false; showFirst = false; showTitle = false;
+isIndep=false; showConn = false; showFirst = false; showTitle = false;
 
 possibleKey = { 'f' 'p' 'r' 't' 'numpad0' 'leftarrow' 'rightarrow' ...
   'uparrow' 'downarrow' };
@@ -88,13 +92,13 @@ if isempty(hConn{1}); showConn = false; else possibleKey(end+1) = {'c'};end
 if( nargout>0 ); varargout={ h m n }; end
 
 set(gcf,'UserData',{possibleKey,showConn,showFirst,showTitle,...
-  showPrettyAxes,anim,camMode,camm,hPoint,hConn,isIndep});
+  showPrettyAxes,anim,camMode,cam,hPoint,hConn,isIndep});
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function interface( src, event )
     tmp=set(gcf,'UserData');
     [possibleKey,showConn,showFirst,showTitle,...
-      showPrettyAxes,anim,camMode,camm,hPoint,hConn,isIndep]=tmp(:);
+      showPrettyAxes,anim,camMode,cam,hPoint,hConn,isIndep]=tmp(:);
 
     if ~isIndep; inter=1:nFrame; else inter=find(h==gca); end
     
