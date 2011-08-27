@@ -22,7 +22,7 @@ function demoNrsfm( demoNumber )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -53,18 +53,16 @@ disp('Several Visualization Possibilities');
 
 anim=generateToyAnimation(0.1,'nFrame',50,'nPoint',20,'nBasis',3,'nLoop',2);
 disp('Playing an animation');
-playAnim(anim);
+close all; playAnim(anim);
 
 disp('* Computing Similarities within the animation');
 Sim = computeAnimSimilarity( anim, 2 );
 disp('Visualize the similarities'); close all;
 viewAnimSimilarity(anim,-Sim);
-disp('Press enter to view ten random frames at the same time');
-pause
+input('Enter anything to view ten random frames at the same time\n','s');
 close all;
 montageView(anim.S(:,:,randSample(50,10)));
-disp('Press enter for a person walking');
-pause
+input('Enter anything for a person walking\n','s');
 close all;
 anim=generateToyAnimation(5);
 playAnim(anim, 'showConn', true, 'nCam', 100);

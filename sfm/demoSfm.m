@@ -180,6 +180,7 @@ nFrame = 10; nPoint = 50;
 animGT=generateToyAnimation( 0,'nPoint',nPoint,'nFrame',nFrame);
 animGT=animGT.addNoise('noiseS','5','doFillW',true);
 
+close all;
 if ~exist('OCTAVE_VERSION','builtin')
   playAnim( animGT, 'frame', 1, 'nCam', 20 );
 end
