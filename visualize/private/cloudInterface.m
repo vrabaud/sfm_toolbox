@@ -12,44 +12,44 @@ function cloudInterface( src, event )
 %
 % See also CLOUDBOUNDARY
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2010 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the Lesser GPL [see external/lgpl.txt]
 
-tmp=get(gcf,'UserData');
-[possibleKey,showConn,showFirst,showGT,doReturn,...
-  showTitle,anim,camMode,alignGT,fps,doPause,hCam,cam,hPoint,hGT,hConn,...
-  showPrettyAxes,animGT,nCam,frameNbr]=tmp{:};
+userData=get(gcf,'UserData');
 
-if ~iscell(anim); anim = {anim}; end
-if ~iscell(cam); cam = {cam}; end
-if ~iscell(hCam); hCam = {hCam}; end
-if ~iscell(hPoint); hPoint = {hPoint}; end
-if ~iscell(hConn); hConn = {hConn}; end
+anim = userData.anim; cam = userData.cam; hCam = userData.hCam;
+hPoint = userData.hPoint; hConn = userData.hConn; hGT = userData.hGT;
+
+if userData.isIndep
+  animRange = 1;
+else
+  animRange = 1:numel(anim);
+end
+
 if ~iscell(hGT); hGT = {hGT}; end
 
-nAnim = numel(anim);
 % Deal with a pressed key to change the view or quit the animation
 diffView=[0 0];
-if ~isfield(event,'Key') || ~any(strcmp(event.Key,possibleKey))
+if ~isfield(event,'Key') || ~any(strcmp(event.Key,userData.possibleKey))
   event.Key='';
 end
 switch event.Key
   case 'c', % Show the connectivity
-    showConn = ~showConn;
+    userData.showConn = ~userData.showConn;
   case 'f', % Show the first point
-    showFirst = ~showFirst;
+    userData.showFirst = ~userData.showFirst;
   case 'g', % Show the ground truth
-    showGT=~showGT;
+    userData.showGT = ~userData.showGT;
   case 'i', % make a view independent from the other ones
-    isIndep=~isIndep;
+    userData.isIndep=~userData.isIndep;
   case 'p', % toggle between pretty axes
-    showPrettyAxes=~showPrettyAxes;
+    userData.showPrettyAxes=~userData.showPrettyAxes;
   case 'q',
-    doReturn=1;
+    userData.doReturn=1;
   case 'r', % rotate the axes
-    for i=1:nAnim
+    for i=animRange
       if ~isempty(anim{i}.S)
         anim{i}.S = anim{i}.S([2 3 1],:,:);
         anim{i}.R = anim{i}.R(:,[2 3 1],:);
@@ -69,50 +69,57 @@ switch event.Key
       end
     end
   case 't', % Show the title
-    showTitle = ~showTitle;
+    userData.showTitle = ~userData.showTitle;
   case {'1','2','3'} % switch 2D/3D view
-    if camMode==str2double(event.Key) && src>=0 && ...
-        any(strcmp( 'g', possibleKey ))
-      alignGT=~alignGT;
+    if userData.camMode==str2double(event.Key) && src>=0 && ...
+        any(strcmp( 'g', userData.possibleKey ))
+      userData.alignGT = ~userData.alignGT;
     else
-      for i=1:nAnim; cam{i}(camMode).axis = axis; end
-      camMode = str2double(event.Key);
-      for i=1:nAnim
-        switch camMode
+      for i=animRange; cam{i}(userData.camMode).axis = axis; end
+      userData.camMode = str2double(event.Key);
+      for i=animRange
+        switch userData.camMode
           case 1,
-            axis( cam{i}(camMode).gca, 'on', 'vis3d' );
+            axis( cam{i}(userData.camMode).gca, 'on', 'vis3d' );
             set(gcf,'Color',0.8*[1 1 1]);
-            if ~isempty(hCam{i}); set(reshape(hCam{i}(:,1:8),[],1),'Visible','on'); end
+            if ~isempty(hCam{i})
+              set(reshape(hCam{i}(:,1:8),[],1),'Visible','on');
+            end
           case 2,
-            axis( cam{i}(camMode).gca, 'off', 'equal' );
+            axis( cam{i}(userData.camMode).gca, 'off', 'equal' );
             set(gcf,'Color',[1 1 1]);
-            if ~isempty(hCam{i}); set(reshape(hCam{i}(:,1:8),[],1),'Visible','off'); end
+            if ~isempty(hCam{i})
+              set(reshape(hCam{i}(:,1:8),[],1),'Visible','off');
+            end
           case 3,
-            axis( cam{i}(camMode).gca, 'on', 'vis3d' );
+            axis( cam{i}(userData.camMode).gca, 'on', 'vis3d' );
             set(gcf,'Color',[1 1 1]);
-            if ~isempty(hCam{i}); set(reshape(hCam{i}(:,1:8),[],1),'Visible','on'); end
+            if ~isempty(hCam{i})
+              set(reshape(hCam{i}(:,1:8),[],1),'Visible','on');
+            end
         end
       end
       
-      for i=1:nAnim
-        axis( cam{i}(camMode).gca, cam{i}(camMode).axis );
-        if camMode~=2
-          set( cam{i}(camMode).gca, 'CameraPositionMode', 'auto' );
+      for i=animRange
+        axis( cam{i}(userData.camMode).gca, cam{i}(userData.camMode).axis);
+        if userData.camMode~=2
+          set( cam{i}(userData.camMode).gca, 'CameraPositionMode', 'auto');
         else
-          set( cam{i}(camMode).gca, 'CameraPosition', [0 -5 0] );
+          set( cam{i}(userData.camMode).gca, 'CameraPosition', [0 -5 0] );
         end
-        set( cam{i}(camMode).gca, 'CameraTarget', cam{i}(camMode).target );
+        set( cam{i}(userData.camMode).gca, 'CameraTarget', ...
+          cam{i}(userData.camMode).target );
       end
     end
   case 'numpad0' % re-center the camera
-    for i=1:nAnim; cam{i}(camMode).diff=0; end
+    for i=animRange; cam{i}(userData.camMode).diff=0; end
   case 'subtract', % slow down the speed
-    fps = fps-5;
-    if fps<0; fps=1; end
+    userData.fps = userData.fps-5;
+    if userData.fps<0; userData.fps=1; end
   case 'add', % increase the speed
-    fps = fps+5;
+    userData.fps = userData.fps+5;
   case 'space', % pause
-    doPause=~doPause;
+    userData.doPause = ~userData.doPause;
   case 'leftarrow',
     diffView = [ 10 0 ];
   case 'rightarrow',
@@ -125,41 +132,44 @@ end
 
 % Update the look of the data
 offon = {'off' 'on'};
-for i=1:nAnim
-  cam{i}(camMode).diff = cam{i}(camMode).diff + diffView;
+for i=animRange
+  cam{i}(userData.camMode).diff = cam{i}(userData.camMode).diff + diffView;
   
   % Set some stuff visible or not
-  set(hPoint{i}(2),'Visible',offon{1+showFirst});
-  set(get(cam{i}(camMode).gca,'Title'),'Visible',offon{1+showTitle});
+  set(hPoint{i}(2),'Visible',offon{1+userData.showFirst});
+  set(get(cam{i}(userData.camMode).gca,'Title'),'Visible',...
+    offon{1+userData.showTitle});
   
-  try
-    h = set(hGT{i}(1),'Visible',offon{1+showGT});
-    h = set(hGT{i}(2),'Visible',offon{1+showGT*showFirst});
-  catch %#ok<CTCH>
+  if (~isempty(hGT)) && (~isempty(hGT{i}))
+    if hGT{i}(1)>=0
+      set(hGT{i}(1),'Visible',offon{1+userData.showGT});
+    end
+    if (length(hGT{i}) >=2 ) && (hGT{i}(2)>=0)
+      set(hGT{i}(2),'Visible',offon{1+userData.showGT*userData.showFirst});
+    end
   end
-  try
-    h = set(hConn{i},'Visible',offon{1+showConn});
-  catch %#ok<CTCH>
+  if (~isempty(hConn))
+    set(hConn{i},'Visible',offon{1+userData.showConn});
   end
 end
 
-if camMode~=2 || isempty(event.Key)
-  for i=1:nAnim
-    set( cam{i}(camMode).gca, 'View', cam{i}(camMode).view + ...
-      cam{i}(camMode).diff);
+if userData.camMode~=2 || isempty(event.Key)
+  for i=animRange
+    set( cam{i}(userData.camMode).gca, 'View', ...
+      cam{i}(userData.camMode).view + cam{i}(userData.camMode).diff);
     
-    if showPrettyAxes
-      set(cam{i}(camMode).gca,'XTick',[],'YTick',[],'ZTick',[],...
+    if userData.showPrettyAxes
+      set(cam{i}(userData.camMode).gca,'XTick',[],'YTick',[],'ZTick',[],...
         'LineWidth',3);
     else
-      set(cam{i}(camMode).gca,'XTickMode','auto','YTickMode','auto',...
-        'ZTickMode','auto','LineWidth',1);
+      set(cam{i}(userData.camMode).gca,'XTickMode','auto','YTickMode',...
+        'auto','ZTickMode','auto','LineWidth',1);
     end
   end
 end
 
-% In the case of animation playing, reset the variables to normal
-if nAnim==1
-  anim = anim{1}; cam = cam{1}; hCam = hCam{1}; hPoint = hPoint{1};
-  hConn = hConn{1}; hGT = hGT{1};
-end
+% Save the data back
+userData.anim = anim; userData.cam = cam; userData.hPoint = hPoint;
+userData.hGT = hGT;
+
+set(gcf,'UserData',userData);

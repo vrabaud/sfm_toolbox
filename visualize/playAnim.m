@@ -50,7 +50,7 @@ function M = playAnim( animIn, varargin )
 %
 % See also
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -61,17 +61,19 @@ end
 
 anim=animIn;
 nPoint=anim.nPoint; nFrame=anim.nFrame;
+userData = createDefaultUserData(1);
 
 dfs = {'nCam',0,'fps',20, 'nLoop',1, 'animGT',[],'frame',[],'camMode',1,...
   'showFirst',false,'showTitle',true,'showGT',false,'alignGT',false,...
   'showConn',true, 'showPrettyAxes', false };
-[ nCam fps nLoop animGT frame camMode showFirst showTitle showGT alignGT...
-  showConn showPrettyAxes ] = getPrmDflt( varargin, dfs, 1 );
+[ nCam userData.fps nLoop animGT frame userData.camMode ...
+  userData.showFirst userData.showTitle userData.showGT userData.alignGT...
+  userData.showConn userData.showPrettyAxes ] = getPrmDflt(varargin,dfs,1);
 
-if ~isempty(frame); showGT = true; end
-if isempty(anim.conn); showConn=false; end
+if ~isempty(frame); userData.showGT = true; end
+if isempty(anim.conn); userData.showConn=false; end
 if isempty(anim.S);
-  camMode = 2;
+  userData.camMode = 2;
   anim.S = anim.W;
   anim.S(3,:,:) = anim.W(2,:,:);
   anim.S(3,:,:)=0;
@@ -98,26 +100,30 @@ end
 % Define some initial variables
 h=gcf; figure(h); clf;
 set( gcf, 'KeyPressFcn', {  } );
-doReturn=0; doPause=0;
+userData.doReturn=0; userData.doPause=0;
 
-possibleKey = { 'f' 'p' 'q' 'r' 't' '1' '2' '3' 'numpad0' 'subtract'...
-  'add' 'space' 'leftarrow' 'rightarrow' 'uparrow' 'downarrow' };
+userData.possibleKey = { 'f' 'p' 'q' 'r' 't' '1' '2' '3' 'numpad0' ...
+  'subtract' 'add' 'space' 'leftarrow' 'rightarrow' 'uparrow' 'downarrow'};
 
-[ hPoint hConn hCam hGT ]=cloudInitialize( anim, frame(1), 'nCam',nCam, ...
+[ userData.hPoint{1} userData.hConn{1} userData.hCam{1} ...
+  userData.hGT{1} ]=cloudInitialize( anim, frame(1), 'nCam',nCam, ...
   'c', [0.4,0.4,1], 'animGT', animGT,'markerScale',1 );
 
 % set the main handle
 set(gcf,'KeyPressFcn',{@cloudInterface});
-if hConn==0; showConn = false; else possibleKey(end+1) = {'c'}; end
-if hGT==0; showGT = false; else possibleKey(end+1) = {'g'}; end
+if userData.hConn{1}==0; userData.showConn = false;
+else userData.possibleKey(end+1) = {'c'};
+end
+if userData.hGT{1}==0; userData.showGT = false;
+else userData.possibleKey(end+1) = {'g'};
+end
 
-axis(cam(camMode).axis);
+axis(cam(userData.camMode).axis);
 for i=1:3; cam(i).gca = gca; end
 % set the data embedded in the figure
-set(gcf,'UserData',{possibleKey,showConn,showFirst,showGT,doReturn,...
-  showTitle,anim,camMode,alignGT,fps,doPause,hCam,cam,hPoint,hGT,...
-  hConn,showPrettyAxes,animGT,nCam,0});
-cloudInterface(-1,struct('Key',int2str(camMode)));
+userData.anim{1}=anim; userData.cam{1}=cam;
+set(gcf,'UserData',userData);
+cloudInterface(-1,struct('Key',int2str(userData.camMode)));
 cloudInterface(-1,struct('Key','' ));
 
 % play the animation several times
@@ -125,29 +131,32 @@ if nargout>0; f=1; M = repmat( getframe, 1, abs(nLoop)*length(frame) ); end
 for iLoop = 1 : abs(nLoop)
   % Play the animation once
   for frameNbr=frame
-    % embed the right data in the graph
-    set(gcf,'UserData',{possibleKey,showConn,showFirst,showGT,doReturn,...
-      showTitle,anim,camMode,alignGT,fps,doPause,hCam,cam,hPoint,hGT,...
-      hConn,showPrettyAxes,animGT,nCam,frameNbr});
-    tic; try geth=get(h); catch; return; end %#ok<CTCH,NASGU>
-    if doReturn; return; end
-    
-    if showTitle; set(get(gca,'Title'),'String',...
-        sprintf('frame %d of %d',frameNbr,nFrame) );
-    end
-    
-    % Display the image
+    tic
     while 1
-      hCam = cloudUpdate( anim, hPoint, frameNbr, 'hCam',hCam,...
-        'nCam', nCam, 'camMode', camMode, 'hGT', hGT, 'hConn', ...
-        hConn, 'animGT', animGT, 'showGT', showGT, 'alignGT',...
-        alignGT, 'showConn', showConn );
+      % embed the right data in the graph
+      userData = get(gcf,'UserData');
+      try geth=get(h); catch; return; end %#ok<CTCH,NASGU>
+      if userData.doReturn; return; end
       
-      if doPause; pause(0.01); continue; end
+      if userData.showTitle
+        set(get(gca,'Title'),'String',...
+          sprintf('frame %d of %d',frameNbr,nFrame) );
+      end
       
-      if  toc>1/fps; break;
+      % Display the image
+      userData.hCam = cloudUpdate( userData.anim{1}, userData.hPoint{1}, ...
+        frameNbr, 'hCam',userData.hCam{1},'nCam', nCam, 'camMode', ...
+        userData.camMode, 'hGT', userData.hGT{1}, 'hConn', ...
+        userData.hConn{1}, 'animGT', animGT, 'showGT', userData.showGT, ...
+        'alignGT',userData.alignGT, 'showConn', userData.showConn );
+      
+      if userData.doPause; pause(0.01); continue; end
+      
+      if  toc>1/userData.fps; break;
       else
-        if 1/fps-toc>0.01; pause(0.01); else pause(1/fps-toc); break; end
+        if 1/userData.fps-toc>0.01; pause(0.01);
+        else pause(1/userData.fps-toc); break;
+        end
       end
     end
     

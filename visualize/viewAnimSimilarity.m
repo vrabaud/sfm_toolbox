@@ -5,7 +5,7 @@ function viewAnimSimilarity( anim1, Sim, varargin )
 %  viewAnimSimilarity( anim1, Sim, varargin )
 %
 % INPUTS
-%  anim     - object of class Animation
+%  anim1     - object of class Animation
 %  Sim      - nFrame x nFrame similarity matrix
 %  varargin   - list of paramaters in quotes alternating with their values
 %   -anim2  - other anim to compare to
@@ -24,25 +24,25 @@ function viewAnimSimilarity( anim1, Sim, varargin )
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
-showGT = false; alignGT = false; camMode = 1;
+userData = createDefaultUserData(2);
 
-[ anim2 nCam animGT showFirst ] = getPrmDflt( varargin,{ 'anim2',anim1,...
-  'nCam',-1,'animGT',cell(1,2), 'showFirst', false}, 1 );
+[ anim2 nCam animGT userData.showFirst ] = getPrmDflt( varargin, ...
+  { 'anim2',anim1,'nCam',-1,'animGT',cell(1,2), 'showFirst', false}, 1 );
 
 if ~isa(anim1,'Animation') || ~isa(anim2,'Animation')
   error('anim must be of class Animation');
 end
 
-anim = { anim1 anim2 };
-cam = cell(1,2); hPoint = cam; hConn = cam; hCam = cam; hGT = cam;
+userData.anim = { anim1 anim2 };
 
 % Determine the boundaries of the data
 for i=1:2
-  [ cam{i} anim{i} ] = cloudInitializeCam( anim{i}, nCam );
+  [ userData.cam{i} userData.anim{i} ] = cloudInitializeCam( ...
+    userData.anim{i}, nCam );
 end
 
 % Create the plots
-figure(gcf); clf; % bring to focus
+h = zeros(1,3); figure(gcf); clf; % bring to focus
 if exist('OCTAVE_VERSION','builtin')==5
   for i = 1 : 3
     h(i) = subplot(1,3,i);
@@ -60,31 +60,27 @@ imshow( Sim, [] ); hold on;
 marker1 = plot( 10, 1, 'r*' ); marker2 = plot( 1, 10, 'b*' );
 
 % Define some initial variables
-set( gcf, 'WindowButtonMotionFcn', { @interface } );
-set( gcf, 'KeyPressFcn', { @interface } );
-
-possibleKey = { 'f' 'r' 't' '1' '2' '3' 'numpad0' ...
+userData.possibleKey = { 'f' 'p' 'r' 't' '1' '2' '3' 'numpad0' ...
   'leftarrow' 'rightarrow' 'uparrow' 'downarrow' };
-
-hPoint=cell(1,2); hCam=hPoint;
 
 c=[ 1 0.4 0.4; 0.4 0.4 1 ];
 for i=1:2
   axes(h(i)); axis on; axis vis3d
-  [hPoint{i} hConn{i} hCam{i} hGT{i}]=cloudInitialize( anim{i}, 1, ...
+  [userData.hPoint{i} userData.hConn{i} userData.hCam{i} ...
+    userData.hGT{i}]=cloudInitialize( userData.anim{i}, 1, ...
     'nCam',nCam, 'c',c(i,:) );
-  for j=1:3; cam{i}(j).gca = h(i); end
+  for j=1:3; userData.cam{i}(j).gca = h(i); end
 end
-showConn=false; showTitle=true;
-set(gcf,'UserData',{possibleKey,showConn,showFirst,showGT,showTitle,...
-  anim,camMode,alignGT,hCam,cam,hPoint,hGT,hConn});
+set(gcf,'UserData',userData);
+
+% define the interaction
+set( gcf, 'WindowButtonMotionFcn', { @interface } );
+set( gcf, 'KeyPressFcn', { @interface } );
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function interface( src, event )
-    tmp=get(gcf,'UserData');
-    [possibleKey,showConn,showFirst,showGT,showTitle,...
-      anim,camMode,alignGT,hCam,cam,hPoint,hGT,hConn]=tmp{:};
-
+    userData=get(gcf,'UserData');
+    
     % Deal with the mouse moving around
     point = get( h(3), 'CurrentPoint' );
     x = round( point( 1, 1:2 ) );
@@ -95,11 +91,14 @@ set(gcf,'UserData',{possibleKey,showConn,showFirst,showGT,showTitle,...
     set( marker2, 'XData', 1, 'YData', x(2) );
     
     for k=1:2
-      hCam{k} = cloudUpdate( anim{k}, hPoint{k}, x(k), 'hCam',hCam{k},...
-        'nCam', nCam, 'camMode', camMode, ...
-        'hGT', hGT{k}, 'hConn',hConn{k},'animGT',animGT{k}, ...
-        'showGT', showGT, 'alignGT', alignGT, 'showConn', showConn );
-      axis( cam{k}(camMode).gca, cam{k}(camMode).axis );
+      userData.hCam{k} = cloudUpdate( userData.anim{k}, ...
+        userData.hPoint{k}, x(k), 'hCam',userData.hCam{k},...
+        'nCam', nCam, 'camMode', userData.camMode, ...
+        'hGT', userData.hGT{k}, 'hConn',userData.hConn{k},...
+        'animGT',animGT{k},'showGT', userData.showGT, ...
+        'alignGT', userData.alignGT, 'showConn', userData.showConn );
+      axis( userData.cam{k}(userData.camMode).gca, ...
+        userData.cam{k}(userData.camMode).axis );
     end
     
     % Display the image

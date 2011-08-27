@@ -1,5 +1,6 @@
 version NEW
   CRITICAL FIXES
+    - fix totally broken animation playing interface
     - fix crashes in some NRSFM visualization functions
     - fix crashes for NRSFM on Windows 64
     - fix crashes under Octave for NRSFM using yalmip

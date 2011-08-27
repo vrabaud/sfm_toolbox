@@ -17,9 +17,9 @@ function varargout = montageView( S, varargin )
 %  S          - [ 2 or 3 x nPoint x nView ]
 %  varargin   - list of paramaters in quotes alternating with their values
 %       - 'm' [] number of image columns
-%       - 'n' [] number of image rowss
+%       - 'n' [] number of image rows
 %       - 'label' [] cell array of label (strings)
-%       - 'conn' [] connecivity array (see GENERATETOYANIMATION)
+%       - 'conn' [] connectivity array (see GENERATETOYANIMATION)
 %
 % OUTPUTS
 %  h           - plot handle
@@ -38,7 +38,8 @@ function varargout = montageView( S, varargin )
 [ m n label conn ] = getPrmDflt( varargin, { 'm', [], 'n', [], ...
   'label', [], 'conn', [] }, 1 );
 
-nFrame=size(S,3); camMode = 1; showPrettyAxes=false;
+nFrame=size(S,3); userData = createDefaultUserData(nFrame);
+userData.showTitle = false;
 
 % get layout of plots (m=#frames/row, n=#frames/col)
 if( isempty(m) || isempty(n))
@@ -52,8 +53,7 @@ if( isempty(m) || isempty(n))
 end
 
 % Plot the 2D/3D data
-k=1; h=zeros(1,nFrame);
-hPoint = cell( 1, nFrame ); hConn = hPoint; animTot = hPoint; cam = hPoint;
+k=1; h=zeros(1,nFrame); animTot = cell( 1, nFrame );
 for j=1:m
   for i=1:n
     if exist('OCTAVE_VERSION','builtin')==5
@@ -63,12 +63,13 @@ for j=1:m
     end
     if k<=nFrame
       anim=Animation; anim.S=S(:,:,k);
-      [ cam{k} animTot{k} ] = cloudInitializeCam( anim, -1 );
-      cam{k}(1).gca = gca;
+      [ userData.cam{k} animTot{k} ] = cloudInitializeCam( anim, -1 );
+      userData.cam{k}(1).gca = gca;
       animTot{k}.conn = conn;
-      [ hPoint{k} hConn{k} ] = cloudInitialize( animTot{k}, 1 );
+      [ userData.hPoint{k} userData.hConn{k} ] = cloudInitialize( ...
+        animTot{k}, 1 );
       
-      axis( gca, cam{k}(1).axis );
+      axis( gca, userData.cam{k}(1).axis );
       if ~isempty(label); title(label{k}); end
       k=k+1;
     else % cross out unused frames
@@ -82,33 +83,28 @@ if size(S,1)==3
   set( gcf, 'WindowButtonMotionFcn', { @interface } );
   set( gcf, 'KeyPressFcn', { @interface } );
 end
-isIndep=false; showConn = false; showFirst = false; showTitle = false;
 
-possibleKey = { 'f' 'p' 'r' 't' 'numpad0' 'leftarrow' 'rightarrow' ...
-  'uparrow' 'downarrow' };
-if isempty(hConn{1}); showConn = false; else possibleKey(end+1) = {'c'};end
+userData.possibleKey = { 'f' 'i' 'p' 'r' 't' 'numpad0' 'leftarrow' ...
+  'rightarrow' 'uparrow' 'downarrow' };
+if ~isempty(userData.hConn{1})
+  userData.possibleKey(end+1) = {'c'};
+end
 
 % optional output
 if( nargout>0 ); varargout={ h m n }; end
 
-set(gcf,'UserData',{possibleKey,showConn,showFirst,showTitle,...
-  showPrettyAxes,anim,camMode,cam,hPoint,hConn,isIndep});
+userData.anim = animTot;
+set(gcf,'UserData',userData);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   function interface( src, event )
-    tmp=set(gcf,'UserData');
-    [possibleKey,showConn,showFirst,showTitle,...
-      showPrettyAxes,anim,camMode,cam,hPoint,hConn,isIndep]=tmp(:);
-
-    if ~isIndep; inter=1:nFrame; else inter=find(h==gca); end
-    
-    anim = animTot( inter );
+    userData=get(gcf,'UserData');
     
     if isempty(event)
       % Set all the views to be like the current one when using the mouse
       cl = find(h==gca);
       if ~isempty(cl) && cl<=nFrame;
-        for l=1:nFrame; cam{l}(1).view = get( h(cl), 'View' ); end
+        for l=1:nFrame; userData.cam{l}(1).view = get( h(cl), 'View' ); end
         cloudInterface( src, event );
       end
     end
