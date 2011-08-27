@@ -129,27 +129,30 @@ end
 %%% Shark data:
 animGT=generateToyAnimation( 4.2,'dt', 0 );
 animGT=animGT.addNoise('noiseS',0);
+disp('**Using Xiao-Kanade');
 animXiao = computeNrsfm( 2, animGT.W);
 [ errXiao errFrameXiao ] = animXiao.computeError( 'animGT', animGT );
 fprintf( '\nXiao: Reprojection error %0.4f and 3D-error %0.4f\n\n', ...
   sum(errFrameXiao{1}(1,:)),errXiao(1));
+playAnim(animXiao,'animGT',animGT,'showGT',true,'alignGT',true);
 
+disp('**Using Torresani et al');
 animTorr = computeNrsfm( 1, animGT.W, 'nBasis', 3, 'nItr',30 );
 [ errTorr errFrameTorr ] = animTorr.computeError( 'animGT', animGT );
 fprintf( '\nTorresani: Reprojection error %0.4f and 3D-error %0.4f\n\n',...
   mean(errFrameTorr{1}(1,:)),errTorr(1));
-%  playAnim(animXiao,'animGT',animGT,'showGT',true);
+playAnim(animTorr,'animGT',animGT,'showGT',true,'alignGT',true);
 
 
 % perform gradient descent on the coefficients to improve the quality of
 % the result
-% animXiao = bundleAdjustment( animXiao, 'nItr', 10 );
-% 
-% [ errXiao errFrameXiao ] = animXiao.computeError( 'animGT', animGT );
-% fprintf( 'Xiao+gradient descent: Reprojection error %0.4f and 3D-error %0.4f\n\n', ...
-%   sum(errFrameXiao{1}(1,:)),errXiao(1));
-% 
-% playAnim(animXiao,'animGT',animGT,'showGT',true);
+disp('**Performing gradient decent on Xiao-Kanade');
+animXiao = bundleAdjustment( animXiao, 'nItr', 10 );
+
+[ errXiao errFrameXiao ] = animXiao.computeError( 'animGT', animGT );
+fprintf( 'Xiao+gradient descent: Reprojection error %0.4f and 3D-error %0.4f\n\n', ...
+  sum(errFrameXiao{1}(1,:)),errXiao(1));
+playAnim(animXiao,'animGT',animGT,'showGT',true,'alignGT',true);
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
