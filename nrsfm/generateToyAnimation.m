@@ -112,7 +112,7 @@ switch type
       l(k,:)=l(k,:)/max(abs(l(k,:)));
     end
     
-    if doSMean; l(1,:)=1; end
+    if doSMean; l(1,:)=[]; end
     anim.l=l; anim.SBasis=SBasis;
     
     % Scale the whole thing
@@ -243,6 +243,7 @@ anim.t(3,:)=anim.t(3,:)-min(S(3,:))+span/3;
 anim.conn=conn;
 
 % set the first camera projection matrix to eye(3,4)
+[ disc, disc, anim ]=anim.generateW('doFillW',true);
 if dR~=0; anim = anim.setFirstPRtToId(); end
 
 % generate random missing data

@@ -26,11 +26,12 @@ function [anim,HEye] = setFirstPRtToId( anim )
 %
 % See also GENERATETOYANIMATION
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
+isTorresaniModel = anim.nBasis==size(anim.l,1)+1;
 if isempty(anim.R)
   HEye=anim.P(:,:,1)\eye(3,3);
   [disc,disc,V]=svd(anim.P(:,:,1));
@@ -38,20 +39,29 @@ if isempty(anim.R)
   % apply the homography to P
   anim.P=multiTimes(anim.P,HEye,1);
 else
-  HEye=anim.R(:,:,1)';
-  HEye(:,4)=-anim.R(:,:,1)'*anim.t(:,1);
-  HEye(4,:)=[0,0,0,1];
-  % Re-generate the rotations and translations
-  anim.t=bsxfun(@minus,anim.t,reshape(multiTimes(anim.R, ...
-    anim.R(:,:,1)'*anim.t(:,1),1),3,anim.nFrame));
+  HEye=[anim.R(:,:,1)',zeros(3,1);0,0,0,1];
+  if anim.nBasis~=0 || isTorresaniModel
+    HEye(1:3,4)=-anim.R(:,:,1)'*anim.t(:,1);
+    % Re-generate the rotations and translations
+    anim=subsasgn(anim,struct('type','.','subs','t'),...
+      bsxfun(@minus,anim.t,reshape(multiTimes(anim.R, ...
+      anim.R(:,:,1)'*anim.t(:,1),1),3,anim.nFrame)));
+  end
   anim=subsasgn(anim,struct('type','.','subs','R'),...
     multiTimes(anim.R,anim.R(:,:,1)',1));
 end
 
 if anim.nBasis~=0
   % Re-generate the basis
+  invHEye = inv(HEye);
+  if isTorresaniModel
+    SBasis=multiTimes(invHEye(1:3,1:3),anim.SBasis,1.2);
+    SBasis(:,:,1)=bsxfun(@plus,SBasis(:,:,1),invHEye(1:3,4));
+  else
+    SBasis=multiTimes(invHEye(1:3,1:3),anim.SBasis,1.2);
+  end
+  
   % use subsasgn so that S is modified at the same time too
-  SBasis=normalizePoint(multiTimes(inv(HEye),normalizePoint(anim.SBasis,-4),1.2),4);
   anim=subsasgn(anim,struct('type','.','subs','SBasis'),SBasis);
 else
   anim.S=normalizePoint(multiTimes(inv(HEye),normalizePoint(anim.S,-4),1.2),4);

@@ -51,7 +51,8 @@ end
 function demo1() %#ok<DEFNU>
 disp('Several Visualization Possibilities');
 
-anim=generateToyAnimation(0.1,'nFrame',50,'nPoint',20,'nBasis',3,'nLoop',2);
+anim=generateToyAnimation(0.1,'nFrame',50,'nPoint',20,'nBasis',3,...
+  'nLoop',2,'doSMean',1);
 disp('Playing an animation');
 close all; playAnim(anim);
 
