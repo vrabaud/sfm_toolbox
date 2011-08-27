@@ -11,7 +11,7 @@ function anim=subsasgn(anim,idx,rhs)
 %
 % EXAMPLE
 %
-% Vincent's Structure From Motion Toolbox      Version 3.1
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
@@ -165,4 +165,10 @@ switch var
     anim.nPoint=max([size(anim.SBasis,2) size(anim.W,2) size(anim.S,2)]);
     anim.nFrame=max([size(anim.l,2) size(anim.W,3) size(anim.S,3) ...
       size(anim.K,2), size(anim.R,3) size(anim.t,2)]);
+    if var=='W'
+      Wisnan=isnan(W);
+      if any(Wisnan)
+        anim.mask = ~Wisnan;
+      end
+    end
 end

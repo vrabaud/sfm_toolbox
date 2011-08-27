@@ -43,24 +43,25 @@ function anim = computeNrsfm( method, W, varargin )
 
 nFrame = size( W, 3 ); nPoint = size( W, 2 );
 anim=Animation('W',W);
+hasAnyNan=any(isnan(W));
 
 switch method
   case 1
     % 2D motion resulting from orthographic projection (Eq (1))
     p2_obs = reshape( permute( W, [ 3 1 2 ] ), [], nPoint );
-
+    
     % runs the non-rigid structure from motion algorithm
     use_lds = 0;
     tol = 0.0001;
-
+    
     % build the mask of themissing data
     if ~isempty(anim.mask); MD = ~anim.mask;
-    else; MD = zeros( nFrame, nPoint );
+    else MD = zeros( nFrame, nPoint );
     end
-
+    
     [ disc SBar V R t Z ] = em_sfm(p2_obs, MD, nBasis-1, use_lds, ...
       tol, nItr);
-
+    
     anim.isProj = false;
     anim.W = W;
     RR=zeros(3,3,nFrame); tt=zeros(3,nFrame);
@@ -73,18 +74,30 @@ switch method
       anim.l=Z';
     end
   case 2 % Xiao Kanade
+    if hasAnyNan
+      warning('Method not supported with missing entries');
+      return;
+    end
     if exist('OCTAVE_VERSION','builtin')==5
       warning('Method not supported under Octave');
       return;
     end
     anim = nrsfmXiaoKanade( W, nBasis );
   case 3,
+    if hasAnyNan
+      warning('Method not supported with missing entries');
+      return;
+    end
     if exist('OCTAVE_VERSION','builtin')==5
       warning('Method not supported under Octave');
       return;
     end
     anim = nrsfmMsfm( W, nBasis, nTriplet, nPair, nItr );
   case 4,
+    if hasAnyNan
+      warning('Method not supported with missing entries');
+      return;
+    end
     if exist('OCTAVE_VERSION','builtin')==5
       warning('Method not supported under Octave');
       return;
