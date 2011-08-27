@@ -40,6 +40,7 @@ if strcmp(computer,'GLNX86') || strcmp(computer,'GLNXA64')
 end
 
 disp('Compiling.......................................');
+disp('sba');
 savepwd=pwd; cd(fileparts(mfilename('fullpath'))); cd('../');
 
 dir_external = [ pwd '/external/' ];
@@ -97,6 +98,7 @@ end
 cd ../../..
 
 cd sfm/private/sba
+disp('sba projection routines');
 switch computer
   case {'PCWIN'},
     if doSba
@@ -148,12 +150,15 @@ switch computer
 end
 
 % general compile options
-fs={'computeCsfmInfimumMex','refineExteriorOrientationMex'};%, ...
+fs={'computeCsfmInfimumMex','refineExteriorOrientationMex', ...
+  'computeH'};%, ...
 %  'msfmRotationDerivativeMex'};
-ds={'nrsfm', 'sfm', 'msfm'};
+ds={'nrsfm/private/', 'sfm/private/', 'external/em-sfm/', ...
+  'msfm/private/'};
 for i=1:length(fs)
-  mex(opts{:},[rd '/' ds{i} '/private/' fs{i} '.' mexext], ...
-    [rd '/' ds{i} '/private/' fs{i} '.c'], optsAfter{:});
+  disp(fs{i});
+  mex(opts{:},[rd '/' ds{i} '/' fs{i} '.' mexext], ...
+    [rd '/' ds{i} '/' fs{i} '.c'], optsAfter{:});
 end
 
 cd(savepwd); disp('..................................Done Compiling');
