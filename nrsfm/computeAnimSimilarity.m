@@ -28,22 +28,19 @@ function [ Sim QTot ] = computeAnimSimilarity( anim, method, ...
 %
 % See also GENERATETOYANIMATION, VIEWANIMSIMILARITY
 %
-% Vincent's Structure From Motion Toolbox      Version 3.0
+% Vincent's Structure From Motion Toolbox      Version NEW
 % Copyright (C) 2008-2011 Vincent Rabaud.  [vrabaud-at-cs.ucsd.edu]
 % Please email me if you find bugs, or have suggestions or questions!
 % Licensed under the GPL [see external/gpl.txt]
 
 if ~isa(anim,'Animation'); error('anim must be of class Animation'); end
-nFrame=anim.nFrame; isProj=anim.isProj;
+nFrame=anim.nFrame;
 
 if nargin<2; method=2; end
 
 % Compute the similarities
 switch abs( method )
   case 2
-    Sim = Inf( nFrame, nFrame );
-    for i=1:nFrame-1; Sim(i,i)=0; end
-    ticId = ticStatus( 'Diadic Computed' );
     anim = anim.centerW();
 
     [ Sim, QTot ] = computeCsfmInfimum(anim.W);
@@ -52,8 +49,8 @@ switch abs( method )
       Sim = Sim/2;
     end
     
-    %%%%%%%% % using triplets of frames for MSFM
   case 3
+    %%%%%%%% using triplets of frames for MSFM
     [ Sim2 perc ] = getPrmDflt( varargin, { 'Sim2' [] 'perc' 1 } );
     Sim = cell(1,nFrame); for i=1:nFrame; Sim{i}=sparse(nFrame,nFrame); end
     isDone = cell(1,nFrame); for i=1:nFrame; isDone{i}=sparse(nFrame,nFrame); end
