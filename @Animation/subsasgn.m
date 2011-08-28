@@ -166,7 +166,7 @@ switch var
     anim.nFrame=max([size(anim.l,2) size(anim.W,3) size(anim.S,3) ...
       size(anim.K,2), size(anim.R,3) size(anim.t,2)]);
     if var=='W'
-      Wisnan=isnan(W);
+      Wisnan=isnan(anim.W);
       if any(Wisnan)
         anim.mask = ~Wisnan;
       end
