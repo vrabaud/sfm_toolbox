@@ -68,7 +68,7 @@ switch computer
     % Matlab on Windows 32/64
     if strcmp(computer, 'PCWIN')
       eval([ 'mex LINKFLAGS="$LINKFLAGS /NODEFAULTLIB:libcmt.lib" ' ...
-        library_flags '-lclapack -lblas -llibF77 -llibI77' sba_files ]);
+        library_flags '-lclapack -lblas -llibF77 -llibI77 ' sba_files ]);
     else
       eval([ 'mex LINKFLAGS="$LINKFLAGS /NODEFAULTLIB:libcmt.lib" ' ...
         library_flags '-lclapack_nowrap -lf2c -lBLAS_nowrap ' sba_files ]);
