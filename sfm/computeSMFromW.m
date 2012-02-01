@@ -131,6 +131,7 @@ if ~isempty(KFull); anim.KFull=KFull; end
 KFull=anim.KFull;
 if ~isempty(KFull)
   isCalibrated=true;
+  doMetricUpgrade=true;
   anim.KFull=[];
   % unapply the internal parameter matrix to the measurements
   if size(KFull,3)==1
@@ -154,7 +155,7 @@ anim.S=S; anim.P=P; anim.W=W;
 
 % perform an affine upgrade if requested
 H=[];
-if anim.isProj
+if anim.isProj && ~isCalibrated
   % do bundle adjustment
   if nItrSBA > 0
     anim = bundleAdjustment( anim, 'nItr', nItrSBA );
@@ -193,7 +194,8 @@ if anim.isProj
       end
     end
   end
-else
+end
+if anim.isProj && ~isCalibrated
   if doMetricUpgrade
     H=metricUpgrade(anim, 'isCalibrated', isCalibrated, 'method', method);
   end
