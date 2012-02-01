@@ -631,7 +631,7 @@ void *jac_adata;
 
   nobs=nvis*mnp;
   nvars=m*cnp + n*pnp;
-  if(nobs<nvars){
+  if(nobs<(mmcon*cnp + n*pnp)){
     fprintf(stderr, "SBA: sba_motstr_levmar_x() cannot solve a problem with fewer measurements [%d] than unknowns [%d]\n", nobs, nvars);
     return SBA_ERROR;
   }
@@ -1578,7 +1578,7 @@ void *jac_adata;
 
   nobs=nvis*mnp;
   nvars=m*cnp;
-  if(nobs<nvars){
+  if(nobs<(m-mcon)*cnp){
     fprintf(stderr, "SBA: sba_mot_levmar_x() cannot solve a problem with fewer measurements [%d] than unknowns [%d]\n", nobs, nvars);
     return SBA_ERROR;
   }
