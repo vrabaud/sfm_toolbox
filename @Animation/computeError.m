@@ -89,13 +89,28 @@ switch method
     
     % precompute stuff for error number 2
     spanW = zeros(1,nFrame);
-    if IS_EXIST_PDIST
-      for i = 1 : nFrame
-        spanW(i) = max(pdist( anim.W(:,:,i)));
+    WIsnan=isnan(W);
+    hasAnyNan=any(WIsnan(:));
+    if hasAnyNan
+      if IS_EXIST_PDIST
+        for i = 1 : nFrame
+          spanW(i) = max(pdist( anim.W(:,~WIsnan(1,:,i),i)));
+        end
+      else
+        for i = 1 : nFrame
+          tmp=anim.W(:,~WIsnan(1,:,i),i);
+          spanW(i) = max(max(pdist2( tmp, tmp)));
+        end
       end
     else
-      for i = 1 : nFrame
-        spanW(i) = max(max(pdist2( anim.W(:,:,i), anim.W(:,:,i))));
+      if IS_EXIST_PDIST
+        for i = 1 : nFrame
+          spanW(i) = max(pdist( anim.W(:,:,i)));
+        end
+      else
+        for i = 1 : nFrame
+          spanW(i) = max(max(pdist2( anim.W(:,:,i), anim.W(:,:,i))));
+        end
       end
     end
     
@@ -109,9 +124,9 @@ switch method
       % set to 0 the ones that are 0 in the mask
       mask = repmat(reshape(~anim.mask,1,nPoint,nFrame), [2, 1, 1]);
       tmp(mask) = 0;
-      WNorm(mask) = 0;
+      WNorm(mask(:)) = 0;
     end
-    WNorm = sum(reshape(W,[],nFrame).^2, 1);
+    WNorm = sum(reshape(WNorm,[],nFrame).^2, 1);
     
     errTot = abs(tmp);
     errFrame(1,:) = sum(reshape(tmp,[],nFrame).^2,1);
