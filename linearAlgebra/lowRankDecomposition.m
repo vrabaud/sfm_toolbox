@@ -87,6 +87,7 @@ if hasAnyNan
     col=W(:,i);
     % remove rows that have a NaN
     goodRow=~any(isnan(col),2);
+    if rank(goodRow)<4; continue; end
     coeff(:,i)=WHat(goodRow,:)\col(goodRow);
   end
 else
