@@ -1,0 +1,9 @@
+#summary List of the algorithms that are implemented in that toolbox
+
+This page lists the different algorithms I implemented in my toolbox.
+
+= SFM =
+
+= NRSFM =
+
+= Linear Algebra =
