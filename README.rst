@@ -1,3 +1,12 @@
+This toolbox is a compilation of popular Structure From Motion (SFM) algorithms. As I used more and more SFM over the years, I could never find anything that goes beyond simple SFM (please, prove me wrong and send me links !!). I compiled all my code into a toolbox so that others do not have to reimplement everything. I apologize in advance if you do not find what you need (like algorithms using the L-infinity beauty) but I only implemented what I needed and optimized what I needed most:
+
+  * data generation (random rigid/non-rigid scene, popular non-rigid examples, different camera models, random or smooth random camera positions (with circle splines for Sequin), noise addition ...)
+  * 2D geometry (homography computations ...)
+  * 3D geometry (quaternion, globally optimal pose estimation, absolute orientation, triangulation ...)
+  * rigid 3D reconstruction: orthographic (Tomasi-Kanade with or without orthonormality constraints) or projective (eight point, Sturm - Triggs 96, Oliensis - Hartley 07, globally optimal affine/metric upgrades from Chandraker 09 (with bug fixes to the original papers)), bundle adjustment ...
+  * non-rigid 3D reconstruction: interface to the available Torresani 08, optimized Xiao - Kanade 04 (with bug fixes to the original papers), CSFM from Rabaud 09
+  * visualization for rigid/non-rigid (sequences , multiple-views at once, comparisons ...) 
+
 This toolbox provides several Structure from Motion algorithms I developed until 2009.
 
 Quickstart
